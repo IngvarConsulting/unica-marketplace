@@ -66,8 +66,8 @@ jobs:
             layout: legacy-alias
           - label: v0.7.2
             version: 0.7.2
-            release: v0.7.2
-            kind: marketplace-tag
+            release: 643046a111d15a1ffc13c836a930a7569b552c69
+            kind: marketplace-promotion
             layout: marketplace-canonical
           - label: issue-90-duplicate
             version: 0.6.1

@@ -107,6 +107,7 @@ class MarketplaceContractTests(unittest.TestCase):
         ):
             self.assertIn(version, one_time)
         self.assertIn("issue-90-duplicate", one_time)
+        self.assertIn("643046a111d15a1ffc13c836a930a7569b552c69", one_time)
         self.assertIn("macos-15", migration_case)
         self.assertIn("ubuntu-latest", migration_case)
         self.assertIn("windows-2022", migration_case)

@@ -10,6 +10,7 @@ import stat
 import tarfile
 import tempfile
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Dict, List
 
@@ -103,6 +104,23 @@ def _validate_legacy_marketplace(plugin_root: Path) -> Path:
     return marketplace_root
 
 
+def _validate_marketplace_snapshot(plugin_root: Path) -> Path:
+    marketplace_root = plugin_root.parents[1]
+    manifest = _load_json(
+        marketplace_root / ".agents" / "plugins" / "marketplace.json"
+    )
+    _require(manifest.get("name") == "unica", "marketplace snapshot name is not unica")
+    plugins = manifest.get("plugins")
+    _require(
+        isinstance(plugins, list)
+        and len(plugins) == 1
+        and isinstance(plugins[0], dict)
+        and plugins[0].get("name") == "unica",
+        "marketplace snapshot must expose one Unica plugin",
+    )
+    return marketplace_root
+
+
 def _toml_string(value: str) -> str:
     return json.dumps(value, ensure_ascii=False)
 
@@ -118,9 +136,10 @@ def _local_marketplace_config(source: Path) -> List[str]:
 
 
 def _git_marketplace_config() -> List[str]:
+    updated = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     return [
         "[marketplaces.unica]",
-        'last_updated = "1970-01-01T00:00:00Z"',
+        f"last_updated = {_toml_string(updated)}",
         'source_type = "git"',
         f"source = {_toml_string(MARKETPLACE_SOURCE)}",
         'ref = "main"',
@@ -170,8 +189,12 @@ def prepare_fixture(
         plugin_ids: List[str]
 
         if layout == "marketplace-canonical":
+            marketplace_root = _validate_marketplace_snapshot(plugin_root)
             config = _git_marketplace_config()
             plugin_ids = ["unica@unica"]
+            snapshot = codex_home / ".tmp" / "marketplaces" / "unica"
+            snapshot.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copytree(marketplace_root, snapshot)
             _copy_plugin(
                 plugin_root,
                 codex_home / "plugins" / "cache" / "unica" / "unica" / version,

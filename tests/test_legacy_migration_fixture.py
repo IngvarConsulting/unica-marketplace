@@ -109,7 +109,7 @@ class LegacyMigrationFixtureTests(unittest.TestCase):
                 "legacy-canonical",
             )
             prepare_fixture(
-                self.make_archive(root, "0.7.2", include_marketplace=False),
+                self.make_archive(root, "0.7.2"),
                 marketplace_home,
                 "0.7.2",
                 "marketplace-canonical",
@@ -124,6 +124,12 @@ class LegacyMigrationFixtureTests(unittest.TestCase):
             self.assertFalse((marketplace_home / "marketplaces/unica-local").exists())
             self.assertTrue(
                 (marketplace_home / "plugins/cache/unica/unica/0.7.2").is_dir()
+            )
+            self.assertTrue(
+                (
+                    marketplace_home
+                    / ".tmp/marketplaces/unica/.agents/plugins/marketplace.json"
+                ).is_file()
             )
             config = (marketplace_home / "config.toml").read_text(encoding="utf-8")
             self.assertIn('source_type = "git"', config)
