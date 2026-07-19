@@ -117,6 +117,7 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("unica-marketplace/archive/$env:SOURCE_RELEASE.tar.gz", migration_case)
         self.assertIn("legacy-stable-upgrade:", verify)
         self.assertIn("source_version: 0.6.1", verify)
+        self.assertIn("layout: issue-90-duplicate", verify)
 
 
 if __name__ == "__main__":
