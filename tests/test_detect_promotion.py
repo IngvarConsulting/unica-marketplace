@@ -35,10 +35,25 @@ class PromotionDetectionTests(unittest.TestCase):
         catalog.parent.mkdir(parents=True, exist_ok=True)
         document = {
             "name": "unica",
-            "plugins": [{"name": "unica", "source": {"ref": f"v{version}"}}],
+            "plugins": [
+                {
+                    "name": "unica",
+                    "source": {
+                        "source": "git-subdir",
+                        "url": "https://github.com/IngvarConsulting/unica-marketplace.git",
+                        "path": "./plugins/unica",
+                        "ref": f"v{version}",
+                    },
+                }
+            ],
             **extra,
         }
         catalog.write_text(json.dumps(document, indent=2), encoding="utf-8")
+
+    def write_catalog_document(self, root: Path, document: object) -> None:
+        catalog = root / ".agents" / "plugins" / "marketplace.json"
+        catalog.parent.mkdir(parents=True, exist_ok=True)
+        catalog.write_text(json.dumps(document), encoding="utf-8")
 
     def commit(self, root: Path, message: str) -> str:
         self.git(root, "add", ".")
@@ -152,6 +167,95 @@ class PromotionDetectionTests(unittest.TestCase):
             self.assertEqual(outputs["catalog_version"], "1.1.0")
             self.assertEqual(outputs["previous_catalog_version"], "1.0.0")
             self.assertEqual(outputs["catalog_promoted"], "true")
+
+    def test_malformed_current_catalog_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            self.git(root, "commit", "--allow-empty", "-q", "-m", "empty base")
+            base = self.git(root, "rev-parse", "HEAD")
+            self.write_plugin(root, "1.0.0")
+            self.write_catalog_document(root, {"name": "unica", "plugins": []})
+            head = self.commit(root, "malformed catalog")
+
+            with self.assertRaisesRegex(RuntimeError, "exactly one Unica plugin"):
+                self.detect_pr(root, base, head)
+
+    def test_malformed_previous_catalog_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            self.write_plugin(root, "1.0.0")
+            self.write_catalog_document(
+                root,
+                {"name": "unica", "plugins": [{"name": "unica", "source": {"ref": ""}}]},
+            )
+            base = self.commit(root, "malformed previous catalog")
+            self.write_catalog(root, "1.0.0")
+            head = self.commit(root, "valid current catalog")
+
+            with self.assertRaisesRegex(RuntimeError, "catalog source"):
+                self.detect_pr(root, base, head)
+
+    def test_malformed_plugin_descriptor_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            descriptor = root / "plugins" / "unica" / ".codex-plugin" / "plugin.json"
+            descriptor.parent.mkdir(parents=True, exist_ok=True)
+            descriptor.write_text(json.dumps({"version": "latest"}), encoding="utf-8")
+            self.write_catalog(root, "1.0.0")
+            head = self.commit(root, "malformed descriptor")
+
+            with self.assertRaisesRegex(RuntimeError, "plugin version"):
+                detect(
+                    root=root,
+                    event_name="push",
+                    event_ref="refs/heads/main",
+                    event_sha=head,
+                    before_sha="0" * 40,
+                    pr_base_sha="",
+                    pr_head_sha="",
+                )
+
+    def test_unavailable_event_commit_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            self.git(root, "commit", "--allow-empty", "-q", "-m", "empty")
+
+            with self.assertRaisesRegex(RuntimeError, "event commit is unavailable"):
+                detect(
+                    root=root,
+                    event_name="push",
+                    event_ref="refs/heads/main",
+                    event_sha="f" * 40,
+                    before_sha="0" * 40,
+                    pr_base_sha="",
+                    pr_head_sha="",
+                )
+
+    def test_absent_files_are_a_valid_initial_empty_state(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            self.git(root, "commit", "--allow-empty", "-q", "-m", "empty")
+            event_sha = self.git(root, "rev-parse", "HEAD")
+
+            outputs = detect(
+                root=root,
+                event_name="push",
+                event_ref="refs/heads/main",
+                event_sha=event_sha,
+                before_sha="0" * 40,
+                pr_base_sha="",
+                pr_head_sha="",
+            )
+
+            self.assertEqual(outputs["has_plugin"], "false")
+            self.assertEqual(outputs["plugin_version"], "")
+            self.assertEqual(outputs["catalog_version"], "")
+            self.assertEqual(outputs["catalog_promoted"], "false")
 
 
 if __name__ == "__main__":

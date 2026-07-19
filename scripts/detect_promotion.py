@@ -12,6 +12,8 @@ from pathlib import Path
 
 PLUGIN_PATH = "plugins/unica/.codex-plugin/plugin.json"
 CATALOG_PATH = ".agents/plugins/marketplace.json"
+MARKETPLACE = "https://github.com/IngvarConsulting/unica-marketplace.git"
+SEMANTIC_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+")
 
 
 def require_commit(root: Path, commit: str, label: str) -> None:
@@ -59,22 +61,43 @@ def read_json_at(root: Path, commit: str, path: str) -> dict | None:
 
 def plugin_version_at(root: Path, commit: str) -> str:
     descriptor = read_json_at(root, commit, PLUGIN_PATH)
-    version = descriptor.get("version") if descriptor is not None else ""
-    return version if isinstance(version, str) else ""
+    if descriptor is None:
+        return ""
+    version = descriptor.get("version")
+    if not isinstance(version, str) or SEMANTIC_VERSION.fullmatch(version) is None:
+        raise RuntimeError(f"plugin version in {PLUGIN_PATH} at {commit} must be semantic")
+    return version
 
 
 def catalog_ref_at(root: Path, commit: str) -> str:
     catalog = read_json_at(root, commit, CATALOG_PATH)
     if catalog is None:
         return ""
+    if catalog.get("name") != "unica":
+        raise RuntimeError(f"catalog at {commit} must be named unica")
     plugins = catalog.get("plugins")
-    if not isinstance(plugins, list) or not plugins or not isinstance(plugins[0], dict):
-        return ""
+    if (
+        not isinstance(plugins, list)
+        or len(plugins) != 1
+        or not isinstance(plugins[0], dict)
+        or plugins[0].get("name") != "unica"
+    ):
+        raise RuntimeError(f"catalog at {commit} must contain exactly one Unica plugin")
     source = plugins[0].get("source")
-    if not isinstance(source, dict):
-        return ""
+    if (
+        not isinstance(source, dict)
+        or source.get("source") != "git-subdir"
+        or source.get("url") != MARKETPLACE
+        or source.get("path") != "./plugins/unica"
+    ):
+        raise RuntimeError(f"catalog source at {commit} must use the expected Unica git-subdir")
     ref = source.get("ref")
-    return ref if isinstance(ref, str) else ""
+    if (
+        not isinstance(ref, str)
+        or re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", ref) is None
+    ):
+        raise RuntimeError(f"catalog source ref at {commit} must be a semantic version tag")
+    return ref
 
 
 def detect(
