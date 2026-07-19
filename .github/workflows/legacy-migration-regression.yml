@@ -1,0 +1,85 @@
+name: One-time legacy migration regression
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.head_ref == 'codex/issue-90-migration-regression' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        source:
+          - label: v0.3.3
+            version: 0.3.3
+            release: v0.3.3
+            kind: version-bundle
+            layout: legacy-canonical
+          - label: v0.3.10
+            version: 0.3.10
+            release: v0.3.10
+            kind: platform-archive
+            layout: legacy-alias
+          - label: v0.3.11
+            version: 0.3.11
+            release: v0.3.11
+            kind: platform-archive
+            layout: legacy-alias
+          - label: v0.3.12
+            version: 0.3.12
+            release: v0.3.12
+            kind: platform-archive
+            layout: legacy-alias
+          - label: v0.4.1
+            version: 0.4.1
+            release: v0.4.1
+            kind: platform-archive
+            layout: legacy-alias
+          - label: v0.4.2
+            version: 0.4.2
+            release: v0.4.2
+            kind: platform-archive
+            layout: legacy-alias
+          - label: v0.4.3
+            version: 0.4.3
+            release: v0.4.3
+            kind: platform-archive
+            layout: legacy-alias
+          - label: v0.4.4
+            version: 0.4.4
+            release: v0.4.4
+            kind: platform-archive
+            layout: legacy-alias
+          - label: v0.5.1
+            version: 0.5.1
+            release: v0.5.1
+            kind: platform-archive
+            layout: legacy-alias
+          - label: v0.6.1
+            version: 0.6.1
+            release: v0.6.1
+            kind: platform-archive
+            layout: legacy-alias
+          - label: v0.7.2
+            version: 0.7.2
+            release: v0.7.2
+            kind: marketplace-tag
+            layout: marketplace-canonical
+          - label: issue-90-duplicate
+            version: 0.6.1
+            release: v0.6.1
+            kind: platform-archive
+            layout: issue-90-duplicate
+    uses: ./.github/workflows/legacy-migration-case.yml
+    with:
+      label: ${{ matrix.source.label }}
+      source_version: ${{ matrix.source.version }}
+      source_release: ${{ matrix.source.release }}
+      source_kind: ${{ matrix.source.kind }}
+      layout: ${{ matrix.source.layout }}
+      target_version: 0.7.5
+    secrets: inherit

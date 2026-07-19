@@ -385,3 +385,18 @@ jobs:
           $bootstrap = Join-Path $pluginRoot "bootstrap/bin/$env:TARGET/$executable"
           if ($env:TARGET -ne 'win-x64') { chmod +x $bootstrap }
           & $bootstrap verify --plugin-root $pluginRoot
+
+  legacy-stable-upgrade:
+    needs: contract
+    if: >-
+      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      needs.contract.outputs.catalog_matches_plugin == 'true'
+    uses: ./.github/workflows/legacy-migration-case.yml
+    with:
+      label: legacy-stable-v0.6.1
+      source_version: 0.6.1
+      source_release: v0.6.1
+      source_kind: platform-archive
+      layout: legacy-alias
+      target_version: ${{ needs.contract.outputs.plugin_version }}
+    secrets: inherit

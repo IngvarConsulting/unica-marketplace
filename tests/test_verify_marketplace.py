@@ -80,6 +80,40 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("plugin add unica@unica --json", workflow)
         self.assertIn("Node.js leaked into the consumer PATH", workflow)
 
+    def test_workflows_cover_one_time_and_ongoing_legacy_migration_policy(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        one_time = (
+            root / ".github" / "workflows" / "legacy-migration-regression.yml"
+        ).read_text(encoding="utf-8")
+        migration_case = (
+            root / ".github" / "workflows" / "legacy-migration-case.yml"
+        ).read_text(encoding="utf-8")
+        verify = (root / ".github" / "workflows" / "verify.yml").read_text(
+            encoding="utf-8"
+        )
+
+        for version in (
+            "v0.3.3",
+            "v0.3.10",
+            "v0.3.11",
+            "v0.3.12",
+            "v0.4.1",
+            "v0.4.2",
+            "v0.4.3",
+            "v0.4.4",
+            "v0.5.1",
+            "v0.6.1",
+            "v0.7.2",
+        ):
+            self.assertIn(version, one_time)
+        self.assertIn("issue-90-duplicate", one_time)
+        self.assertIn("macos-15", migration_case)
+        self.assertIn("ubuntu-latest", migration_case)
+        self.assertIn("windows-2022", migration_case)
+        self.assertIn("issue_90_marker", migration_case)
+        self.assertIn("legacy-stable-upgrade:", verify)
+        self.assertIn("source_version: 0.6.1", verify)
+
 
 if __name__ == "__main__":
     unittest.main()
