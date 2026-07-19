@@ -89,7 +89,14 @@ def verify_catalog(root: Path, version: str) -> None:
     require(source.get("source") == "git-subdir", "stable source must use git-subdir")
     require(source.get("url") == MARKETPLACE, "stable source repository mismatch")
     require(source.get("path") == "./plugins/unica", "stable source path mismatch")
-    require(source.get("ref") == f"v{version}", "stable source ref is not the plugin version tag")
+    stable_ref = source.get("ref")
+    require(isinstance(stable_ref, str) and re.fullmatch(r"v\d+\.\d+\.\d+", stable_ref),
+            "stable source ref is not a semantic version tag")
+    stable_version = stable_ref.removeprefix("v")
+    require(
+        tuple(map(int, version.split("."))) >= tuple(map(int, stable_version.split("."))),
+        "staged plugin version is older than the stable catalog",
+    )
     require(entry.get("policy", {}).get("installation") == "AVAILABLE", "stable policy mismatch")
 
 
@@ -120,4 +127,3 @@ if __name__ == "__main__":
         main()
     except ContractError as error:
         raise SystemExit(str(error)) from error
-
