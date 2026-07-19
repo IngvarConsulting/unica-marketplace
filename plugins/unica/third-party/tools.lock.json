@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "darwin-arm64": {
+      "targetTriple": "aarch64-apple-darwin",
+      "hostSystem": "Darwin",
+      "hostMachines": [
+        "aarch64",
+        "arm64"
+      ],
+      "exe": ""
+    },
+    "linux-x64": {
+      "targetTriple": "x86_64-unknown-linux-gnu",
+      "hostSystem": "Linux",
+      "hostMachines": [
+        "amd64",
+        "x86_64"
+      ],
+      "exe": ""
+    },
+    "win-x64": {
+      "targetTriple": "x86_64-pc-windows-msvc",
+      "hostSystem": "Windows",
+      "hostMachines": [
+        "amd64",
+        "x86_64"
+      ],
+      "exe": ".exe"
+    }
+  },
+  "tools": [
+    {
+      "name": "bsl-analyzer",
+      "version": "0.2.55",
+      "repository": "https://github.com/itrous/bsl-analyzer",
+      "sourceTag": "v0.2.55",
+      "sourceCommit": "5a02bb44dedaf29e0e29af1f740279d279199854",
+      "license": "LGPL-3.0-or-later",
+      "assetStrategy": "direct-release-asset",
+      "binaryName": "bsl-analyzer",
+      "assets": {
+        "darwin-arm64": {
+          "assetName": "bsl-analyzer-app-darwin-arm64",
+          "sha256": "e744747e19572035218b5fc1b9ab52c74ffa1d5d238b59aadecfdfa89ddd767b"
+        },
+        "linux-x64": {
+          "assetName": "bsl-analyzer-app-linux-amd64",
+          "sha256": "407d618c1f400b9a287ef6debe9b7bbd39deeb8edbf6d96529c1c9579f138708"
+        },
+        "win-x64": {
+          "assetName": "bsl-analyzer-app-windows-amd64.exe",
+          "sha256": "b9f3ed200901a0c33efca51941e7495b07325eae5d0aeb3f6185da4aa62cf3c5"
+        }
+      }
+    },
+    {
+      "name": "v8-runner",
+      "version": "0.5.1",
+      "repository": "https://github.com/alkoleft/v8-runner-rust",
+      "sourceTag": "v0.5.1",
+      "sourceCommit": "ad72f64222ab0a7e6dfd391adb437a956c0a2428",
+      "license": "NOASSERTION",
+      "assetStrategy": "archive-release-asset",
+      "binaryName": "v8-runner",
+      "assets": {
+        "darwin-arm64": {
+          "assetName": "v8-runner-macos-aarch64.tar.gz",
+          "archiveBinary": "v8-runner",
+          "sha256": "6a5c30e67a354746c3b91586e4b59a45186b258293fe4b54057a1fd3b92c63b8"
+        },
+        "linux-x64": {
+          "assetName": "v8-runner-linux-x86_64-musl.tar.gz",
+          "archiveBinary": "v8-runner",
+          "sha256": "032c6fbfe6b9db0c3ad285ade12bfdf2c5265577274d23b80b685d49532a3866"
+        },
+        "win-x64": {
+          "assetName": "v8-runner-windows-x86_64.zip",
+          "archiveBinary": "v8-runner.exe",
+          "sha256": "0cf1b5b93f79dca19db79cad2610a2a611e73dc1d7b6f5a55879caf1e3b94b34"
+        }
+      }
+    },
+    {
+      "name": "rlm-tools-bsl",
+      "version": "1.26.0",
+      "repository": "https://github.com/Dach-Coin/rlm-tools-bsl",
+      "sourceTag": "v1.26.0",
+      "sourceCommit": "dcfff95ce678f49971b14d8acd82b042a6855470",
+      "license": "MIT",
+      "assetStrategy": "pyinstaller-entrypoint",
+      "binaryName": "rlm-tools-bsl",
+      "entrypoint": "rlm-tools-bsl",
+      "assets": {
+        "darwin-arm64": {
+          "assetName": "rlm-tools-bsl-darwin-arm64"
+        },
+        "linux-x64": {
+          "assetName": "rlm-tools-bsl-linux-x64"
+        },
+        "win-x64": {
+          "assetName": "rlm-tools-bsl-win-x64.exe"
+        }
+      }
+    },
+    {
+      "name": "rlm-bsl-index",
+      "version": "1.26.0",
+      "repository": "https://github.com/Dach-Coin/rlm-tools-bsl",
+      "sourceTag": "v1.26.0",
+      "sourceCommit": "dcfff95ce678f49971b14d8acd82b042a6855470",
+      "license": "MIT",
+      "assetStrategy": "pyinstaller-entrypoint",
+      "binaryName": "rlm-bsl-index",
+      "entrypoint": "rlm-bsl-index",
+      "assets": {
+        "darwin-arm64": {
+          "assetName": "rlm-bsl-index-darwin-arm64"
+        },
+        "linux-x64": {
+          "assetName": "rlm-bsl-index-linux-x64"
+        },
+        "win-x64": {
+          "assetName": "rlm-bsl-index-win-x64.exe"
+        }
+      }
+    },
+    {
+      "name": "unica",
+      "version": "0.7.1",
+      "repository": "https://github.com/IngvarConsulting/unica",
+      "sourceTag": "workspace",
+      "sourceCommit": "workspace",
+      "license": "LGPL-3.0-or-later",
+      "assetStrategy": "cargo-workspace",
+      "binaryName": "unica",
+      "cargoPackage": "unica-coder",
+      "cargoBin": "unica",
+      "assets": {
+        "darwin-arm64": {
+          "assetName": "unica"
+        },
+        "linux-x64": {
+          "assetName": "unica"
+        },
+        "win-x64": {
+          "assetName": "unica.exe"
+        }
+      }
+    }
+  ]
+}
