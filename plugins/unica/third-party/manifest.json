@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 2,
+  "generatedBy": "scripts/ci/package-unica-plugin.py",
+  "sourceManifest": true,
+  "note": "This checked-in source manifest is a placeholder. Official marketplace archives overwrite it with a generated multi-target manifest derived from third-party/tools.lock.json and CI-built tool bundles.",
+  "tools": [],
+  "internalAdapters": [
+    {
+      "name": "v8std",
+      "url": "https://ai.v8std.ru/mcp",
+      "protocol": "streamable-http"
+    }
+  ]
+}

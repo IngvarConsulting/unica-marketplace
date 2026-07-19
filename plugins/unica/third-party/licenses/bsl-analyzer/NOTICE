@@ -1,0 +1,81 @@
+BSL Analyzer — licensing notice / лицензионная заметка
+
+The workspace is dual-licensed per crate. See LICENSING.md for the full
+per-crate matrix and docs/legal/ for the underlying provenance audit.
+
+  * Tier A crates are licensed under MIT OR Apache-2.0.
+  * Tier B crates are licensed under LGPL-3.0-or-later.
+  * The shipped LSP server binary, which statically links Tier B crates,
+    is therefore distributed under LGPL-3.0-or-later. Source for all
+    crates is published in this repository.
+
+Architecture heritage
+---------------------
+The overall architecture — event-based parser, Rowan CST, Salsa
+incremental database, HIR and IDE layering — follows the design of
+rust-analyzer, which is distributed under MIT OR Apache-2.0.
+Upstream: https://github.com/rust-analyzer/rust-analyzer
+
+Language heritage
+-----------------
+BSL and the SDBL query language are part of the 1C:Enterprise platform.
+The language itself, its keywords, its syntax and its semantic rules
+belong to 1C as the platform author; they are not proprietary to any
+third-party reimplementation.
+
+Official references:
+  * 1C query language: https://its.1c.ru/db/pubqlang
+  * 1C code standards: https://its.1c.ru/db/v8std
+
+Diagnostic rules
+----------------
+Code-quality diagnostics in crates/ide-diagnostics encode the 1C
+code-style standards published at v8std.ru (CC0) and in the official
+1C documentation. They do not implement a third party's proprietary
+rule set.
+
+Historical reference for the SDBL parser and lexer
+--------------------------------------------------
+Early grammar work in the following files was developed with the
+bsl-parser project (https://github.com/1c-syntax/bsl-parser,
+LGPL-3.0-or-later) as a reference source:
+
+  * crates/parser/src/grammar/sdbl/
+  * crates/parser/src/grammar/ (BSL grammar layer)
+  * crates/lexer/src/sdbl.rs
+
+These components are Tier B and are being replaced slice-by-slice
+from official 1C documentation under a clean-room process described
+in docs/legal/sdbl-clean-room-slices.md. Until that work completes,
+the Tier B crates and the final binary remain under LGPL-3.0-or-later.
+
+Bundled 1C platform data
+------------------------
+The file crates/bsl-platform/data/platform_data.json is a structured
+extract of the 1C:Enterprise context-help archives (shcntx_ru.hbk,
+shlang_ru.hbk). The contents — in particular method descriptions,
+parameter documentation and code examples — are © ООО «1С-Софт» and
+are NOT covered by this workspace's MIT, Apache-2.0 or LGPL-3.0
+licensing. The file is bundled to allow reproducible builds of
+bsl-analyzer without requiring every contributor to install
+1C:Enterprise locally, and on the practical assumption that its use is
+interoperability with the 1C platform rather than a standalone
+documentation product. See crates/bsl-platform/data/PROVENANCE.md for
+the full statement.
+
+Upstream acknowledgements
+-------------------------
+  * rust-analyzer — architectural reference — MIT OR Apache-2.0
+  * bsl-parser — historical grammar reference for the SDBL layer —
+    LGPL-3.0-or-later
+  * bsl-language-server — compatibility target for configuration
+    format and diagnostic catalogue — LGPL-3.0-or-later
+  * v8std.ru — public catalogue of 1C coding standards — CC0
+  * crates/parser/tests/fixtures/Module.bsl — © ООО «1С-Софт»,
+    CC BY 4.0, redistributed with its own license header intact
+  * crates/bsl-platform/data/platform_data.json — © ООО «1С-Софт»,
+    1C copyright, bundled for interoperability; see
+    crates/bsl-platform/data/PROVENANCE.md
+
+See LICENSING.md for the per-crate license map and the conditions
+under which each crate can be reused.
