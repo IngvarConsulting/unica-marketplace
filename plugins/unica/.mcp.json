@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "unica": {
+      "command": "git",
+      "args": [
+        "-c",
+        "alias.unica-bootstrap=!f() { root=\"$PWD/${GIT_PREFIX:-}\"; exec sh \"${root}bootstrap/launch.sh\" \"$root\"; }; f",
+        "unica-bootstrap"
+      ],
+      "note": "Single public Unica stdio MCP orchestrator. The public Git package enters through a command-scoped Git shell alias, selects a native bootstrap for the host, verifies the pinned runtime, and transparently launches unica.",
+      "cwd": "."
+    }
+  }
+}
