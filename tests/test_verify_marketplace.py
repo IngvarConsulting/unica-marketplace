@@ -196,8 +196,11 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("did not resolve to expected event commit", resolver)
         self.assertIn("gh release view", verify)
         self.assertIn("isDraft,publishedAt,assets", verify)
-        self.assertIn("Get-InstallerDigest 'install-unica.ps1'", verify)
-        self.assertIn("Get-InstallerDigest 'install-unica.sh'", verify)
+        self.assertNotIn("Get-InstallerDigest", resolver)
+        self.assertNotIn("install-unica.ps1", resolver)
+        self.assertNotIn("install-unica.sh", resolver)
+        self.assertNotIn("installer_ps1_sha256", resolver)
+        self.assertNotIn("installer_sh_sha256", resolver)
         self.assertIn(
             "needs: [contract, resolve-migration-target, previous-stable-seed]",
             verify,
