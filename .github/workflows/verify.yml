@@ -174,52 +174,33 @@ jobs:
         include:
           - os: macos-15
             target: darwin-arm64
-            codex_asset: codex-aarch64-apple-darwin.tar.gz
-            codex_name: codex-aarch64-apple-darwin
           - os: ubuntu-latest
             target: linux-x64
-            codex_asset: codex-x86_64-unknown-linux-musl.tar.gz
-            codex_name: codex-x86_64-unknown-linux-musl
           - os: windows-2022
             target: win-x64
-            codex_asset: codex-x86_64-pc-windows-msvc.exe.zip
-            codex_name: codex-x86_64-pc-windows-msvc.exe
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install the current locked Codex CLI
+        uses: ./.github/actions/setup-locked-codex
+        with:
+          profile: current
+          target: ${{ matrix.target }}
+          codex-home: ${{ runner.temp }}/codex-home
       - name: Verify staged native bootstrap and MCP
         shell: pwsh
         env:
-          CODEX_HOME: ${{ runner.temp }}/codex-home
           TARGET: ${{ matrix.target }}
-          CODEX_ASSET: ${{ matrix.codex_asset }}
-          CODEX_NAME: ${{ matrix.codex_name }}
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force -Path $env:CODEX_HOME | Out-Null
-          $codexDir = Join-Path $env:RUNNER_TEMP 'codex-native'
-          New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
-          gh release download rust-v0.145.0-alpha.18 --repo openai/codex --pattern $env:CODEX_ASSET --dir $codexDir
-          $archive = Get-ChildItem -LiteralPath $codexDir -File | Select-Object -First 1
-          if ($archive.Extension -eq '.zip') {
-            Expand-Archive -LiteralPath $archive.FullName -DestinationPath $codexDir
-          } else {
-            & tar -xzf $archive.FullName -C $codexDir
-          }
-          $codex = Get-ChildItem -LiteralPath $codexDir -Recurse -File |
-            Where-Object { $_.Name -eq $env:CODEX_NAME } |
-            Select-Object -First 1
-          if (-not $codex) { throw "Native Codex executable $env:CODEX_NAME is missing" }
-
           if ($env:TARGET -eq 'win-x64') {
-            $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
+            $env:PATH = "$env:CODEX_BIN_DIR;$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
           } else {
-            $env:PATH = '/usr/bin:/bin'
+            $env:PATH = "$env:CODEX_BIN_DIR`:/usr/bin:/bin"
           }
           if (Get-Command node -ErrorAction SilentlyContinue) { throw 'Node.js leaked into the consumer PATH' }
-          if ($env:TARGET -ne 'win-x64') { chmod +x $codex.FullName }
-          & $codex.FullName --version
+          & $env:CODEX_BIN --version
 
           $pluginRoot = (Resolve-Path -LiteralPath 'plugins/unica').Path
 
@@ -237,62 +218,43 @@ jobs:
         include:
           - os: macos-15
             target: darwin-arm64
-            codex_asset: codex-aarch64-apple-darwin.tar.gz
-            codex_name: codex-aarch64-apple-darwin
           - os: ubuntu-latest
             target: linux-x64
-            codex_asset: codex-x86_64-unknown-linux-musl.tar.gz
-            codex_name: codex-x86_64-unknown-linux-musl
           - os: windows-2022
             target: win-x64
-            codex_asset: codex-x86_64-pc-windows-msvc.exe.zip
-            codex_name: codex-x86_64-pc-windows-msvc.exe
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      - name: Install the current locked Codex CLI
+        uses: ./.github/actions/setup-locked-codex
+        with:
+          profile: current
+          target: ${{ matrix.target }}
+          codex-home: ${{ runner.temp }}/codex-home
       - name: Install from the candidate catalog and verify MCP
         shell: pwsh
         env:
-          CODEX_HOME: ${{ runner.temp }}/codex-home
           TARGET: ${{ matrix.target }}
-          CODEX_ASSET: ${{ matrix.codex_asset }}
-          CODEX_NAME: ${{ matrix.codex_name }}
           EXPECTED_VERSION: ${{ needs.contract.outputs.plugin_version }}
           EVENT_NAME: ${{ github.event_name }}
           EVENT_REF: ${{ github.ref }}
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force -Path $env:CODEX_HOME | Out-Null
-          $codexDir = Join-Path $env:RUNNER_TEMP 'codex-native'
-          New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
-          gh release download rust-v0.145.0-alpha.18 --repo openai/codex --pattern $env:CODEX_ASSET --dir $codexDir
-          $archive = Get-ChildItem -LiteralPath $codexDir -File | Select-Object -First 1
-          if ($archive.Extension -eq '.zip') {
-            Expand-Archive -LiteralPath $archive.FullName -DestinationPath $codexDir
-          } else {
-            & tar -xzf $archive.FullName -C $codexDir
-          }
-          $codex = Get-ChildItem -LiteralPath $codexDir -Recurse -File |
-            Where-Object { $_.Name -eq $env:CODEX_NAME } |
-            Select-Object -First 1
-          if (-not $codex) { throw "Native Codex executable $env:CODEX_NAME is missing" }
-
           if ($env:TARGET -eq 'win-x64') {
-            $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
+            $env:PATH = "$env:CODEX_BIN_DIR;$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
           } else {
-            $env:PATH = '/usr/bin:/bin'
+            $env:PATH = "$env:CODEX_BIN_DIR`:/usr/bin:/bin"
           }
           if (Get-Command node -ErrorAction SilentlyContinue) { throw 'Node.js leaked into the consumer PATH' }
-          if ($env:TARGET -ne 'win-x64') { chmod +x $codex.FullName }
 
           if ($env:EVENT_NAME -eq 'push' -and $env:EVENT_REF -eq 'refs/heads/main') {
-            & $codex.FullName plugin marketplace add IngvarConsulting/unica-marketplace --ref main --json
+            & $env:CODEX_BIN plugin marketplace add IngvarConsulting/unica-marketplace --ref main --json
           } else {
-            & $codex.FullName plugin marketplace add $env:GITHUB_WORKSPACE --json
+            & $env:CODEX_BIN plugin marketplace add $env:GITHUB_WORKSPACE --json
           }
-          & $codex.FullName plugin add unica@unica --json
-          $state = (& $codex.FullName plugin list --available --json) | ConvertFrom-Json
+          & $env:CODEX_BIN plugin add unica@unica --json
+          $state = (& $env:CODEX_BIN plugin list --available --json) | ConvertFrom-Json
           $matches = @($state.installed | Where-Object {
             $_.pluginId -eq 'unica@unica' -and $_.version -eq $env:EXPECTED_VERSION
           })
@@ -320,59 +282,43 @@ jobs:
         include:
           - os: macos-15
             target: darwin-arm64
-            codex_asset: codex-aarch64-apple-darwin.tar.gz
-            codex_name: codex-aarch64-apple-darwin
           - os: ubuntu-latest
             target: linux-x64
-            codex_asset: codex-x86_64-unknown-linux-musl.tar.gz
-            codex_name: codex-x86_64-unknown-linux-musl
           - os: windows-2022
             target: win-x64
-            codex_asset: codex-x86_64-pc-windows-msvc.exe.zip
-            codex_name: codex-x86_64-pc-windows-msvc.exe
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v4
       - name: Restore an existing previous-stable seed
         id: seed-cache
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/codex-upgrade-home
           key: unica-upgrade-${{ matrix.target }}-${{ needs.contract.outputs.catalog_version }}
+      - name: Install the current locked Codex CLI
+        if: steps.seed-cache.outputs.cache-hit != 'true'
+        uses: ./.github/actions/setup-locked-codex
+        with:
+          profile: current
+          target: ${{ matrix.target }}
+          codex-home: ${{ runner.temp }}/codex-upgrade-home
       - name: Install the current stable version for the next promotion
         if: steps.seed-cache.outputs.cache-hit != 'true'
         shell: pwsh
         env:
-          CODEX_HOME: ${{ runner.temp }}/codex-upgrade-home
           TARGET: ${{ matrix.target }}
-          CODEX_ASSET: ${{ matrix.codex_asset }}
-          CODEX_NAME: ${{ matrix.codex_name }}
           EXPECTED_VERSION: ${{ needs.contract.outputs.catalog_version }}
           TARGET_MARKETPLACE_REF: main
           TARGET_MARKETPLACE_COMMIT: ${{ github.sha }}
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Force -Path $env:CODEX_HOME | Out-Null
-          $codexDir = Join-Path $env:RUNNER_TEMP 'codex-native-seed'
-          New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
-          gh release download rust-v0.145.0-alpha.18 --repo openai/codex --pattern $env:CODEX_ASSET --dir $codexDir
-          $archive = Get-ChildItem -LiteralPath $codexDir -File | Select-Object -First 1
-          if ($archive.Extension -eq '.zip') {
-            Expand-Archive -LiteralPath $archive.FullName -DestinationPath $codexDir
-          } else {
-            & tar -xzf $archive.FullName -C $codexDir
-          }
-          $codex = Get-ChildItem -LiteralPath $codexDir -Recurse -File |
-            Where-Object { $_.Name -eq $env:CODEX_NAME } |
-            Select-Object -First 1
-          if (-not $codex) { throw "Native Codex executable $env:CODEX_NAME is missing" }
           if ($env:TARGET -eq 'win-x64') {
-            $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
+            $env:PATH = "$env:CODEX_BIN_DIR;$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
           } else {
-            $env:PATH = '/usr/bin:/bin'
+            $env:PATH = "$env:CODEX_BIN_DIR`:/usr/bin:/bin"
           }
           if (Get-Command node -ErrorAction SilentlyContinue) { throw 'Node.js leaked into the consumer PATH' }
-          if ($env:TARGET -ne 'win-x64') { chmod +x $codex.FullName }
 
           function Assert-MarketplaceRefAtCommit {
             if ($env:TARGET_MARKETPLACE_COMMIT -notmatch '^[0-9a-f]{40}$') {
@@ -396,9 +342,9 @@ jobs:
           }
 
           Assert-MarketplaceRefAtCommit
-          & $codex.FullName plugin marketplace add IngvarConsulting/unica-marketplace --ref main --json
-          & $codex.FullName plugin add unica@unica --json
-          $state = (& $codex.FullName plugin list --available --json) | ConvertFrom-Json
+          & $env:CODEX_BIN plugin marketplace add IngvarConsulting/unica-marketplace --ref main --json
+          & $env:CODEX_BIN plugin add unica@unica --json
+          $state = (& $env:CODEX_BIN plugin list --available --json) | ConvertFrom-Json
           $matches = @($state.installed | Where-Object {
             $_.pluginId -eq 'unica@unica' -and $_.version -eq $env:EXPECTED_VERSION
           })
@@ -425,18 +371,13 @@ jobs:
         include:
           - os: macos-15
             target: darwin-arm64
-            codex_asset: codex-aarch64-apple-darwin.tar.gz
-            codex_name: codex-aarch64-apple-darwin
           - os: ubuntu-latest
             target: linux-x64
-            codex_asset: codex-x86_64-unknown-linux-musl.tar.gz
-            codex_name: codex-x86_64-unknown-linux-musl
           - os: windows-2022
             target: win-x64
-            codex_asset: codex-x86_64-pc-windows-msvc.exe.zip
-            codex_name: codex-x86_64-pc-windows-msvc.exe
     runs-on: ${{ matrix.os }}
     steps:
+      - uses: actions/checkout@v4
       - name: Restore the exact previous stable installation
         id: seed-cache
         uses: actions/cache/restore@v4
@@ -444,39 +385,28 @@ jobs:
           path: ${{ runner.temp }}/codex-upgrade-home
           key: unica-upgrade-${{ matrix.target }}-${{ needs.contract.outputs.previous_catalog_version }}
           fail-on-cache-miss: true
+      - name: Install the current locked Codex CLI
+        uses: ./.github/actions/setup-locked-codex
+        with:
+          profile: current
+          target: ${{ matrix.target }}
+          codex-home: ${{ runner.temp }}/codex-upgrade-home
       - name: Run the documented explicit update and verify MCP
         shell: pwsh
         env:
-          CODEX_HOME: ${{ runner.temp }}/codex-upgrade-home
           TARGET: ${{ matrix.target }}
-          CODEX_ASSET: ${{ matrix.codex_asset }}
-          CODEX_NAME: ${{ matrix.codex_name }}
           EXPECTED_VERSION: ${{ needs.contract.outputs.plugin_version }}
           TARGET_MARKETPLACE_REF: ${{ needs.resolve-migration-target.outputs.marketplace_ref }}
           TARGET_MARKETPLACE_COMMIT: ${{ needs.resolve-migration-target.outputs.marketplace_commit }}
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $codexDir = Join-Path $env:RUNNER_TEMP 'codex-native-upgrade'
-          New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
-          gh release download rust-v0.145.0-alpha.18 --repo openai/codex --pattern $env:CODEX_ASSET --dir $codexDir
-          $archive = Get-ChildItem -LiteralPath $codexDir -File | Select-Object -First 1
-          if ($archive.Extension -eq '.zip') {
-            Expand-Archive -LiteralPath $archive.FullName -DestinationPath $codexDir
-          } else {
-            & tar -xzf $archive.FullName -C $codexDir
-          }
-          $codex = Get-ChildItem -LiteralPath $codexDir -Recurse -File |
-            Where-Object { $_.Name -eq $env:CODEX_NAME } |
-            Select-Object -First 1
-          if (-not $codex) { throw "Native Codex executable $env:CODEX_NAME is missing" }
           if ($env:TARGET -eq 'win-x64') {
-            $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
+            $env:PATH = "$env:CODEX_BIN_DIR;$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
           } else {
-            $env:PATH = '/usr/bin:/bin'
+            $env:PATH = "$env:CODEX_BIN_DIR`:/usr/bin:/bin"
           }
           if (Get-Command node -ErrorAction SilentlyContinue) { throw 'Node.js leaked into the consumer PATH' }
-          if ($env:TARGET -ne 'win-x64') { chmod +x $codex.FullName }
 
           function Assert-MarketplaceRefAtCommit {
             if ($env:TARGET_MARKETPLACE_COMMIT -notmatch '^[0-9a-f]{40}$') {
@@ -500,10 +430,10 @@ jobs:
           }
 
           Assert-MarketplaceRefAtCommit
-          & $codex.FullName plugin marketplace upgrade unica --json
-          & $codex.FullName plugin remove unica@unica --json
-          & $codex.FullName plugin add unica@unica --json
-          $state = (& $codex.FullName plugin list --available --json) | ConvertFrom-Json
+          & $env:CODEX_BIN plugin marketplace upgrade unica --json
+          & $env:CODEX_BIN plugin remove unica@unica --json
+          & $env:CODEX_BIN plugin add unica@unica --json
+          $state = (& $env:CODEX_BIN plugin list --available --json) | ConvertFrom-Json
           $matches = @($state.installed | Where-Object {
             $_.pluginId -eq 'unica@unica' -and $_.version -eq $env:EXPECTED_VERSION
           })

@@ -80,6 +80,28 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("plugin add unica@unica --json", workflow)
         self.assertIn("Node.js leaked into the consumer PATH", workflow)
 
+    def test_workflows_use_one_sha_verified_codex_setup(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        workflows = "\n".join(
+            path.read_text(encoding="utf-8")
+            for path in (
+                root / ".github/workflows/verify.yml",
+                root / ".github/workflows/legacy-migration-regression.yml",
+                root / ".github/workflows/legacy-migration-case.yml",
+            )
+        )
+        action = (
+            root / ".github/actions/setup-locked-codex/action.yml"
+        ).read_text(encoding="utf-8")
+
+        self.assertNotIn("gh release download rust-v", workflows)
+        self.assertGreaterEqual(
+            workflows.count("uses: ./.github/actions/setup-locked-codex"), 6
+        )
+        self.assertIn("codex-cli-lock.json", action)
+        self.assertIn("Get-FileHash", action)
+        self.assertIn("CODEX_BIN=", action)
+
     def test_workflows_cover_full_history_and_ongoing_legacy_migration_policy(self) -> None:
         root = Path(__file__).resolve().parents[1]
         one_time = (
@@ -120,8 +142,8 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("ubuntu-latest", migration_case)
         self.assertIn("windows-2022", migration_case)
         self.assertIn("issue_90_marker", migration_case)
-        self.assertIn("$codexCommandName", migration_case)
-        self.assertIn("'codex.exe'", migration_case)
+        self.assertIn("setup-locked-codex", migration_case)
+        self.assertIn("$env:CODEX_BIN", migration_case)
         self.assertIn("unica-marketplace/archive/$env:SOURCE_RELEASE.tar.gz", migration_case)
         self.assertIn("source-tag", migration_case)
         self.assertNotIn("legacy-stable-upgrade:", verify)

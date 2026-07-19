@@ -173,22 +173,14 @@ jobs:
         include:
           - os: macos-15
             target: darwin-arm64
-            codex_asset: codex-aarch64-apple-darwin.tar.gz
-            codex_name: codex-aarch64-apple-darwin
           - os: ubuntu-latest
             target: linux-x64
-            codex_asset: codex-x86_64-unknown-linux-musl.tar.gz
-            codex_name: codex-x86_64-unknown-linux-musl
           - os: windows-2022
             target: win-x64
-            codex_asset: codex-x86_64-pc-windows-msvc.exe.zip
-            codex_name: codex-x86_64-pc-windows-msvc.exe
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     env:
       TARGET: ${{ matrix.target }}
-      CODEX_ASSET: ${{ matrix.codex_asset }}
-      CODEX_NAME: ${{ matrix.codex_name }}
       TARGET_VERSION: ${{ needs.resolve-target.outputs.target_version }}
       TARGET_MARKETPLACE_REF: ${{ needs.resolve-target.outputs.marketplace_ref }}
       TARGET_INSTALLER_PS1_SHA256: ${{ needs.resolve-target.outputs.installer_ps1_sha256 }}
@@ -201,26 +193,16 @@ jobs:
           fetch-depth: 1
 
       - name: Install the current locked Codex CLI
+        uses: ./.github/actions/setup-locked-codex
+        with:
+          profile: current
+          target: ${{ matrix.target }}
+          codex-home: ${{ runner.temp }}/codex-rollback-home
+
+      - name: Preserve the real Codex path for failure injection
         shell: pwsh
         run: |
-          $ErrorActionPreference = 'Stop'
-          "CODEX_HOME=$(Join-Path $env:RUNNER_TEMP 'codex-rollback-home')" | Out-File -FilePath $env:GITHUB_ENV -Append
-          $codexDir = Join-Path $env:RUNNER_TEMP 'codex-native-rollback'
-          New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
-          gh release download rust-v0.145.0-alpha.18 --repo openai/codex --pattern $env:CODEX_ASSET --dir $codexDir
-          $archive = Get-ChildItem -LiteralPath $codexDir -File | Select-Object -First 1
-          if ($archive.Extension -eq '.zip') {
-            Expand-Archive -LiteralPath $archive.FullName -DestinationPath $codexDir
-          } else {
-            & tar -xzf $archive.FullName -C $codexDir
-            if ($LASTEXITCODE -ne 0) { throw "Cannot extract $($archive.FullName)" }
-          }
-          $codex = Get-ChildItem -LiteralPath $codexDir -Recurse -File |
-            Where-Object { $_.Name -eq $env:CODEX_NAME } |
-            Select-Object -First 1
-          if (-not $codex) { throw "Native Codex executable $env:CODEX_NAME is missing" }
-          if ($env:TARGET -ne 'win-x64') { chmod +x $codex.FullName }
-          "REAL_CODEX=$($codex.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "REAL_CODEX=$env:CODEX_BIN" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Rebuild the issue 90 fixture and capture its exact state
         shell: pwsh

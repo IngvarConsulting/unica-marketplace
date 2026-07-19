@@ -1,0 +1,77 @@
+name: Setup locked Codex CLI
+description: Download and SHA-256 verify a native Codex CLI from the repository lock.
+
+inputs:
+  profile:
+    description: Profile key from codex-cli-lock.json.
+    required: true
+  target:
+    description: Native target key from codex-cli-lock.json.
+    required: true
+  codex-home:
+    description: Isolated CODEX_HOME exposed to following steps.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve, download, and verify the locked executable
+      shell: pwsh
+      env:
+        LOCKED_CODEX_PROFILE: ${{ inputs.profile }}
+        LOCKED_CODEX_TARGET: ${{ inputs.target }}
+        LOCKED_CODEX_HOME: ${{ inputs.codex-home }}
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $lockPath = Join-Path $env:GITHUB_WORKSPACE '.github/contracts/codex-cli-lock.json'
+        $lock = Get-Content -LiteralPath $lockPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($lock.schemaVersion -ne 1) { throw 'Unsupported Codex CLI lock schema' }
+        $profile = $lock.profiles.PSObject.Properties[$env:LOCKED_CODEX_PROFILE].Value
+        if (-not $profile) { throw "Unknown locked Codex profile: $env:LOCKED_CODEX_PROFILE" }
+        $target = $profile.targets.PSObject.Properties[$env:LOCKED_CODEX_TARGET].Value
+        if (-not $target) { throw "Codex profile $env:LOCKED_CODEX_PROFILE has no target $env:LOCKED_CODEX_TARGET" }
+        if ($profile.release -notmatch '^rust-v[0-9A-Za-z._-]+$') {
+          throw "Unsafe locked Codex release: $($profile.release)"
+        }
+        if ($target.asset -notmatch '^[A-Za-z0-9._-]+$' -or
+            $target.executable -notmatch '^[A-Za-z0-9._-]+$' -or
+            $target.sha256 -notmatch '^[0-9a-f]{64}$') {
+          throw "Malformed locked Codex target: $env:LOCKED_CODEX_PROFILE/$env:LOCKED_CODEX_TARGET"
+        }
+
+        $codexDir = Join-Path $env:RUNNER_TEMP "codex-$env:LOCKED_CODEX_PROFILE-$env:LOCKED_CODEX_TARGET"
+        if (Test-Path -LiteralPath $codexDir) {
+          Remove-Item -LiteralPath $codexDir -Recurse -Force
+        }
+        $extractDir = Join-Path $codexDir 'extract'
+        New-Item -ItemType Directory -Force -Path $extractDir | Out-Null
+        gh release download $profile.release --repo openai/codex --pattern $target.asset --dir $codexDir
+        if ($LASTEXITCODE -ne 0) { throw "Cannot download locked Codex release $($profile.release)" }
+        $archives = @(Get-ChildItem -LiteralPath $codexDir -File)
+        if ($archives.Count -ne 1 -or $archives[0].Name -ne $target.asset) {
+          throw "Locked Codex asset $($target.asset) did not resolve exactly once"
+        }
+        $actualSha256 = (Get-FileHash -LiteralPath $archives[0].FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actualSha256 -ne $target.sha256) {
+          throw "Codex asset SHA-256 $actualSha256 does not match locked digest $($target.sha256)"
+        }
+        if ($archives[0].Extension -eq '.zip') {
+          Expand-Archive -LiteralPath $archives[0].FullName -DestinationPath $extractDir
+        } else {
+          & tar -xzf $archives[0].FullName -C $extractDir
+          if ($LASTEXITCODE -ne 0) { throw "Cannot extract locked Codex asset $($target.asset)" }
+        }
+        $matches = @(Get-ChildItem -LiteralPath $extractDir -Recurse -File |
+          Where-Object { $_.Name -eq $target.executable })
+        if ($matches.Count -ne 1) {
+          throw "Locked Codex executable $($target.executable) did not resolve exactly once"
+        }
+        $commandName = if ($env:LOCKED_CODEX_TARGET -eq 'win-x64') { 'codex.exe' } else { 'codex' }
+        $command = Join-Path $codexDir $commandName
+        Copy-Item -LiteralPath $matches[0].FullName -Destination $command -Force
+        if ($env:LOCKED_CODEX_TARGET -ne 'win-x64') { chmod +x $command }
+        New-Item -ItemType Directory -Force -Path $env:LOCKED_CODEX_HOME | Out-Null
+        "CODEX_HOME=$env:LOCKED_CODEX_HOME" | Out-File -FilePath $env:GITHUB_ENV -Append
+        "CODEX_BIN=$command" | Out-File -FilePath $env:GITHUB_ENV -Append
+        "CODEX_BIN_DIR=$codexDir" | Out-File -FilePath $env:GITHUB_ENV -Append
