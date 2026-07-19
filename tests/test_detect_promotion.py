@@ -101,6 +101,8 @@ class PromotionDetectionTests(unittest.TestCase):
             outputs = self.detect_pr(root, base, head)
 
             self.assertEqual(outputs["catalog_promoted"], "true")
+            self.assertEqual(outputs["promotion_required"], "true")
+            self.assertEqual(outputs["barrier_required"], "false")
             self.assertEqual(outputs["catalog_version"], "1.1.0")
             self.assertEqual(outputs["previous_catalog_version"], "1.0.0")
 
@@ -116,6 +118,7 @@ class PromotionDetectionTests(unittest.TestCase):
             outputs = self.detect_pr(root, base, head)
 
             self.assertEqual(outputs["catalog_promoted"], "true")
+            self.assertEqual(outputs["promotion_required"], "false")
             self.assertEqual(outputs["previous_catalog_version"], "")
             self.assertEqual(outputs["catalog_version"], "1.0.0")
 
@@ -167,6 +170,46 @@ class PromotionDetectionTests(unittest.TestCase):
             self.assertEqual(outputs["catalog_version"], "1.1.0")
             self.assertEqual(outputs["previous_catalog_version"], "1.0.0")
             self.assertEqual(outputs["catalog_promoted"], "true")
+            self.assertEqual(outputs["promotion_required"], "true")
+
+    def test_final_zero_nine_to_one_promotion_requires_legacy_barrier(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            self.write_plugin(root, "0.9.8")
+            self.write_catalog(root, "0.9.8")
+            base = self.commit(root, "final zero nine")
+            self.write_plugin(root, "1.0.0")
+            self.write_catalog(root, "1.0.0")
+            head = self.commit(root, "promote one zero")
+
+            outputs = self.detect_pr(root, base, head)
+
+            self.assertEqual(outputs["promotion_required"], "true")
+            self.assertEqual(outputs["barrier_required"], "true")
+
+    def test_main_staging_push_requires_seed_for_current_catalog(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            self.write_plugin(root, "0.7.5")
+            self.write_catalog(root, "0.7.5")
+            before = self.commit(root, "stable")
+            self.write_plugin(root, "0.7.6")
+            event_sha = self.commit(root, "stage next release")
+
+            outputs = detect(
+                root=root,
+                event_name="push",
+                event_ref="refs/heads/main",
+                event_sha=event_sha,
+                before_sha=before,
+                pr_base_sha="",
+                pr_head_sha="",
+            )
+
+            self.assertEqual(outputs["seed_required"], "true")
+            self.assertEqual(outputs["promotion_required"], "false")
 
     def test_malformed_current_catalog_fails_closed(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

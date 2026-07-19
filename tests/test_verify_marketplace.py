@@ -171,8 +171,7 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}", contract)
         self.assertIn("EVENT_SHA: ${{ github.sha }}", contract)
         self.assertIn("resolve-migration-target:", verify)
-        self.assertIn("needs.contract.outputs.catalog_promoted == 'true'", resolver)
-        self.assertIn("needs.contract.outputs.catalog_matches_plugin == 'true'", resolver)
+        self.assertIn("needs.contract.outputs.promotion_required == 'true'", resolver)
         self.assertNotIn("needs.contract.outputs.catalog_changed", resolver)
         self.assertNotIn("previous_catalog_version !=", resolver)
         self.assertIn("PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}", resolver)
@@ -215,21 +214,12 @@ class MarketplaceContractTests(unittest.TestCase):
             verify.index("  staged-package-smoke:")
         ]
 
-        self.assertIn("catalog promotion boundary", resolver)
-        self.assertIn("staged-plugin-only PR", resolver)
-        self.assertIn("still-old catalog", resolver)
-        self.assertRegex(
-            resolver,
-            r"github\.event_name == 'pull_request' &&\n"
-            r"\s+needs\.contract\.outputs\.catalog_promoted == 'true' &&\n"
-            r"\s+needs\.contract\.outputs\.catalog_matches_plugin == 'true'",
-        )
-        self.assertRegex(
-            resolver,
-            r"github\.event_name == 'push' && github\.ref == 'refs/heads/main' &&\n"
-            r"\s+needs\.contract\.outputs\.catalog_promoted == 'true' &&\n"
-            r"\s+needs\.contract\.outputs\.catalog_matches_plugin == 'true'",
-        )
+        self.assertIn("promotion_required", resolver)
+        self.assertIn("exact event and previous trees", resolver)
+        self.assertIn("staged-plugin-only", resolver)
+        self.assertIn("promotion PR", resolver)
+        self.assertIn("direct main push", resolver)
+        self.assertIn("needs.contract.outputs.promotion_required == 'true'", resolver)
         self.assertNotIn("previous_catalog_version !=", resolver)
 
     def test_previous_stable_paths_pin_main_before_and_after_installation(self) -> None:
@@ -272,6 +262,39 @@ class MarketplaceContractTests(unittest.TestCase):
         last_upgrade_guard = upgrade.rindex("Assert-MarketplaceRefAtCommit")
         self.assertLess(first_upgrade_guard, upgrade_operation)
         self.assertLess(upgrade_operation, last_upgrade_guard)
+
+    def test_promotion_pr_is_gated_by_previous_stable_and_aggregate_policy(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        workflow = (root / ".github/workflows/verify.yml").read_text(
+            encoding="utf-8"
+        )
+        resolver = workflow[
+            workflow.index("  resolve-migration-target:"):
+            workflow.index("  staged-package-smoke:")
+        ]
+        upgrade = workflow[
+            workflow.index("  previous-stable-upgrade:"):
+            workflow.index("  regression-policy:")
+        ]
+        aggregate = workflow[workflow.index("  regression-policy:"):]
+
+        self.assertIn("promotion_required", workflow)
+        self.assertIn("needs.contract.outputs.promotion_required == 'true'", resolver)
+        self.assertIn("needs.contract.outputs.promotion_required == 'true'", upgrade)
+        self.assertIn("unica-upgrade-v2-", workflow)
+        self.assertIn("Validate the restored previous stable seed", upgrade)
+        self.assertIn("function Select-CandidateMarketplaceRef", upgrade)
+        self.assertIn("Previous stable seed marketplace source", upgrade)
+        self.assertIn("if: always()", aggregate)
+        for job in (
+            "contract",
+            "resolve-migration-target",
+            "staged-package-smoke",
+            "consumer-fresh-install",
+            "previous-stable-seed",
+            "previous-stable-upgrade",
+        ):
+            self.assertIn(job, aggregate)
 
     def test_manual_full_history_regression_pins_the_selected_commit_and_verified_installer_assets(self) -> None:
         root = Path(__file__).resolve().parents[1]

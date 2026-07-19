@@ -20,6 +20,9 @@ jobs:
       catalog_version: ${{ steps.detect.outputs.catalog_version }}
       previous_catalog_version: ${{ steps.detect.outputs.previous_catalog_version }}
       catalog_promoted: ${{ steps.detect.outputs.catalog_promoted }}
+      promotion_required: ${{ steps.detect.outputs.promotion_required }}
+      seed_required: ${{ steps.detect.outputs.seed_required }}
+      barrier_required: ${{ steps.detect.outputs.barrier_required }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,18 +50,10 @@ jobs:
 
   resolve-migration-target:
     needs: contract
-    # The automatic consumer test begins at the catalog promotion boundary.
-    # catalog_promoted means source.ref changed (or was first added), so JSON
-    # formatting and unrelated metadata edits with the same ref do not trigger it.
-    # A staged-plugin-only PR is excluded: its still-old catalog cannot install
-    # the newly staged package, so that earlier phase is covered by package smoke.
-    if: >-
-      (github.event_name == 'pull_request' &&
-       needs.contract.outputs.catalog_promoted == 'true' &&
-       needs.contract.outputs.catalog_matches_plugin == 'true') ||
-      (github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-       needs.contract.outputs.catalog_promoted == 'true' &&
-       needs.contract.outputs.catalog_matches_plugin == 'true')
+    # promotion_required is computed from the exact event and previous trees.
+    # It is true on both a promotion PR and the matching direct main push, but
+    # false for formatting edits, staged-plugin-only changes, and first seed.
+    if: ${{ needs.contract.outputs.promotion_required == 'true' }}
     runs-on: ubuntu-latest
     outputs:
       marketplace_ref: ${{ steps.resolve.outputs.marketplace_ref }}
@@ -271,11 +266,7 @@ jobs:
 
   previous-stable-seed:
     needs: contract
-    if: >-
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.contract.outputs.has_plugin == 'true' &&
-      needs.contract.outputs.catalog_version != '' &&
-      needs.contract.outputs.catalog_matches_plugin != 'true'
+    if: ${{ needs.contract.outputs.seed_required == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -294,7 +285,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/codex-upgrade-home
-          key: unica-upgrade-${{ matrix.target }}-${{ needs.contract.outputs.catalog_version }}
+          key: unica-upgrade-v2-${{ matrix.target }}-current-${{ needs.contract.outputs.catalog_version }}
       - name: Install the current locked Codex CLI
         if: steps.seed-cache.outputs.cache-hit != 'true'
         uses: ./.github/actions/setup-locked-codex
@@ -355,16 +346,13 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/codex-upgrade-home
-          key: unica-upgrade-${{ matrix.target }}-${{ needs.contract.outputs.catalog_version }}
+          key: unica-upgrade-v2-${{ matrix.target }}-current-${{ needs.contract.outputs.catalog_version }}
 
   previous-stable-upgrade:
     needs: [contract, resolve-migration-target]
     if: >-
       always() && needs.resolve-migration-target.result == 'success' &&
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.contract.outputs.catalog_matches_plugin == 'true' &&
-      needs.contract.outputs.previous_catalog_version != '' &&
-      needs.contract.outputs.previous_catalog_version != needs.contract.outputs.catalog_version
+      needs.contract.outputs.promotion_required == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -383,7 +371,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/codex-upgrade-home
-          key: unica-upgrade-${{ matrix.target }}-${{ needs.contract.outputs.previous_catalog_version }}
+          key: unica-upgrade-v2-${{ matrix.target }}-current-${{ needs.contract.outputs.previous_catalog_version }}
           fail-on-cache-miss: true
       - name: Install the current locked Codex CLI
         uses: ./.github/actions/setup-locked-codex
@@ -391,6 +379,21 @@ jobs:
           profile: current
           target: ${{ matrix.target }}
           codex-home: ${{ runner.temp }}/codex-upgrade-home
+      - name: Validate the restored previous stable seed
+        shell: pwsh
+        env:
+          PREVIOUS_VERSION: ${{ needs.contract.outputs.previous_catalog_version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $stateText = (& $env:CODEX_BIN plugin list --available --json) | Out-String
+          if ($LASTEXITCODE -ne 0) { throw 'Restored previous stable seed is unreadable' }
+          $state = $stateText | ConvertFrom-Json
+          $matches = @($state.installed | Where-Object {
+            $_.pluginId -eq 'unica@unica' -and $_.version -eq $env:PREVIOUS_VERSION
+          })
+          if ($matches.Count -ne 1) {
+            throw "Restored seed is not exactly unica@unica $env:PREVIOUS_VERSION"
+          }
       - name: Run the documented explicit update and verify MCP
         shell: pwsh
         env:
@@ -429,7 +432,35 @@ jobs:
             }
           }
 
+          function Select-CandidateMarketplaceRef {
+            if ($env:TARGET_MARKETPLACE_REF -eq 'main') { return }
+            $configPath = Join-Path $env:CODEX_HOME 'config.toml'
+            $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8
+            $sectionPattern = '(?ms)^\[marketplaces\.unica\]\r?\n.*?(?=^\[|\z)'
+            $sections = [regex]::Matches($config, $sectionPattern)
+            if ($sections.Count -ne 1) {
+              throw 'Previous stable seed must contain exactly one marketplaces.unica table'
+            }
+            $section = $sections[0].Value
+            if ($section -notmatch '(?m)^source_type\s*=\s*"git"\s*$' -or
+                $section -notmatch '(?m)^source\s*=\s*"https://github.com/IngvarConsulting/unica-marketplace\.git"\s*$' -or
+                $section -notmatch '(?m)^ref\s*=\s*"main"\s*$') {
+              throw 'Previous stable seed marketplace source is not the locked main branch'
+            }
+            $candidateSection = [regex]::Replace(
+              $section,
+              '(?m)^ref\s*=\s*"main"\s*$',
+              "ref = `"$env:TARGET_MARKETPLACE_REF`"",
+              1
+            )
+            $candidateConfig = $config.Substring(0, $sections[0].Index) +
+              $candidateSection +
+              $config.Substring($sections[0].Index + $sections[0].Length)
+            Set-Content -LiteralPath $configPath -Value $candidateConfig -Encoding UTF8 -NoNewline
+          }
+
           Assert-MarketplaceRefAtCommit
+          Select-CandidateMarketplaceRef
           & $env:CODEX_BIN plugin marketplace upgrade unica --json
           & $env:CODEX_BIN plugin remove unica@unica --json
           & $env:CODEX_BIN plugin add unica@unica --json
@@ -449,3 +480,51 @@ jobs:
           if ($env:TARGET -ne 'win-x64') { chmod +x $bootstrap }
           & $bootstrap verify --plugin-root $pluginRoot
           Assert-MarketplaceRefAtCommit
+
+  regression-policy:
+    name: regression-policy
+    if: always()
+    needs:
+      - contract
+      - resolve-migration-target
+      - staged-package-smoke
+      - consumer-fresh-install
+      - previous-stable-seed
+      - previous-stable-upgrade
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce the regression policy truth table
+        shell: bash
+        env:
+          CONTRACT_RESULT: ${{ needs.contract.result }}
+          RESOLVE_RESULT: ${{ needs.resolve-migration-target.result }}
+          STAGED_RESULT: ${{ needs.staged-package-smoke.result }}
+          FRESH_RESULT: ${{ needs.consumer-fresh-install.result }}
+          SEED_RESULT: ${{ needs.previous-stable-seed.result }}
+          UPGRADE_RESULT: ${{ needs.previous-stable-upgrade.result }}
+          HAS_PLUGIN: ${{ needs.contract.outputs.has_plugin }}
+          CATALOG_MATCHES_PLUGIN: ${{ needs.contract.outputs.catalog_matches_plugin }}
+          PROMOTION_REQUIRED: ${{ needs.contract.outputs.promotion_required }}
+          SEED_REQUIRED: ${{ needs.contract.outputs.seed_required }}
+        run: |
+          set -euo pipefail
+          check_result() {
+            name="$1"
+            result="$2"
+            required="$3"
+            if [[ "$required" == true ]]; then
+              if [[ "$result" != success ]]; then
+                echo "$name is required but concluded $result" >&2
+                return 1
+              fi
+            elif [[ "$result" != success && "$result" != skipped ]]; then
+              echo "$name was not required but concluded $result" >&2
+              return 1
+            fi
+          }
+          check_result contract "$CONTRACT_RESULT" true
+          check_result resolve-migration-target "$RESOLVE_RESULT" "$PROMOTION_REQUIRED"
+          check_result staged-package-smoke "$STAGED_RESULT" "$HAS_PLUGIN"
+          check_result consumer-fresh-install "$FRESH_RESULT" "$CATALOG_MATCHES_PLUGIN"
+          check_result previous-stable-seed "$SEED_RESULT" "$SEED_REQUIRED"
+          check_result previous-stable-upgrade "$UPGRADE_RESULT" "$PROMOTION_REQUIRED"

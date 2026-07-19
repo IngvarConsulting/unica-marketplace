@@ -133,10 +133,38 @@ def detect(
     previous_catalog_ref = catalog_ref_at(root, previous_tree) if previous_tree else ""
     catalog_version = catalog_ref.removeprefix("v")
     previous_catalog_version = previous_catalog_ref.removeprefix("v")
+    has_plugin = bool(plugin_version)
+    catalog_promoted = bool(catalog_ref) and catalog_ref != previous_catalog_ref
+    catalog_matches_plugin = has_plugin and plugin_version == catalog_version
+    promotion_required = (
+        catalog_promoted
+        and catalog_matches_plugin
+        and bool(previous_catalog_version)
+        and previous_catalog_version != catalog_version
+    )
+    seed_required = (
+        event_name == "push"
+        and event_ref == "refs/heads/main"
+        and has_plugin
+        and bool(catalog_version)
+        and not catalog_matches_plugin
+    )
+    previous_parts = previous_catalog_version.split(".")
+    target_parts = catalog_version.split(".")
+    barrier_required = (
+        promotion_required
+        and len(previous_parts) == 3
+        and previous_parts[0:2] == ["0", "9"]
+        and len(target_parts) == 3
+        and target_parts[0] == "1"
+    )
     return {
-        "has_plugin": str(bool(plugin_version)).lower(),
-        "catalog_promoted": str(bool(catalog_ref) and catalog_ref != previous_catalog_ref).lower(),
-        "catalog_matches_plugin": str(bool(plugin_version) and plugin_version == catalog_version).lower(),
+        "has_plugin": str(has_plugin).lower(),
+        "catalog_promoted": str(catalog_promoted).lower(),
+        "catalog_matches_plugin": str(catalog_matches_plugin).lower(),
+        "promotion_required": str(promotion_required).lower(),
+        "seed_required": str(seed_required).lower(),
+        "barrier_required": str(barrier_required).lower(),
         "previous_catalog_version": previous_catalog_version,
         "catalog_version": catalog_version,
         "plugin_version": plugin_version,
