@@ -80,7 +80,7 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("plugin add unica@unica --json", workflow)
         self.assertIn("Node.js leaked into the consumer PATH", workflow)
 
-    def test_workflows_cover_one_time_and_ongoing_legacy_migration_policy(self) -> None:
+    def test_workflows_cover_full_history_and_ongoing_legacy_migration_policy(self) -> None:
         root = Path(__file__).resolve().parents[1]
         one_time = (
             root / ".github" / "workflows" / "legacy-migration-regression.yml"
@@ -268,6 +268,8 @@ class MarketplaceContractTests(unittest.TestCase):
         verify = (root / ".github" / "workflows" / "verify.yml").read_text(encoding="utf-8")
         migration_guide = (root / "MIGRATION.md").read_text(encoding="utf-8")
 
+        self.assertTrue(regression.startswith("name: Full legacy migration regression\n"))
+        self.assertNotIn("One-time legacy migration regression", regression)
         self.assertIn("target_marketplace_ref:", migration_case)
         self.assertIn("target_marketplace_commit:", migration_case)
         self.assertIn("TARGET_MARKETPLACE_REF: ${{ inputs.target_marketplace_ref }}", migration_case)
@@ -349,6 +351,8 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertNotIn("Immutable source release", regression)
 
         self.assertIn("Manual full-history regression", migration_guide)
+        self.assertIn("Full legacy migration regression", migration_guide)
+        self.assertNotIn("One-time legacy migration regression", migration_guide)
         self.assertIn("selected workflow ref", migration_guide)
         self.assertIn("published semantic-version source release", migration_guide)
         self.assertIn("captured SHA-256 digests", migration_guide)

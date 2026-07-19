@@ -1,4 +1,4 @@
-name: One-time legacy migration regression
+name: Full legacy migration regression
 
 on:
   workflow_dispatch:

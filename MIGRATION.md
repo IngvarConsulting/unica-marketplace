@@ -44,7 +44,7 @@ so nested canonical plugin settings cannot be silently lost again.
 
 ## Manual full-history regression
 
-Run the **One-time legacy migration regression** workflow from the marketplace
+Run the **Full legacy migration regression** workflow from the marketplace
 branch or tag that contains the candidate catalog. With no inputs, the workflow
 uses the selected workflow ref; the weekly schedule intentionally uses `main`.
 An optional `marketplace_ref` override is accepted only when it is a safe Git

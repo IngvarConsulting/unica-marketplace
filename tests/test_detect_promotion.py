@@ -235,6 +235,57 @@ class PromotionDetectionTests(unittest.TestCase):
                     pr_head_sha="",
                 )
 
+    def test_invalid_catalog_json_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            self.git(root, "commit", "--allow-empty", "-q", "-m", "empty base")
+            base = self.git(root, "rev-parse", "HEAD")
+            self.write_plugin(root, "1.0.0")
+            catalog = root / ".agents" / "plugins" / "marketplace.json"
+            catalog.parent.mkdir(parents=True, exist_ok=True)
+            catalog.write_text("{not-json", encoding="utf-8")
+            head = self.commit(root, "invalid catalog JSON")
+
+            with self.assertRaisesRegex(RuntimeError, r"cannot parse \.agents/plugins/marketplace\.json"):
+                self.detect_pr(root, base, head)
+
+    def test_invalid_plugin_json_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            descriptor = root / "plugins" / "unica" / ".codex-plugin" / "plugin.json"
+            descriptor.parent.mkdir(parents=True, exist_ok=True)
+            descriptor.write_text("{not-json", encoding="utf-8")
+            head = self.commit(root, "invalid plugin JSON")
+
+            with self.assertRaisesRegex(RuntimeError, r"cannot parse plugins/unica/\.codex-plugin/plugin\.json"):
+                detect(
+                    root=root,
+                    event_name="push",
+                    event_ref="refs/heads/main",
+                    event_sha=head,
+                    before_sha="0" * 40,
+                    pr_base_sha="",
+                    pr_head_sha="",
+                )
+
+    def test_non_hex_event_commit_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+
+            with self.assertRaisesRegex(RuntimeError, "event is not a valid commit"):
+                detect(
+                    root=root,
+                    event_name="push",
+                    event_ref="refs/heads/main",
+                    event_sha="not-a-hex-commit",
+                    before_sha="0" * 40,
+                    pr_base_sha="",
+                    pr_head_sha="",
+                )
+
     def test_absent_files_are_a_valid_initial_empty_state(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
