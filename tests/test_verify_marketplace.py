@@ -134,16 +134,16 @@ class MarketplaceContractTests(unittest.TestCase):
             verify.index("  staged-package-smoke:")
         ]
 
-        self.assertIn("catalog_changed: ${{ steps.detect.outputs.catalog_changed }}", contract)
-        self.assertIn('"catalog_changed": str(catalog_changed).lower()', contract)
-        self.assertIn('"git", "diff", "--quiet", change_base, change_head', contract)
-        self.assertIn('".agents/plugins/marketplace.json"', contract)
+        self.assertIn("catalog_promoted: ${{ steps.detect.outputs.catalog_promoted }}", contract)
+        self.assertIn("python3 scripts/detect_promotion.py", contract)
+        self.assertNotIn("catalog_changed", contract)
+        self.assertNotIn("staged_plugin_changed", contract)
         self.assertIn("PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}", contract)
         self.assertIn("EVENT_SHA: ${{ github.sha }}", contract)
         self.assertIn("resolve-migration-target:", verify)
-        self.assertIn("needs.contract.outputs.catalog_changed == 'true'", resolver)
+        self.assertIn("needs.contract.outputs.catalog_promoted == 'true'", resolver)
         self.assertIn("needs.contract.outputs.catalog_matches_plugin == 'true'", resolver)
-        self.assertNotIn("needs.contract.outputs.staged_plugin_changed", resolver)
+        self.assertNotIn("needs.contract.outputs.catalog_changed", resolver)
         self.assertNotIn("previous_catalog_version !=", resolver)
         self.assertIn("PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}", resolver)
         self.assertIn("EVENT_SHA: ${{ github.sha }}", resolver)
@@ -204,13 +204,13 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertRegex(
             resolver,
             r"github\.event_name == 'pull_request' &&\n"
-            r"\s+needs\.contract\.outputs\.catalog_changed == 'true' &&\n"
+            r"\s+needs\.contract\.outputs\.catalog_promoted == 'true' &&\n"
             r"\s+needs\.contract\.outputs\.catalog_matches_plugin == 'true'",
         )
         self.assertRegex(
             resolver,
             r"github\.event_name == 'push' && github\.ref == 'refs/heads/main' &&\n"
-            r"\s+needs\.contract\.outputs\.catalog_changed == 'true' &&\n"
+            r"\s+needs\.contract\.outputs\.catalog_promoted == 'true' &&\n"
             r"\s+needs\.contract\.outputs\.catalog_matches_plugin == 'true'",
         )
         self.assertNotIn("previous_catalog_version !=", resolver)
