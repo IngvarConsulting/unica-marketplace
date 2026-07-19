@@ -3,11 +3,11 @@
 > **For agentic workers:** this is a historical execution record. Live code,
 > tests, package metadata, and the approved design are authoritative.
 
-**Status:** Historical; revised on 2026-07-19 after selecting `v0.7.6` as the
+**Status:** Historical; revised on 2026-07-20 after selecting `v0.7.8` as the
 immutable migration bridge.
 
 **Goal:** Make PR #9 provide bounded automatic promotion proof and a manual-only
-full regression for the `v0.7.6` migration bridge.
+full regression for the `v0.7.8` migration bridge.
 
 ## Implemented work units
 
@@ -23,9 +23,8 @@ full regression for the `v0.7.6` migration bridge.
 ## Explicitly removed policy
 
 The earlier draft proposed a receipt for a future final `0.9.x` release and a
-special first-`1.x` promotion barrier. That proposal is superseded. It conflicts
-with the approved source policy that freezes migration in `v0.7.6` and removes
-the executable legacy implementation in `v0.8.0`.
+special first-`1.x` promotion barrier. That proposal is superseded. Migration
+is frozen and manually proven in the stable `v0.7.8` bridge instead.
 
 There is no schedule, no receipt file, no `barrier_required` detector output,
 and no receipt-verification job.
@@ -43,5 +42,5 @@ git diff --check
 ```
 
 Hosted proof is the PR #9 `Verify marketplace` run, followed after promotion by
-the manually dispatched `Full legacy migration regression` against `v0.7.6`
+the manually dispatched `Full legacy migration regression` against `v0.7.8`
 with `profile_set=bridge`.

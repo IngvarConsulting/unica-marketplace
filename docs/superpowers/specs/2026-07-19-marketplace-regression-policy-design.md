@@ -1,7 +1,7 @@
 # Marketplace Regression Policy Design
 
-**Status:** approved for implementation on 2026-07-19 and revised to the
-maintainer-approved `v0.7.6` bridge boundary.
+**Status:** approved for implementation on 2026-07-19 and revised on 2026-07-20
+to the maintainer-approved `v0.7.8` bridge boundary.
 
 ## Context
 
@@ -9,10 +9,10 @@ Routine marketplace promotion, historical migration compatibility, and the
 one-off duplicate registration from Unica issue #90 have different costs and
 change rates. They must not share one automatic schedule.
 
-Unica `v0.7.6` is the final package that understands old local and duplicated
-installations. After it normalizes an installation, `v0.8.0` supports ordinary
-updates from canonical `v0.7.5`, canonical `v0.7.6`, and canonical technical
-`0.7.x` installations. Version alone is not proof of canonical identity.
+Unica `v0.7.8` is the supported package that understands old local and
+duplicated installations. Versions `v0.7.6` and `v0.7.7` are technical. After
+`v0.7.8` normalizes an installation, later releases use the ordinary canonical
+marketplace update. Version alone is not proof of canonical identity.
 
 ## Policy
 
@@ -27,6 +27,11 @@ requires only signals that can change during a normal promotion:
 4. exact candidate ref and source-release resolution;
 5. previous-stable seed integrity;
 6. canonical previous-stable update on all three systems.
+
+Promotion checks fetch immutable tags into local PR checkouts. The
+previous-stable seed is also materialized inside the promotion run when a cache
+from the staging-main run is not available, so staging and promotion cannot
+race each other.
 
 Conditional jobs may be skipped only when the event does not require them.
 Malformed event trees, catalog inputs, cache identity, or source releases fail
@@ -49,7 +54,7 @@ visibility, idempotence, and consumer-level rollback after an injected failure.
 
 ### Compatibility boundary
 
-The full bridge regression is run against the promoted `v0.7.6` catalog before
+The full bridge regression is run against the promoted `v0.7.8` catalog before
 issue #90 is closed. The resulting successful GitHub workflow run is release
 evidence, not a receipt consumed by future promotions.
 
@@ -75,7 +80,7 @@ published source release and verified by digest before execution.
 ## Delivery sequence
 
 1. Merge this policy in marketplace PR #9.
-2. Publish and promote source `v0.7.6`.
+2. Publish and promote source `v0.7.8`.
 3. Run profile set `bridge` against the exact promoted catalog.
 4. Close issue #90 using the successful workflow URL as evidence.
 5. Keep automatic promotions bounded to fresh and previous-stable canonical

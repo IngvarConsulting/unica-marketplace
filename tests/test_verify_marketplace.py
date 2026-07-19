@@ -81,6 +81,13 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("plugin add unica@unica --json", workflow)
         self.assertIn("Node.js leaked into the consumer PATH", workflow)
 
+        consumer = workflow[
+            workflow.index("  consumer-fresh-install:"):
+            workflow.index("  previous-stable-seed:")
+        ]
+        self.assertIn("fetch-depth: 0", consumer)
+        self.assertIn("fetch-tags: true", consumer)
+
     def test_workflows_use_one_sha_verified_codex_setup(self) -> None:
         root = Path(__file__).resolve().parents[1]
         workflows = "\n".join(
@@ -191,7 +198,10 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("isDraft,publishedAt,assets", verify)
         self.assertIn("Get-InstallerDigest 'install-unica.ps1'", verify)
         self.assertIn("Get-InstallerDigest 'install-unica.sh'", verify)
-        self.assertIn("needs: [contract, resolve-migration-target]", verify)
+        self.assertIn(
+            "needs: [contract, resolve-migration-target, previous-stable-seed]",
+            verify,
+        )
         self.assertIn(
             "TARGET_MARKETPLACE_REF: ${{ needs.resolve-migration-target.outputs.marketplace_ref }}",
             verify,
@@ -237,7 +247,12 @@ class MarketplaceContractTests(unittest.TestCase):
         ]
 
         self.assertIn("TARGET_MARKETPLACE_REF: main", seed)
-        self.assertIn("TARGET_MARKETPLACE_COMMIT: ${{ github.sha }}", seed)
+        self.assertIn(
+            "EXPECTED_VERSION: ${{ needs.contract.outputs.seed_version }}", seed
+        )
+        self.assertIn(
+            "TARGET_MARKETPLACE_COMMIT: ${{ needs.contract.outputs.seed_commit }}", seed
+        )
         self.assertIn("function Assert-MarketplaceRefAtCommit", seed)
         self.assertEqual(seed.count("Assert-MarketplaceRefAtCommit"), 3)
         first_seed_guard = seed.index("Assert-MarketplaceRefAtCommit\n", seed.index("function Assert-MarketplaceRefAtCommit") + 1)
@@ -246,8 +261,12 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertLess(first_seed_guard, seed_install)
         self.assertLess(seed_install, last_seed_guard)
 
-        self.assertIn("needs: [contract, resolve-migration-target]", upgrade)
+        self.assertIn(
+            "needs: [contract, resolve-migration-target, previous-stable-seed]",
+            upgrade,
+        )
         self.assertIn("needs.resolve-migration-target.result == 'success'", upgrade)
+        self.assertIn("needs.previous-stable-seed.result == 'success'", upgrade)
         self.assertIn(
             "TARGET_MARKETPLACE_REF: ${{ needs.resolve-migration-target.outputs.marketplace_ref }}",
             upgrade,
@@ -467,8 +486,10 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("selected workflow ref", migration_guide)
         self.assertIn("published semantic-version source release", migration_guide)
         self.assertIn("captured SHA-256 digests", migration_guide)
-        self.assertIn("v0.7.7", migration_guide)
-        self.assertIn("superseded", migration_guide)
+        self.assertIn("releases/download/v0.7.8/install-unica.sh", migration_guide)
+        self.assertIn("releases/download/v0.7.8/install-unica.ps1", migration_guide)
+        self.assertNotIn("releases/download/v0.7.7/", migration_guide)
+        self.assertIn("technical releases", migration_guide)
         self.assertNotIn("releases/download/v0.7.6", migration_guide)
         self.assertNotIn("weekly", migration_guide.lower())
         self.assertNotIn("0.9.x", migration_guide)

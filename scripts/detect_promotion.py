@@ -142,19 +142,24 @@ def detect(
         and bool(previous_catalog_version)
         and previous_catalog_version != catalog_version
     )
-    seed_required = (
+    staging_seed_required = (
         event_name == "push"
         and event_ref == "refs/heads/main"
         and has_plugin
         and bool(catalog_version)
         and not catalog_matches_plugin
     )
+    seed_required = staging_seed_required or promotion_required
+    seed_version = previous_catalog_version if promotion_required else catalog_version
+    seed_commit = previous_tree if promotion_required else event_tree
     return {
         "has_plugin": str(has_plugin).lower(),
         "catalog_promoted": str(catalog_promoted).lower(),
         "catalog_matches_plugin": str(catalog_matches_plugin).lower(),
         "promotion_required": str(promotion_required).lower(),
         "seed_required": str(seed_required).lower(),
+        "seed_version": seed_version if seed_required else "",
+        "seed_commit": seed_commit if seed_required else "",
         "previous_catalog_version": previous_catalog_version,
         "catalog_version": catalog_version,
         "plugin_version": plugin_version,
