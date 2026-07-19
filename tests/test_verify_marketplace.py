@@ -459,7 +459,9 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("selected workflow ref", migration_guide)
         self.assertIn("published semantic-version source release", migration_guide)
         self.assertIn("captured SHA-256 digests", migration_guide)
-        self.assertIn("v0.7.6", migration_guide)
+        self.assertIn("v0.7.7", migration_guide)
+        self.assertIn("superseded", migration_guide)
+        self.assertNotIn("releases/download/v0.7.6", migration_guide)
         self.assertNotIn("weekly", migration_guide.lower())
         self.assertNotIn("0.9.x", migration_guide)
 
