@@ -422,6 +422,8 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("ProcessStartInfo", regression)
         self.assertNotIn("$shim = Join-Path $shimDir 'codex.cmd'", regression)
         self.assertNotIn("-OutputType ConsoleApplication", regression)
+        self.assertIn('"PYTHON_BIN=$($python.Source)" | Out-File', regression)
+        self.assertIn("& $env:PYTHON_BIN scripts/legacy_migration_fixture.py --codex-home", regression)
         self.assertIn("$migrationText = (& $powerShell -NoProfile -File", regression)
         self.assertNotIn("$migrationText = (& pwsh -NoProfile -File", regression)
         self.assertIn("marketplace_ref:", regression)

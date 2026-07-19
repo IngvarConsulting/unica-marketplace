@@ -224,6 +224,7 @@ jobs:
 
           $python = Get-Command python3 -ErrorAction SilentlyContinue
           if (-not $python) { $python = Get-Command python }
+          "PYTHON_BIN=$($python.Source)" | Out-File -FilePath $env:GITHUB_ENV -Append
           & $python.Source scripts/legacy_migration_fixture.py --archive $archive --codex-home $env:CODEX_HOME --version 0.6.1 --layout issue-90-duplicate
           if ($LASTEXITCODE -ne 0) { throw 'Cannot rebuild the rollback fixture' }
           & $python.Source scripts/legacy_migration_fixture.py --codex-home $env:CODEX_HOME --snapshot-output (Join-Path $env:RUNNER_TEMP 'rollback-before.json')
@@ -331,9 +332,7 @@ jobs:
           if (($diagnostics | Out-String) -notmatch 'rollback-succeeded') {
             throw "Migration did not report rollback-succeeded`n$migrationText"
           }
-          $python = Get-Command python3 -ErrorAction SilentlyContinue
-          if (-not $python) { $python = Get-Command python }
-          & $python.Source scripts/legacy_migration_fixture.py --codex-home $env:CODEX_HOME --compare-snapshot (Join-Path $env:RUNNER_TEMP 'rollback-before.json')
+          & $env:PYTHON_BIN scripts/legacy_migration_fixture.py --codex-home $env:CODEX_HOME --compare-snapshot (Join-Path $env:RUNNER_TEMP 'rollback-before.json')
           if ($LASTEXITCODE -ne 0) { throw 'Transactional rollback did not restore the exact fixture state' }
 
       - name: Upload rollback evidence
