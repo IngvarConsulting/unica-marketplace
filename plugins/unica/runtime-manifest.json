@@ -1,22 +1,22 @@
 {
   "schemaVersion": 1,
-  "pluginVersion": "0.7.7",
+  "pluginVersion": "0.7.8",
   "development": false,
   "source": {
     "repository": "https://github.com/IngvarConsulting/unica",
-    "commit": "b8f8a5e5eda440b0e33749502a5e1a00bc2f95fd"
+    "commit": "23c7eb99866e5988a320a0db4b568622dd820c81"
   },
   "release": {
     "repository": "https://github.com/IngvarConsulting/unica",
-    "tag": "v0.7.7"
+    "tag": "v0.7.8"
   },
   "targets": {
     "darwin-arm64": {
       "asset": {
         "mediaType": "application/gzip",
         "name": "unica-runtime-darwin-arm64.tar.gz",
-        "sha256": "512bb9e23619ffac1ed375d719afd9be5770e843b23ad87ea261591a3eab86f1",
-        "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.7.7/unica-runtime-darwin-arm64.tar.gz"
+        "sha256": "b80e53e242449dad8cae69389d5fa176f0adf5832788d938aa4201ec70b856cb",
+        "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.7.8/unica-runtime-darwin-arm64.tar.gz"
       },
       "files": [
         {
@@ -27,17 +27,17 @@
         {
           "executable": true,
           "path": "bin/darwin-arm64/rlm-bsl-index",
-          "sha256": "24c024a7b05102587a71658d88c63fb310569b67e584fb1495fa25af7d0fd93f"
+          "sha256": "a95dd5fd24f1a72f8289898e3e1f0633ee19877e57876ae9fb34a9d2632db744"
         },
         {
           "executable": true,
           "path": "bin/darwin-arm64/rlm-tools-bsl",
-          "sha256": "7b44de4e38d5966fb5c2e023099460bd1c88f0059150620c2c628c3e487b781e"
+          "sha256": "c0a7d8851456fbeb5aa11c905df3ca91fe06a165d8531abda85e52ef81647f09"
         },
         {
           "executable": true,
           "path": "bin/darwin-arm64/unica",
-          "sha256": "3c1fc415dd01c6034c93486172db9245326deb5bf1846dd928b7950599aa7da1"
+          "sha256": "0f48b4fc2c24700abb0b4be8cf74c8340bd77483d4893f3808fdda6abfd4547a"
         },
         {
           "executable": true,
@@ -47,7 +47,7 @@
         {
           "executable": false,
           "path": "third-party/manifest.json",
-          "sha256": "4cca3433516e69a198b741af745b2da3dbe210bd7df9c7ca492e46bf6dc75a85"
+          "sha256": "3625ea4e01b9e0c05a4dbf761625e321bd17d478a5bd060dcb07d80a8e3e750e"
         }
       ],
       "entrypoint": "bin/darwin-arm64/unica"
@@ -56,8 +56,8 @@
       "asset": {
         "mediaType": "application/gzip",
         "name": "unica-runtime-linux-x64.tar.gz",
-        "sha256": "716d2cb794da5ce27c13dc4cbda600de128d78d1ae29235fa57723d81f14f0a4",
-        "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.7.7/unica-runtime-linux-x64.tar.gz"
+        "sha256": "58bc4a971e08869495773a03f66cd9b1e332205bbee5325911162ba8b3533130",
+        "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.7.8/unica-runtime-linux-x64.tar.gz"
       },
       "files": [
         {
@@ -68,17 +68,17 @@
         {
           "executable": true,
           "path": "bin/linux-x64/rlm-bsl-index",
-          "sha256": "0ff74a850429c73e448bb2681bc11f69b1d6e6d1c8a0e4a04f38eb4763b98288"
+          "sha256": "16bbecbaa13d8a183fbf83ca54b378e867f16666189febe951b7e8717a5317d3"
         },
         {
           "executable": true,
           "path": "bin/linux-x64/rlm-tools-bsl",
-          "sha256": "d1d8b2fa4c8740f0e12b3b79374881d8c970e362451a0646a0b2fc0462abc2c7"
+          "sha256": "bdb1bc25bcd01ed8891209dde06fce8357c50a6cc88e977bc398f90f863ce093"
         },
         {
           "executable": true,
           "path": "bin/linux-x64/unica",
-          "sha256": "d3160ab2df0efad9c100455e9c503fb10319600235631f87e4364186ba8f441a"
+          "sha256": "e12d6e8db7d88333782f063304e3b189280d8dbcdba594cfc132b022bf220834"
         },
         {
           "executable": true,
@@ -88,7 +88,7 @@
         {
           "executable": false,
           "path": "third-party/manifest.json",
-          "sha256": "f2da1bac88b411d7f2d63d5b527828a224045d6bb3edd2328dce87410dd02041"
+          "sha256": "37ccea1400b50bc022e774d361f09075a8e3bc621c6521b2f81033c50f207bb2"
         }
       ],
       "entrypoint": "bin/linux-x64/unica"
@@ -97,8 +97,8 @@
       "asset": {
         "mediaType": "application/gzip",
         "name": "unica-runtime-win-x64.tar.gz",
-        "sha256": "5f1e7c287d6d100ad8a599bef88f744dd6d85a9cecf68729a2a0f4333525b62b",
-        "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.7.7/unica-runtime-win-x64.tar.gz"
+        "sha256": "fc86b59163945489af7c2b3a1e741ab153e366c12f926f4803e5acf110166377",
+        "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.7.8/unica-runtime-win-x64.tar.gz"
       },
       "files": [
         {
@@ -109,17 +109,17 @@
         {
           "executable": true,
           "path": "bin/win-x64/rlm-bsl-index.exe",
-          "sha256": "77deab8d50b38d5f26e16ae131dbdc4e4942508ea954bd6afb77aafeaf9107cc"
+          "sha256": "fc6c35e283d5a2aba05e7f12abe9b579118f5da0428926f1327cf39fde902af9"
         },
         {
           "executable": true,
           "path": "bin/win-x64/rlm-tools-bsl.exe",
-          "sha256": "a199d1cdb7fe8fc5d586add55009d3afd26fc6ebfe9d73ffa01de34179b11aee"
+          "sha256": "d3a56c2549460d14d2ab8f3ceb4db35098862cb2e02ea661d75bc80bf6432cfd"
         },
         {
           "executable": true,
           "path": "bin/win-x64/unica.exe",
-          "sha256": "ac968f8827d561f2c8d070f9b26e7a9fb552dd1fa262aad340cfcd7e23e53a8c"
+          "sha256": "24c2fdfc12956eb258398efae1e62a47c8dbf7e77f2ae544533db68f59093bd8"
         },
         {
           "executable": true,
@@ -129,7 +129,7 @@
         {
           "executable": false,
           "path": "third-party/manifest.json",
-          "sha256": "d0b31b0974f9d6d6915933a75c92d35918bd09b078a1b1f16bee930a1b764bca"
+          "sha256": "73fcab0d314a77202adf30fb243d19233a78050b4625a2e65fc09dd35752682d"
         }
       ],
       "entrypoint": "bin/win-x64/unica.exe"
