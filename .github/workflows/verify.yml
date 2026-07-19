@@ -20,6 +20,7 @@ jobs:
       catalog_version: ${{ steps.detect.outputs.catalog_version }}
       previous_catalog_version: ${{ steps.detect.outputs.previous_catalog_version }}
       staged_plugin_changed: ${{ steps.detect.outputs.staged_plugin_changed }}
+      catalog_changed: ${{ steps.detect.outputs.catalog_changed }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,6 +32,7 @@ jobs:
           BEFORE_SHA: ${{ github.event.before }}
           EVENT_NAME: ${{ github.event_name }}
           EVENT_REF: ${{ github.ref }}
+          EVENT_SHA: ${{ github.sha }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
@@ -49,10 +51,13 @@ jobs:
               catalog_version = ref.removeprefix("v")
           previous_version = ""
           staged_plugin_changed = False
+          catalog_changed = False
           before = os.environ.get("BEFORE_SHA", "")
+          event_name = os.environ.get("EVENT_NAME")
+          event_ref = os.environ.get("EVENT_REF")
           if (
-              os.environ.get("EVENT_NAME") == "push"
-              and os.environ.get("EVENT_REF") == "refs/heads/main"
+              event_name == "push"
+              and event_ref == "refs/heads/main"
               and before
               and set(before) != {"0"}
           ):
@@ -66,18 +71,39 @@ jobs:
               if previous.returncode == 0:
                   ref = json.loads(previous.stdout)["plugins"][0]["source"]["ref"]
                   previous_version = ref.removeprefix("v")
-          if os.environ.get("EVENT_NAME") == "pull_request":
-              base = os.environ.get("PR_BASE_SHA", "")
-              head = os.environ.get("PR_HEAD_SHA", "")
-              if not base or not head:
+          change_base = ""
+          change_head = ""
+          if event_name == "pull_request":
+              change_base = os.environ.get("PR_BASE_SHA", "")
+              change_head = os.environ.get("PR_HEAD_SHA", "")
+              if not change_base or not change_head:
                   raise RuntimeError("Pull request is missing a base or head commit")
+          elif event_name == "push" and event_ref == "refs/heads/main":
+              change_base = before
+              change_head = os.environ.get("EVENT_SHA", "")
+              if not change_head:
+                  raise RuntimeError("Main push is missing its event commit")
+
+          if change_head and change_base and set(change_base) != {"0"}:
               diff = subprocess.run(
-                  ["git", "diff", "--quiet", base, head, "--", "plugins/unica"],
+                  ["git", "diff", "--quiet", change_base, change_head, "--", "plugins/unica"],
                   check=False,
               )
               if diff.returncode not in (0, 1):
-                  raise RuntimeError("Cannot determine whether the pull request stages Unica")
+                  raise RuntimeError("Cannot determine whether the event stages Unica")
               staged_plugin_changed = diff.returncode == 1
+              diff = subprocess.run(
+                  ["git", "diff", "--quiet", change_base, change_head, "--", ".agents/plugins/marketplace.json"],
+                  check=False,
+              )
+              if diff.returncode not in (0, 1):
+                  raise RuntimeError("Cannot determine whether the event changes the catalog")
+              catalog_changed = diff.returncode == 1
+          elif change_head:
+              # A repository's first push has no usable base tree. Existing files
+              # on that event are additions and must not bypass first promotion.
+              staged_plugin_changed = plugin_path.is_file()
+              catalog_changed = catalog_path.is_file()
           outputs = {
               "has_plugin": str(bool(plugin_version)).lower(),
               "catalog_matches_plugin": str(bool(plugin_version) and plugin_version == catalog_version).lower(),
@@ -85,6 +111,7 @@ jobs:
               "catalog_version": catalog_version,
               "previous_catalog_version": previous_version,
               "staged_plugin_changed": str(staged_plugin_changed).lower(),
+              "catalog_changed": str(catalog_changed).lower(),
           }
           with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
               for key, value in outputs.items():
@@ -101,13 +128,16 @@ jobs:
 
   resolve-migration-target:
     needs: contract
+    # The automatic consumer test begins at the catalog promotion boundary.
+    # A staged-plugin-only PR is excluded: its still-old catalog cannot install
+    # the newly staged package, so that earlier phase is covered by package smoke.
     if: >-
       (github.event_name == 'pull_request' &&
-       needs.contract.outputs.staged_plugin_changed == 'true') ||
+       needs.contract.outputs.catalog_changed == 'true' &&
+       needs.contract.outputs.catalog_matches_plugin == 'true') ||
       (github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-       needs.contract.outputs.catalog_matches_plugin == 'true' &&
-       needs.contract.outputs.previous_catalog_version != '' &&
-       needs.contract.outputs.previous_catalog_version != needs.contract.outputs.catalog_version)
+       needs.contract.outputs.catalog_changed == 'true' &&
+       needs.contract.outputs.catalog_matches_plugin == 'true')
     runs-on: ubuntu-latest
     outputs:
       marketplace_ref: ${{ steps.resolve.outputs.marketplace_ref }}
@@ -116,12 +146,14 @@ jobs:
       installer_ps1_sha256: ${{ steps.resolve.outputs.installer_ps1_sha256 }}
       installer_sh_sha256: ${{ steps.resolve.outputs.installer_sh_sha256 }}
     steps:
-      - name: Select the candidate or promoted marketplace ref
+      - name: Select the promotion event commit and installer ref
         id: select
         shell: pwsh
         env:
           EVENT_NAME: ${{ github.event_name }}
           PR_HEAD_REF: ${{ github.head_ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          EVENT_SHA: ${{ github.sha }}
           PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
           MARKETPLACE_REPOSITORY: ${{ github.repository }}
         run: |
@@ -135,15 +167,24 @@ jobs:
           } else {
             'main'
           }
+          $targetCommit = if ($env:EVENT_NAME -eq 'pull_request') {
+            $env:PR_HEAD_SHA
+          } else {
+            $env:EVENT_SHA
+          }
           if ($targetRef -notmatch '^[A-Za-z0-9][A-Za-z0-9._/-]*$' -or
               $targetRef.EndsWith('/') -or $targetRef.Contains('//') -or $targetRef.Contains('..')) {
             throw "Unsafe marketplace ref: $targetRef"
           }
+          if ($targetCommit -notmatch '^[0-9a-f]{40}$') {
+            throw "Invalid marketplace event commit: $targetCommit"
+          }
           "marketplace_ref=$targetRef" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "marketplace_commit=$targetCommit" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ steps.select.outputs.marketplace_ref }}
+          ref: ${{ steps.select.outputs.marketplace_commit }}
           fetch-depth: 1
 
       - name: Resolve the staged package's published source release
@@ -151,6 +192,7 @@ jobs:
         shell: pwsh
         env:
           MARKETPLACE_REF: ${{ steps.select.outputs.marketplace_ref }}
+          EXPECTED_MARKETPLACE_COMMIT: ${{ steps.select.outputs.marketplace_commit }}
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -167,6 +209,9 @@ jobs:
           $marketplaceCommit = (& git rev-parse HEAD).Trim()
           if ($marketplaceCommit -notmatch '^[0-9a-f]{40}$') {
             throw "Selected marketplace ref $env:MARKETPLACE_REF did not resolve to a commit"
+          }
+          if ($marketplaceCommit -ne $env:EXPECTED_MARKETPLACE_COMMIT) {
+            throw "Marketplace HEAD $marketplaceCommit did not resolve to expected event commit $env:EXPECTED_MARKETPLACE_COMMIT"
           }
           $releaseText = (& gh release view $sourceRelease --repo IngvarConsulting/unica --json tagName,isDraft,publishedAt,assets) | Out-String
           if ($LASTEXITCODE -ne 0) {
@@ -381,6 +426,8 @@ jobs:
           CODEX_ASSET: ${{ matrix.codex_asset }}
           CODEX_NAME: ${{ matrix.codex_name }}
           EXPECTED_VERSION: ${{ needs.contract.outputs.catalog_version }}
+          TARGET_MARKETPLACE_REF: main
+          TARGET_MARKETPLACE_COMMIT: ${{ github.sha }}
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -406,6 +453,28 @@ jobs:
           if (Get-Command node -ErrorAction SilentlyContinue) { throw 'Node.js leaked into the consumer PATH' }
           if ($env:TARGET -ne 'win-x64') { chmod +x $codex.FullName }
 
+          function Assert-MarketplaceRefAtCommit {
+            if ($env:TARGET_MARKETPLACE_COMMIT -notmatch '^[0-9a-f]{40}$') {
+              throw "Expected marketplace commit is invalid: $env:TARGET_MARKETPLACE_COMMIT"
+            }
+            $remoteUrl = 'https://github.com/IngvarConsulting/unica-marketplace.git'
+            $remoteLines = @(& git ls-remote --heads $remoteUrl "refs/heads/$env:TARGET_MARKETPLACE_REF" 2>&1)
+            if ($LASTEXITCODE -ne 0) {
+              throw "Cannot resolve marketplace branch $env:TARGET_MARKETPLACE_REF"
+            }
+            $remoteCommits = @($remoteLines | ForEach-Object {
+              $parts = $_ -split '\s+', 2
+              if ($parts.Count -eq 2) { $parts[0] }
+            })
+            if ($remoteCommits.Count -ne 1) {
+              throw "Marketplace branch $env:TARGET_MARKETPLACE_REF must resolve exactly once"
+            }
+            if ($remoteCommits[0] -ne $env:TARGET_MARKETPLACE_COMMIT) {
+              throw "Marketplace branch $env:TARGET_MARKETPLACE_REF moved: expected $env:TARGET_MARKETPLACE_COMMIT, got $($remoteCommits[0])"
+            }
+          }
+
+          Assert-MarketplaceRefAtCommit
           & $codex.FullName plugin marketplace add IngvarConsulting/unica-marketplace --ref main --json
           & $codex.FullName plugin add unica@unica --json
           $state = (& $codex.FullName plugin list --available --json) | ConvertFrom-Json
@@ -413,6 +482,7 @@ jobs:
             $_.pluginId -eq 'unica@unica' -and $_.version -eq $env:EXPECTED_VERSION
           })
           if ($matches.Count -ne 1) { throw "Failed to seed unica@unica $env:EXPECTED_VERSION" }
+          Assert-MarketplaceRefAtCommit
       - name: Save the previous-stable seed
         if: steps.seed-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
@@ -421,8 +491,9 @@ jobs:
           key: unica-upgrade-${{ matrix.target }}-${{ needs.contract.outputs.catalog_version }}
 
   previous-stable-upgrade:
-    needs: contract
+    needs: [contract, resolve-migration-target]
     if: >-
+      always() && needs.resolve-migration-target.result == 'success' &&
       github.event_name == 'push' && github.ref == 'refs/heads/main' &&
       needs.contract.outputs.catalog_matches_plugin == 'true' &&
       needs.contract.outputs.previous_catalog_version != '' &&
@@ -460,6 +531,8 @@ jobs:
           CODEX_ASSET: ${{ matrix.codex_asset }}
           CODEX_NAME: ${{ matrix.codex_name }}
           EXPECTED_VERSION: ${{ needs.contract.outputs.plugin_version }}
+          TARGET_MARKETPLACE_REF: ${{ needs.resolve-migration-target.outputs.marketplace_ref }}
+          TARGET_MARKETPLACE_COMMIT: ${{ needs.resolve-migration-target.outputs.marketplace_commit }}
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -484,6 +557,28 @@ jobs:
           if (Get-Command node -ErrorAction SilentlyContinue) { throw 'Node.js leaked into the consumer PATH' }
           if ($env:TARGET -ne 'win-x64') { chmod +x $codex.FullName }
 
+          function Assert-MarketplaceRefAtCommit {
+            if ($env:TARGET_MARKETPLACE_COMMIT -notmatch '^[0-9a-f]{40}$') {
+              throw "Expected marketplace commit is invalid: $env:TARGET_MARKETPLACE_COMMIT"
+            }
+            $remoteUrl = 'https://github.com/IngvarConsulting/unica-marketplace.git'
+            $remoteLines = @(& git ls-remote --heads $remoteUrl "refs/heads/$env:TARGET_MARKETPLACE_REF" 2>&1)
+            if ($LASTEXITCODE -ne 0) {
+              throw "Cannot resolve marketplace branch $env:TARGET_MARKETPLACE_REF"
+            }
+            $remoteCommits = @($remoteLines | ForEach-Object {
+              $parts = $_ -split '\s+', 2
+              if ($parts.Count -eq 2) { $parts[0] }
+            })
+            if ($remoteCommits.Count -ne 1) {
+              throw "Marketplace branch $env:TARGET_MARKETPLACE_REF must resolve exactly once"
+            }
+            if ($remoteCommits[0] -ne $env:TARGET_MARKETPLACE_COMMIT) {
+              throw "Marketplace branch $env:TARGET_MARKETPLACE_REF moved: expected $env:TARGET_MARKETPLACE_COMMIT, got $($remoteCommits[0])"
+            }
+          }
+
+          Assert-MarketplaceRefAtCommit
           & $codex.FullName plugin marketplace upgrade unica --json
           & $codex.FullName plugin remove unica@unica --json
           & $codex.FullName plugin add unica@unica --json
@@ -502,6 +597,7 @@ jobs:
           $bootstrap = Join-Path $pluginRoot "bootstrap/bin/$env:TARGET/$executable"
           if ($env:TARGET -ne 'win-x64') { chmod +x $bootstrap }
           & $bootstrap verify --plugin-root $pluginRoot
+          Assert-MarketplaceRefAtCommit
 
   legacy-stable-upgrade:
     needs: [contract, resolve-migration-target]

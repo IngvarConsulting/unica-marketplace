@@ -119,7 +119,7 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("source_version: 0.6.1", verify)
         self.assertIn("layout: issue-90-duplicate", verify)
 
-    def test_automatic_issue_90_gate_resolves_candidate_pr_and_promoted_main(self) -> None:
+    def test_automatic_issue_90_gate_resolves_catalog_promotion_event_commit(self) -> None:
         root = Path(__file__).resolve().parents[1]
         verify = (root / ".github" / "workflows" / "verify.yml").read_text(
             encoding="utf-8"
@@ -128,12 +128,35 @@ class MarketplaceContractTests(unittest.TestCase):
             root / ".github" / "workflows" / "legacy-migration-case.yml"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("staged_plugin_changed", verify)
+        contract = verify[verify.index("  contract:"):verify.index("  resolve-migration-target:")]
+        resolver = verify[
+            verify.index("  resolve-migration-target:"):
+            verify.index("  staged-package-smoke:")
+        ]
+
+        self.assertIn("catalog_changed: ${{ steps.detect.outputs.catalog_changed }}", contract)
+        self.assertIn('"catalog_changed": str(catalog_changed).lower()', contract)
+        self.assertIn('"git", "diff", "--quiet", change_base, change_head', contract)
+        self.assertIn('".agents/plugins/marketplace.json"', contract)
+        self.assertIn("PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}", contract)
+        self.assertIn("EVENT_SHA: ${{ github.sha }}", contract)
         self.assertIn("resolve-migration-target:", verify)
-        self.assertIn("github.head_ref", verify)
-        self.assertIn("github.ref == 'refs/heads/main'", verify)
-        self.assertIn("previous_catalog_version != needs.contract.outputs.catalog_version", verify)
-        self.assertIn("git rev-parse HEAD", verify)
+        self.assertIn("needs.contract.outputs.catalog_changed == 'true'", resolver)
+        self.assertIn("needs.contract.outputs.catalog_matches_plugin == 'true'", resolver)
+        self.assertNotIn("needs.contract.outputs.staged_plugin_changed", resolver)
+        self.assertNotIn("previous_catalog_version !=", resolver)
+        self.assertIn("PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}", resolver)
+        self.assertIn("EVENT_SHA: ${{ github.sha }}", resolver)
+        self.assertRegex(
+            resolver,
+            r"\$targetCommit = if \(\$env:EVENT_NAME -eq 'pull_request'\) \{\n"
+            r"\s+\$env:PR_HEAD_SHA\n\s+\} else \{\n\s+\$env:EVENT_SHA",
+        )
+        self.assertIn("marketplace_commit=$targetCommit", resolver)
+        self.assertIn("ref: ${{ steps.select.outputs.marketplace_commit }}", resolver)
+        self.assertIn("EXPECTED_MARKETPLACE_COMMIT: ${{ steps.select.outputs.marketplace_commit }}", resolver)
+        self.assertIn("$marketplaceCommit -ne $env:EXPECTED_MARKETPLACE_COMMIT", resolver)
+        self.assertIn("did not resolve to expected event commit", resolver)
         self.assertIn("gh release view", verify)
         self.assertIn("isDraft,publishedAt,assets", verify)
         self.assertIn("Get-InstallerDigest 'install-unica.ps1'", verify)
@@ -164,6 +187,75 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("layout: issue-90-duplicate", verify)
         for runner in ("macos-15", "ubuntu-latest", "windows-2022"):
             self.assertIn(runner, migration_case)
+
+    def test_automatic_gate_documents_and_enforces_the_promotion_boundary(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        verify = (root / ".github" / "workflows" / "verify.yml").read_text(
+            encoding="utf-8"
+        )
+        resolver = verify[
+            verify.index("  resolve-migration-target:"):
+            verify.index("  staged-package-smoke:")
+        ]
+
+        self.assertIn("catalog promotion boundary", resolver)
+        self.assertIn("staged-plugin-only PR", resolver)
+        self.assertIn("still-old catalog", resolver)
+        self.assertRegex(
+            resolver,
+            r"github\.event_name == 'pull_request' &&\n"
+            r"\s+needs\.contract\.outputs\.catalog_changed == 'true' &&\n"
+            r"\s+needs\.contract\.outputs\.catalog_matches_plugin == 'true'",
+        )
+        self.assertRegex(
+            resolver,
+            r"github\.event_name == 'push' && github\.ref == 'refs/heads/main' &&\n"
+            r"\s+needs\.contract\.outputs\.catalog_changed == 'true' &&\n"
+            r"\s+needs\.contract\.outputs\.catalog_matches_plugin == 'true'",
+        )
+        self.assertNotIn("previous_catalog_version !=", resolver)
+
+    def test_previous_stable_paths_pin_main_before_and_after_installation(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        verify = (root / ".github" / "workflows" / "verify.yml").read_text(
+            encoding="utf-8"
+        )
+        seed = verify[
+            verify.index("  previous-stable-seed:"):
+            verify.index("  previous-stable-upgrade:")
+        ]
+        upgrade = verify[
+            verify.index("  previous-stable-upgrade:"):
+            verify.index("  legacy-stable-upgrade:")
+        ]
+
+        self.assertIn("TARGET_MARKETPLACE_REF: main", seed)
+        self.assertIn("TARGET_MARKETPLACE_COMMIT: ${{ github.sha }}", seed)
+        self.assertIn("function Assert-MarketplaceRefAtCommit", seed)
+        self.assertEqual(seed.count("Assert-MarketplaceRefAtCommit"), 3)
+        first_seed_guard = seed.index("Assert-MarketplaceRefAtCommit\n", seed.index("function Assert-MarketplaceRefAtCommit") + 1)
+        seed_install = seed.index("plugin marketplace add")
+        last_seed_guard = seed.rindex("Assert-MarketplaceRefAtCommit")
+        self.assertLess(first_seed_guard, seed_install)
+        self.assertLess(seed_install, last_seed_guard)
+
+        self.assertIn("needs: [contract, resolve-migration-target]", upgrade)
+        self.assertIn("needs.resolve-migration-target.result == 'success'", upgrade)
+        self.assertIn(
+            "TARGET_MARKETPLACE_REF: ${{ needs.resolve-migration-target.outputs.marketplace_ref }}",
+            upgrade,
+        )
+        self.assertIn(
+            "TARGET_MARKETPLACE_COMMIT: ${{ needs.resolve-migration-target.outputs.marketplace_commit }}",
+            upgrade,
+        )
+        self.assertIn("function Assert-MarketplaceRefAtCommit", upgrade)
+        self.assertEqual(upgrade.count("Assert-MarketplaceRefAtCommit"), 3)
+        first_upgrade_guard = upgrade.index("Assert-MarketplaceRefAtCommit\n", upgrade.index("function Assert-MarketplaceRefAtCommit") + 1)
+        upgrade_operation = upgrade.index("plugin marketplace upgrade")
+        last_upgrade_guard = upgrade.rindex("Assert-MarketplaceRefAtCommit")
+        self.assertLess(first_upgrade_guard, upgrade_operation)
+        self.assertLess(upgrade_operation, last_upgrade_guard)
 
     def test_manual_full_history_regression_pins_the_selected_commit_and_verified_installer_assets(self) -> None:
         root = Path(__file__).resolve().parents[1]
