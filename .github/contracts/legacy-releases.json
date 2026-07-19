@@ -1,0 +1,232 @@
+{
+  "schemaVersion": 1,
+  "releases": [
+    {
+      "label": "v0.3.3",
+      "version": "0.3.3",
+      "classification": "supported",
+      "sourceKind": "version-bundle",
+      "sourceRef": "v0.3.3",
+      "sourceCommit": "c3ff56aa6dcb82ea6d44098e644180a61edacaca",
+      "layout": "legacy-canonical",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-0.3.3.tar.gz", "sha256": "dd4ef7632df678b178d90e906f9ab24daec0ebd4438b22a9cbf59f9b799afbbe"},
+        "linux-x64": {"name": "unica-codex-marketplace-0.3.3.tar.gz", "sha256": "dd4ef7632df678b178d90e906f9ab24daec0ebd4438b22a9cbf59f9b799afbbe"},
+        "win-x64": {"name": "unica-codex-marketplace-0.3.3.tar.gz", "sha256": "dd4ef7632df678b178d90e906f9ab24daec0ebd4438b22a9cbf59f9b799afbbe"}
+      }
+    },
+    {
+      "label": "v0.3.4",
+      "version": "0.3.4",
+      "classification": "supported",
+      "sourceKind": "source-tag",
+      "sourceRef": "v0.3.4",
+      "sourceCommit": "6612a95736799378d955dbdc769e7457ec49f7c0",
+      "layout": "legacy-alias"
+    },
+    {
+      "label": "v0.3.5",
+      "version": "0.3.5",
+      "classification": "supported",
+      "sourceKind": "source-tag",
+      "sourceRef": "v0.3.5",
+      "sourceCommit": "871a7b9870ce159d2e2e9eeb1b3c1ba5fb677fd9",
+      "layout": "legacy-alias"
+    },
+    {
+      "label": "v0.3.6",
+      "version": "0.3.6",
+      "classification": "supported",
+      "sourceKind": "source-tag",
+      "sourceRef": "v0.3.6",
+      "sourceCommit": "3de35636c116a65418631a00bbb45bc3b6980317",
+      "layout": "legacy-alias"
+    },
+    {
+      "label": "v0.3.10",
+      "version": "0.3.10",
+      "classification": "supported",
+      "sourceKind": "platform-archive",
+      "sourceRef": "v0.3.10",
+      "sourceCommit": "e3fb8b3ace82670c161039d232dbd74901cfada0",
+      "layout": "legacy-alias",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-darwin-arm64.tar.gz", "sha256": "ca43a994b1d3e68845e951b1f9ddbd70ec358f8860692e0722c4bb01fc49a060"},
+        "linux-x64": {"name": "unica-codex-marketplace-linux-x64.tar.gz", "sha256": "a9738296bef0a7cf273b6193e1b1a61d65707b0ca725bc433a61d4bdcfb33427"},
+        "win-x64": {"name": "unica-codex-marketplace-win-x64.zip", "sha256": "1f2dbe7fa036563a89168f1e46267a1c39122d05b5fc3ccf1fc914b8f4871683"}
+      }
+    },
+    {
+      "label": "v0.3.11",
+      "version": "0.3.11",
+      "classification": "supported",
+      "sourceKind": "platform-archive",
+      "sourceRef": "v0.3.11",
+      "sourceCommit": "1612e322a7b351c92b9154cde0d0c3e3332286e9",
+      "layout": "legacy-alias",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-darwin-arm64.tar.gz", "sha256": "6b80b0d80e1b0a6f98b817adb1625e68e2c9b48516b9f1a5d92ad6a0869f38fb"},
+        "linux-x64": {"name": "unica-codex-marketplace-linux-x64.tar.gz", "sha256": "d873e7cd0023b57ddec3ced6b1724d4571d2088eb075a279ef4eca7f1a7bf207"},
+        "win-x64": {"name": "unica-codex-marketplace-win-x64.zip", "sha256": "0eee589c244ee7af7a76ff05bb3495265e86c42b20684772432758fc64fbf415"}
+      }
+    },
+    {
+      "label": "v0.3.12",
+      "version": "0.3.12",
+      "classification": "supported",
+      "sourceKind": "platform-archive",
+      "sourceRef": "v0.3.12",
+      "sourceCommit": "618d31eb6794b22c948f54a5c7bbc3a77e5e17b9",
+      "layout": "legacy-alias",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-darwin-arm64.tar.gz", "sha256": "b4ccce670ec189ee4b662825877b5be548389e0b9c084cbeb9c16c2732bf02c1"},
+        "linux-x64": {"name": "unica-codex-marketplace-linux-x64.tar.gz", "sha256": "d7bc82fd5bb60b1cb80406eb5e406a52e45a7f5ef433b4335f4ed5c9909c3985"},
+        "win-x64": {"name": "unica-codex-marketplace-win-x64.zip", "sha256": "3383b3fab619a72895859c29a282b3c7513270b2f45af79d1aa4b13f618ccb7d"}
+      }
+    },
+    {
+      "label": "v0.4.1",
+      "version": "0.4.1",
+      "classification": "supported",
+      "sourceKind": "platform-archive",
+      "sourceRef": "v0.4.1",
+      "sourceCommit": "db254e42af00c248ec33346ba64076bbf5d37b71",
+      "layout": "legacy-alias",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-darwin-arm64.tar.gz", "sha256": "16f551284596e0ba93129e8fcf4222dd58f262b8fe3afdcdff46554e884b8c9d"},
+        "linux-x64": {"name": "unica-codex-marketplace-linux-x64.tar.gz", "sha256": "ab6c831c112b97e96d5115fcb2c6cdb97378a8c716985ea5a56e8345af2fc0c5"},
+        "win-x64": {"name": "unica-codex-marketplace-win-x64.zip", "sha256": "ecbac9df1ce6adbb4444b8055252720c5e5077a581e21afc2b62952128b05d20"}
+      }
+    },
+    {
+      "label": "v0.4.2",
+      "version": "0.4.2",
+      "classification": "supported",
+      "sourceKind": "platform-archive",
+      "sourceRef": "v0.4.2",
+      "sourceCommit": "90337cdbcfc7a798df618916a83b3bb4651e05d1",
+      "layout": "legacy-alias",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-darwin-arm64.tar.gz", "sha256": "55ec02bc474d83fe60c5540b7895b4453308baed28335f91a562463b0ed20d32"},
+        "linux-x64": {"name": "unica-codex-marketplace-linux-x64.tar.gz", "sha256": "58d13e791c08c3646bb5d35d4a20f92afbc868f2908108aafa29b2a401f9a77d"},
+        "win-x64": {"name": "unica-codex-marketplace-win-x64.zip", "sha256": "5393884d98f483b99f052a1aee62e3ac0fc78cc0039df825c60ad12c2d2907a4"}
+      }
+    },
+    {
+      "label": "v0.4.3",
+      "version": "0.4.3",
+      "classification": "supported",
+      "sourceKind": "platform-archive",
+      "sourceRef": "v0.4.3",
+      "sourceCommit": "ab02c194f6a0a0b5913c4c3523a1bf52665ab36f",
+      "layout": "legacy-alias",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-darwin-arm64.tar.gz", "sha256": "df24ff8d160a62dfbbdc66f15f9e7a38c20d935edcb306bccf1cc2b32393a921"},
+        "linux-x64": {"name": "unica-codex-marketplace-linux-x64.tar.gz", "sha256": "0b4206a6c8c5ad1b2b8dd1f26218974b6ddb09fc50916e56fc3a25ddc82ce261"},
+        "win-x64": {"name": "unica-codex-marketplace-win-x64.zip", "sha256": "0d39a06610fd37aaecc27c42a71ed5ece6725dabb464658670f78d333a5a19e7"}
+      }
+    },
+    {
+      "label": "v0.4.4",
+      "version": "0.4.4",
+      "classification": "supported",
+      "sourceKind": "platform-archive",
+      "sourceRef": "v0.4.4",
+      "sourceCommit": "d4df0e67a9868a1bab13e88199bace0b1b341b8e",
+      "layout": "legacy-alias",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-darwin-arm64.tar.gz", "sha256": "a5ff7ee2c299fdc0609392da8e1ed95ae23df1ff019036f79d66b245de2bc138"},
+        "linux-x64": {"name": "unica-codex-marketplace-linux-x64.tar.gz", "sha256": "13cf1930ddf1037a3e926a59bd1bae5378ac77a5fc59eef81cee37589cb6f80a"},
+        "win-x64": {"name": "unica-codex-marketplace-win-x64.zip", "sha256": "48a23878dd0c1826d334d50e46c6f6c020a1c201d189fbab3c32f3f0eee0b94d"}
+      }
+    },
+    {
+      "label": "v0.5.1",
+      "version": "0.5.1",
+      "classification": "supported",
+      "sourceKind": "platform-archive",
+      "sourceRef": "v0.5.1",
+      "sourceCommit": "04b97cf4ae4b4139b7856540cdd39c76c00486aa",
+      "layout": "legacy-alias",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-darwin-arm64.tar.gz", "sha256": "0f82898ff314c3ed5d57771072f0f6ca7e8fc52e0cdd61d5c05d7e042b17c87d"},
+        "linux-x64": {"name": "unica-codex-marketplace-linux-x64.tar.gz", "sha256": "a6e44b5dae9218fb3e3c0c6a777012c05ba07751f27433d1cd16742e2d0427c3"},
+        "win-x64": {"name": "unica-codex-marketplace-win-x64.zip", "sha256": "22efc1c85d2a2639bb119ad31c616eca7caf3b4fba560dddb9fa12b7bf9a4301"}
+      }
+    },
+    {
+      "label": "v0.6.1",
+      "version": "0.6.1",
+      "classification": "supported",
+      "sourceKind": "platform-archive",
+      "sourceRef": "v0.6.1",
+      "sourceCommit": "c3b4372a13514a1cc56a20da7060ecfc2f348370",
+      "layout": "legacy-alias",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-darwin-arm64.tar.gz", "sha256": "c79bd30a0465c8c89d49d2f8c8a16b4bd98c5ad929456b51e5ac05fd1e0786b9"},
+        "linux-x64": {"name": "unica-codex-marketplace-linux-x64.tar.gz", "sha256": "0d5f24461913d05131fc66e30e72c1837d47a322da5e8e1ac45f6878c395d735"},
+        "win-x64": {"name": "unica-codex-marketplace-win-x64.zip", "sha256": "ae8e7269d5fce2f29b9ea4947297b92d7c7d04d1bcb6c9334127c7c6fd85e499"}
+      }
+    },
+    {
+      "label": "v0.7.0",
+      "version": "0.7.0",
+      "classification": "excluded",
+      "sourceKind": "source-tag",
+      "sourceRef": "v0.7.0",
+      "sourceCommit": "4199c5f4d2909062032a3ce8709e92c920172fb3",
+      "reason": "Source prerelease was never promoted as a marketplace stable release."
+    },
+    {
+      "label": "v0.7.1",
+      "version": "0.7.1",
+      "classification": "excluded",
+      "sourceKind": "source-tag",
+      "sourceRef": "v0.7.1",
+      "sourceCommit": "6b5170507ea7f1bb4598cb9a12a21d5119cdf1df",
+      "reason": "Source prerelease was never promoted as a marketplace stable release."
+    },
+    {
+      "label": "v0.7.2",
+      "version": "0.7.2",
+      "classification": "transition",
+      "sourceKind": "marketplace-promotion",
+      "sourceRef": "643046a111d15a1ffc13c836a930a7569b552c69",
+      "sourceCommit": "643046a111d15a1ffc13c836a930a7569b552c69",
+      "layout": "marketplace-canonical"
+    },
+    {
+      "label": "v0.7.4",
+      "version": "0.7.4",
+      "classification": "excluded",
+      "sourceKind": "source-tag",
+      "sourceRef": "v0.7.4",
+      "sourceCommit": "24230b59dbd24314e417508a5ca0166bcb148a1c",
+      "reason": "Source prerelease was never promoted as a marketplace stable release."
+    },
+    {
+      "label": "v0.7.5",
+      "version": "0.7.5",
+      "classification": "transition",
+      "sourceKind": "marketplace-promotion",
+      "sourceRef": "27ae677dcad1210e0df432396135d393d06b74a9",
+      "sourceCommit": "27ae677dcad1210e0df432396135d393d06b74a9",
+      "layout": "marketplace-canonical"
+    }
+  ],
+  "fixtures": [
+    {
+      "label": "issue-90-duplicate",
+      "version": "0.6.1",
+      "sourceKind": "platform-archive",
+      "sourceRef": "v0.6.1",
+      "sourceCommit": "c3b4372a13514a1cc56a20da7060ecfc2f348370",
+      "layout": "issue-90-duplicate",
+      "assets": {
+        "darwin-arm64": {"name": "unica-codex-marketplace-darwin-arm64.tar.gz", "sha256": "c79bd30a0465c8c89d49d2f8c8a16b4bd98c5ad929456b51e5ac05fd1e0786b9"},
+        "linux-x64": {"name": "unica-codex-marketplace-linux-x64.tar.gz", "sha256": "0d5f24461913d05131fc66e30e72c1837d47a322da5e8e1ac45f6878c395d735"},
+        "win-x64": {"name": "unica-codex-marketplace-win-x64.zip", "sha256": "ae8e7269d5fce2f29b9ea4947297b92d7c7d04d1bcb6c9334127c7c6fd85e499"}
+      }
+    }
+  ]
+}
