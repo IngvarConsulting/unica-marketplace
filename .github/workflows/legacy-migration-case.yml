@@ -24,6 +24,15 @@ on:
       target_marketplace_ref:
         required: true
         type: string
+      target_marketplace_commit:
+        required: true
+        type: string
+      target_installer_ps1_sha256:
+        required: true
+        type: string
+      target_installer_sh_sha256:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -55,6 +64,9 @@ jobs:
       FIXTURE_LAYOUT: ${{ inputs.layout }}
       TARGET_VERSION: ${{ inputs.target_version }}
       TARGET_MARKETPLACE_REF: ${{ inputs.target_marketplace_ref }}
+      TARGET_MARKETPLACE_COMMIT: ${{ inputs.target_marketplace_commit }}
+      TARGET_INSTALLER_PS1_SHA256: ${{ inputs.target_installer_ps1_sha256 }}
+      TARGET_INSTALLER_SH_SHA256: ${{ inputs.target_installer_sh_sha256 }}
       TARGET: ${{ matrix.target }}
       CODEX_ASSET: ${{ matrix.codex_asset }}
       CODEX_NAME: ${{ matrix.codex_name }}
@@ -145,7 +157,20 @@ jobs:
             --repo IngvarConsulting/unica `
             --pattern $installerName `
             --dir $installerDir
-          "INSTALLER_PATH=$(Join-Path $installerDir $installerName)" |
+          $installerPath = Join-Path $installerDir $installerName
+          $expectedInstallerSha256 = if ($env:TARGET -eq 'win-x64') {
+            $env:TARGET_INSTALLER_PS1_SHA256
+          } else {
+            $env:TARGET_INSTALLER_SH_SHA256
+          }
+          if ($expectedInstallerSha256 -notmatch '^[0-9a-f]{64}$') {
+            throw "Expected installer SHA-256 is invalid for $installerName"
+          }
+          $actualInstallerSha256 = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualInstallerSha256 -ne $expectedInstallerSha256) {
+            throw "Downloaded $installerName SHA-256 $actualInstallerSha256 does not match published asset digest $expectedInstallerSha256"
+          }
+          "INSTALLER_PATH=$installerPath" |
             Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Migrate to the target release and verify the consumer contract
@@ -161,6 +186,34 @@ jobs:
             $env:PATH = "$env:CODEX_BIN_DIR`:/usr/bin:/bin"
           }
           if (Get-Command node -ErrorAction SilentlyContinue) { throw 'Node.js leaked into the consumer PATH' }
+
+          function Assert-MarketplaceRefAtCommit {
+            $remoteUrl = 'https://github.com/IngvarConsulting/unica-marketplace.git'
+            $refName = $env:TARGET_MARKETPLACE_REF
+            $remoteLines = @(& git ls-remote $remoteUrl "refs/heads/$refName" "refs/tags/$refName" "refs/tags/$refName^{}" 2>&1)
+            if ($LASTEXITCODE -ne 0) { throw "Cannot resolve marketplace ref $refName" }
+            $remoteRefs = @($remoteLines | ForEach-Object {
+              $parts = $_ -split '\s+', 2
+              if ($parts.Count -eq 2) {
+                [PSCustomObject]@{ Commit = $parts[0]; Name = $parts[1] }
+              }
+            })
+            $branchRefs = @($remoteRefs | Where-Object { $_.Name -eq "refs/heads/$refName" })
+            $tagRefs = @($remoteRefs | Where-Object { $_.Name -eq "refs/tags/$refName" })
+            if ($branchRefs.Count + $tagRefs.Count -ne 1) {
+              throw "Marketplace ref $refName must resolve to exactly one branch or tag"
+            }
+            $remoteCommit = if ($branchRefs.Count -eq 1) {
+              $branchRefs[0].Commit
+            } else {
+              $peeledTagRefs = @($remoteRefs | Where-Object { $_.Name -eq "refs/tags/$refName^{}" })
+              if ($peeledTagRefs.Count -gt 1) { throw "Marketplace tag $refName resolved ambiguously" }
+              if ($peeledTagRefs.Count -eq 1) { $peeledTagRefs[0].Commit } else { $tagRefs[0].Commit }
+            }
+            if ($remoteCommit -ne $env:TARGET_MARKETPLACE_COMMIT) {
+              throw "Marketplace ref $refName moved: expected $env:TARGET_MARKETPLACE_COMMIT, got $remoteCommit"
+            }
+          }
 
           $seedStateText = (& $env:CODEX_BIN plugin list --available --json) | Out-String
           if ($LASTEXITCODE -ne 0) { throw 'Codex cannot discover the historical fixture' }
@@ -180,6 +233,7 @@ jobs:
             if ($seedDoctor.checks.$check.status -ne 'ok') { throw "Historical fixture failed $check" }
           }
 
+          Assert-MarketplaceRefAtCommit
           if ($env:TARGET -eq 'win-x64') {
             $migrationText = (& $env:INSTALLER_PATH -Ref $env:TARGET_MARKETPLACE_REF -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
           } else {
@@ -191,6 +245,7 @@ jobs:
           if ($migrationText -notmatch "Preflight Unica migration from v$([regex]::Escape($env:TARGET_VERSION))") {
             throw "Installer did not target Unica v$env:TARGET_VERSION"
           }
+          Assert-MarketplaceRefAtCommit
 
           $stateText = (& $env:CODEX_BIN plugin list --available --json) | Out-String
           if ($LASTEXITCODE -ne 0) { throw 'Codex cannot discover the migrated installation' }
@@ -231,6 +286,7 @@ jobs:
             if ($promptText -notmatch [regex]::Escape($skill)) { throw "Fresh prompt-input is missing $skill" }
           }
 
+          Assert-MarketplaceRefAtCommit
           if ($env:TARGET -eq 'win-x64') {
             $rerunText = (& $env:INSTALLER_PATH -Ref $env:TARGET_MARKETPLACE_REF -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
           } else {
@@ -241,6 +297,7 @@ jobs:
           if ($rerunCode -ne 0 -or $rerunText -notmatch '"changed"\s*:\s*false') {
             throw 'Second migration run was not a successful no-op'
           }
+          Assert-MarketplaceRefAtCommit
 
           $logRoot = Join-Path $env:CODEX_HOME 'log'
           if (Test-Path -LiteralPath $logRoot) {

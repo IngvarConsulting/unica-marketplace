@@ -399,5 +399,8 @@ jobs:
       source_kind: platform-archive
       layout: issue-90-duplicate
       target_marketplace_ref: main
+      target_marketplace_commit: ${{ github.sha }}
       target_version: ${{ needs.contract.outputs.plugin_version }}
+      target_installer_ps1_sha256: 046dfe9b5c0c9e0b6bc7dc15c06a667d7bda8d7fa47e4c87a350cca0a5794bbf
+      target_installer_sh_sha256: 62812330445bc95c68f9d47a216d9d6cf83d6fc6925cf480e5838d54b6df8559
     secrets: inherit

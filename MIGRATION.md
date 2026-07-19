@@ -1,7 +1,7 @@
 # Migration from a development installation
 
 The transition installers need only Codex and Git. They clone the stable public
-marketplace, select the catalog's immutable version tag, run native preflight,
+marketplace, select the catalog's published semantic-version source release, run native preflight,
 and delegate all configuration changes to the same transactional migration
 engine on macOS, Linux, and Windows.
 
@@ -50,8 +50,14 @@ uses the selected workflow ref; the weekly schedule intentionally uses `main`.
 An optional `marketplace_ref` override is accepted only when it is a safe Git
 ref, and `target_version` can assert the expected source-release version.
 
-Before rebuilding any historical fixture, the workflow checks out that selected
-marketplace ref, reads its catalog, requires an immutable `vX.Y.Z` Unica tag,
-and verifies the matching source release is published. It then runs every
-supported historical state and the issue #90 duplicate fixture on macOS, Linux,
-and Windows against that exact marketplace ref.
+Before rebuilding any historical fixture, the workflow resolves the selected
+marketplace ref to an exact commit, reads that commit's catalog, requires a
+published semantic-version source release (`vX.Y.Z`), and verifies the release
+is not a draft and has a publication timestamp. It captures the published
+SHA-256 digests of `install-unica.ps1` and `install-unica.sh`, verifies the
+downloaded installer on every target OS before execution, and proves the remote
+ref still resolves to the selected commit before each migration. It then runs
+every supported historical state and the issue #90 duplicate fixture on macOS,
+Linux, and Windows. Published source release metadata plus captured SHA-256 digests
+is the enforceable contract; GitHub's current releases are not required
+to report `isImmutable: true`.
