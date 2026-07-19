@@ -416,6 +416,12 @@ class MarketplaceContractTests(unittest.TestCase):
             "$powerShell = (Get-Command pwsh -CommandType Application).Source",
             regression,
         )
+        self.assertIn("$shim = Join-Path $shimDir 'codex.exe'", regression)
+        self.assertIn("dotnet publish", regression)
+        self.assertIn("--runtime win-x64 --self-contained false", regression)
+        self.assertIn("ProcessStartInfo", regression)
+        self.assertNotIn("$shim = Join-Path $shimDir 'codex.cmd'", regression)
+        self.assertNotIn("-OutputType ConsoleApplication", regression)
         self.assertIn("$migrationText = (& $powerShell -NoProfile -File", regression)
         self.assertNotIn("$migrationText = (& pwsh -NoProfile -File", regression)
         self.assertIn("marketplace_ref:", regression)
