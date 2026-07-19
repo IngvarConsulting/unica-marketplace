@@ -7,7 +7,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.legacy_migration_fixture import FixtureError, prepare_fixture
+from scripts.legacy_migration_fixture import (
+    FixtureError,
+    compare_snapshot,
+    prepare_fixture,
+    snapshot_state,
+)
 
 
 class LegacyMigrationFixtureTests(unittest.TestCase):
@@ -149,6 +154,27 @@ class LegacyMigrationFixtureTests(unittest.TestCase):
                     "0.6.1",
                     "legacy-alias",
                 )
+
+    def test_snapshot_detects_mutation_and_accepts_exact_rollback(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            codex_home = root / "codex-home"
+            prepare_fixture(
+                self.make_archive(root, "0.6.1"),
+                codex_home,
+                "0.6.1",
+                "issue-90-duplicate",
+            )
+            snapshot = snapshot_state(codex_home)
+
+            config = codex_home / "config.toml"
+            original = config.read_bytes()
+            config.write_text("changed", encoding="utf-8")
+            with self.assertRaisesRegex(FixtureError, "rollback state differs"):
+                compare_snapshot(codex_home, snapshot)
+
+            config.write_bytes(original)
+            compare_snapshot(codex_home, snapshot)
 
 
 if __name__ == "__main__":

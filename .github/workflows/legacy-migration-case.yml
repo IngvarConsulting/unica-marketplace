@@ -15,7 +15,17 @@ on:
       source_kind:
         required: true
         type: string
+      source_commit:
+        required: true
+        type: string
+      source_assets:
+        required: false
+        type: string
+        default: "{}"
       layout:
+        required: true
+        type: string
+      codex_profile:
         required: true
         type: string
       target_version:
@@ -61,7 +71,10 @@ jobs:
       SOURCE_VERSION: ${{ inputs.source_version }}
       SOURCE_RELEASE: ${{ inputs.source_release }}
       SOURCE_KIND: ${{ inputs.source_kind }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+      SOURCE_ASSETS: ${{ inputs.source_assets }}
       FIXTURE_LAYOUT: ${{ inputs.layout }}
+      CODEX_PROFILE: ${{ inputs.codex_profile }}
       TARGET_VERSION: ${{ inputs.target_version }}
       TARGET_MARKETPLACE_REF: ${{ inputs.target_marketplace_ref }}
       TARGET_MARKETPLACE_COMMIT: ${{ inputs.target_marketplace_commit }}
@@ -109,37 +122,48 @@ jobs:
           $ErrorActionPreference = 'Stop'
           $downloadDir = Join-Path $env:RUNNER_TEMP 'historical-release'
           New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null
+          if ($env:SOURCE_COMMIT -notmatch '^[0-9a-f]{40}$') {
+            throw "Historical source commit is invalid: $env:SOURCE_COMMIT"
+          }
           if ($env:SOURCE_KIND -eq 'marketplace-promotion') {
             $archive = Join-Path $downloadDir "unica-marketplace-$env:SOURCE_RELEASE.tar.gz"
             Invoke-WebRequest `
               -Uri "https://github.com/IngvarConsulting/unica-marketplace/archive/$env:SOURCE_RELEASE.tar.gz" `
               -OutFile $archive
+          } elseif ($env:SOURCE_KIND -eq 'source-tag') {
+            $sourceDir = Join-Path $downloadDir 'unica-source'
+            & git init $sourceDir | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot initialize historical source checkout' }
+            & git -C $sourceDir remote add origin https://github.com/IngvarConsulting/unica.git
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot configure historical source remote' }
+            & git -C $sourceDir fetch --depth 1 origin "refs/tags/$env:SOURCE_RELEASE"
+            if ($LASTEXITCODE -ne 0) { throw "Cannot fetch historical source tag $env:SOURCE_RELEASE" }
+            $resolvedCommit = (& git -C $sourceDir rev-parse 'FETCH_HEAD^{commit}').Trim()
+            if ($resolvedCommit -ne $env:SOURCE_COMMIT) {
+              throw "Historical source tag $env:SOURCE_RELEASE moved: expected $env:SOURCE_COMMIT, got $resolvedCommit"
+            }
+            $archive = Join-Path $downloadDir "unica-source-$env:SOURCE_RELEASE.tar.gz"
+            & git -C $sourceDir archive --format=tar.gz --output=$archive $resolvedCommit
+            if ($LASTEXITCODE -ne 0) { throw "Cannot archive historical source $env:SOURCE_RELEASE" }
           } else {
-            if ($env:SOURCE_KIND -eq 'version-bundle') {
-              $asset = "unica-codex-marketplace-$env:SOURCE_VERSION.tar.gz"
-            } elseif ($env:TARGET -eq 'win-x64') {
-              $asset = 'unica-codex-marketplace-win-x64.zip'
-            } else {
-              $asset = "unica-codex-marketplace-$env:TARGET.tar.gz"
+            $assets = $env:SOURCE_ASSETS | ConvertFrom-Json -AsHashtable
+            if (-not $assets.ContainsKey($env:TARGET)) {
+              throw "Historical release contract has no asset for $env:TARGET"
+            }
+            $asset = [string]$assets[$env:TARGET].name
+            $expectedSourceSha256 = [string]$assets[$env:TARGET].sha256
+            if ($expectedSourceSha256 -notmatch '^[0-9a-f]{64}$') {
+              throw "Historical release asset has an invalid SHA-256 for $env:TARGET"
             }
             gh release download $env:SOURCE_RELEASE `
               --repo IngvarConsulting/unica `
               --pattern $asset `
               --dir $downloadDir
             $archive = Join-Path $downloadDir $asset
-          }
-          if ($env:FIXTURE_LAYOUT -eq 'issue-90-duplicate') {
-            $originDir = Join-Path $downloadDir 'origin-v0.3.11'
-            New-Item -ItemType Directory -Force -Path $originDir | Out-Null
-            $originAsset = if ($env:TARGET -eq 'win-x64') {
-              'unica-codex-marketplace-win-x64.zip'
-            } else {
-              "unica-codex-marketplace-$env:TARGET.tar.gz"
+            $actualSourceSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actualSourceSha256 -ne $expectedSourceSha256) {
+              throw "Historical release asset SHA-256 $actualSourceSha256 does not match locked digest $expectedSourceSha256"
             }
-            gh release download v0.3.11 `
-              --repo IngvarConsulting/unica `
-              --pattern $originAsset `
-              --dir $originDir
           }
           $python = Get-Command python3 -ErrorAction SilentlyContinue
           if (-not $python) { $python = Get-Command python }

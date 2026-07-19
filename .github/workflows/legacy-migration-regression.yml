@@ -11,8 +11,18 @@ on:
         description: Optional source release version assertion, without the v prefix.
         required: false
         type: string
-  schedule:
-    - cron: '0 0 * * 0'
+      profile_set:
+        description: Current CLI coverage, or the final 0.9.x barrier with representative historical CLI cases.
+        required: true
+        type: choice
+        default: current
+        options:
+          - current
+          - barrier
+
+concurrency:
+  group: legacy-migration-${{ github.ref }}-${{ inputs.marketplace_ref || github.ref_name }}-${{ inputs.profile_set }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -26,6 +36,7 @@ jobs:
       target_version: ${{ steps.resolve.outputs.target_version }}
       installer_ps1_sha256: ${{ steps.resolve.outputs.installer_ps1_sha256 }}
       installer_sh_sha256: ${{ steps.resolve.outputs.installer_sh_sha256 }}
+      source_matrix: ${{ steps.matrix.outputs.source_matrix }}
     steps:
       - name: Select the marketplace ref
         id: select
@@ -33,13 +44,10 @@ jobs:
         env:
           WORKFLOW_REF: ${{ github.ref_name }}
           REQUESTED_REF: ${{ inputs.marketplace_ref }}
-          EVENT_NAME: ${{ github.event_name }}
         run: |
           $ErrorActionPreference = 'Stop'
           $targetRef = if (-not [string]::IsNullOrWhiteSpace($env:REQUESTED_REF)) {
             $env:REQUESTED_REF.Trim()
-          } elseif ($env:EVENT_NAME -eq 'schedule') {
-            'main'
           } else {
             $env:WORKFLOW_REF
           }
@@ -123,82 +131,190 @@ jobs:
           "installer_ps1_sha256=$installerPs1Sha256" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "installer_sh_sha256=$installerShSha256" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
+      - name: Generate the selected manual regression matrix
+        id: matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/regression_policy.py matrix \
+            --inventory .github/contracts/legacy-releases.json \
+            --profile-set '${{ inputs.profile_set }}' \
+            --github-output "$GITHUB_OUTPUT"
+
   regression:
     needs: resolve-target
     strategy:
       fail-fast: false
       matrix:
-        source:
-          - label: v0.3.3
-            version: 0.3.3
-            release: v0.3.3
-            kind: version-bundle
-            layout: legacy-canonical
-          - label: v0.3.10
-            version: 0.3.10
-            release: v0.3.10
-            kind: platform-archive
-            layout: legacy-alias
-          - label: v0.3.11
-            version: 0.3.11
-            release: v0.3.11
-            kind: platform-archive
-            layout: legacy-alias
-          - label: v0.3.12
-            version: 0.3.12
-            release: v0.3.12
-            kind: platform-archive
-            layout: legacy-alias
-          - label: v0.4.1
-            version: 0.4.1
-            release: v0.4.1
-            kind: platform-archive
-            layout: legacy-alias
-          - label: v0.4.2
-            version: 0.4.2
-            release: v0.4.2
-            kind: platform-archive
-            layout: legacy-alias
-          - label: v0.4.3
-            version: 0.4.3
-            release: v0.4.3
-            kind: platform-archive
-            layout: legacy-alias
-          - label: v0.4.4
-            version: 0.4.4
-            release: v0.4.4
-            kind: platform-archive
-            layout: legacy-alias
-          - label: v0.5.1
-            version: 0.5.1
-            release: v0.5.1
-            kind: platform-archive
-            layout: legacy-alias
-          - label: v0.6.1
-            version: 0.6.1
-            release: v0.6.1
-            kind: platform-archive
-            layout: legacy-alias
-          - label: v0.7.2
-            version: 0.7.2
-            release: 643046a111d15a1ffc13c836a930a7569b552c69
-            kind: marketplace-promotion
-            layout: marketplace-canonical
-          - label: issue-90-duplicate
-            version: 0.6.1
-            release: v0.6.1
-            kind: platform-archive
-            layout: issue-90-duplicate
+        source: ${{ fromJSON(needs.resolve-target.outputs.source_matrix) }}
     uses: ./.github/workflows/legacy-migration-case.yml
     with:
       label: ${{ matrix.source.label }}
       source_version: ${{ matrix.source.version }}
       source_release: ${{ matrix.source.release }}
       source_kind: ${{ matrix.source.kind }}
+      source_commit: ${{ matrix.source.sourceCommit }}
+      source_assets: ${{ toJSON(matrix.source.assets) }}
       layout: ${{ matrix.source.layout }}
+      codex_profile: ${{ matrix.source.codexProfile }}
       target_marketplace_ref: ${{ needs.resolve-target.outputs.marketplace_ref }}
       target_marketplace_commit: ${{ needs.resolve-target.outputs.marketplace_commit }}
       target_version: ${{ needs.resolve-target.outputs.target_version }}
       target_installer_ps1_sha256: ${{ needs.resolve-target.outputs.installer_ps1_sha256 }}
       target_installer_sh_sha256: ${{ needs.resolve-target.outputs.installer_sh_sha256 }}
     secrets: inherit
+
+  manual-rollback:
+    needs: resolve-target
+    name: rollback / ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: darwin-arm64
+            codex_asset: codex-aarch64-apple-darwin.tar.gz
+            codex_name: codex-aarch64-apple-darwin
+          - os: ubuntu-latest
+            target: linux-x64
+            codex_asset: codex-x86_64-unknown-linux-musl.tar.gz
+            codex_name: codex-x86_64-unknown-linux-musl
+          - os: windows-2022
+            target: win-x64
+            codex_asset: codex-x86_64-pc-windows-msvc.exe.zip
+            codex_name: codex-x86_64-pc-windows-msvc.exe
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      TARGET: ${{ matrix.target }}
+      CODEX_ASSET: ${{ matrix.codex_asset }}
+      CODEX_NAME: ${{ matrix.codex_name }}
+      TARGET_VERSION: ${{ needs.resolve-target.outputs.target_version }}
+      TARGET_MARKETPLACE_REF: ${{ needs.resolve-target.outputs.marketplace_ref }}
+      TARGET_INSTALLER_PS1_SHA256: ${{ needs.resolve-target.outputs.installer_ps1_sha256 }}
+      TARGET_INSTALLER_SH_SHA256: ${{ needs.resolve-target.outputs.installer_sh_sha256 }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.resolve-target.outputs.marketplace_commit }}
+          fetch-depth: 1
+
+      - name: Install the current locked Codex CLI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          "CODEX_HOME=$(Join-Path $env:RUNNER_TEMP 'codex-rollback-home')" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $codexDir = Join-Path $env:RUNNER_TEMP 'codex-native-rollback'
+          New-Item -ItemType Directory -Force -Path $codexDir | Out-Null
+          gh release download rust-v0.145.0-alpha.18 --repo openai/codex --pattern $env:CODEX_ASSET --dir $codexDir
+          $archive = Get-ChildItem -LiteralPath $codexDir -File | Select-Object -First 1
+          if ($archive.Extension -eq '.zip') {
+            Expand-Archive -LiteralPath $archive.FullName -DestinationPath $codexDir
+          } else {
+            & tar -xzf $archive.FullName -C $codexDir
+            if ($LASTEXITCODE -ne 0) { throw "Cannot extract $($archive.FullName)" }
+          }
+          $codex = Get-ChildItem -LiteralPath $codexDir -Recurse -File |
+            Where-Object { $_.Name -eq $env:CODEX_NAME } |
+            Select-Object -First 1
+          if (-not $codex) { throw "Native Codex executable $env:CODEX_NAME is missing" }
+          if ($env:TARGET -ne 'win-x64') { chmod +x $codex.FullName }
+          "REAL_CODEX=$($codex.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Rebuild the issue 90 fixture and capture its exact state
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $inventory = Get-Content -LiteralPath '.github/contracts/legacy-releases.json' -Raw -Encoding UTF8 | ConvertFrom-Json
+          $fixture = @($inventory.fixtures | Where-Object { $_.label -eq 'issue-90-duplicate' })
+          if ($fixture.Count -ne 1) { throw 'Issue 90 fixture contract must resolve exactly once' }
+          $asset = $fixture[0].assets.PSObject.Properties[$env:TARGET].Value
+          if (-not $asset -or $asset.sha256 -notmatch '^[0-9a-f]{64}$') {
+            throw "Issue 90 fixture has no locked asset for $env:TARGET"
+          }
+          $downloadDir = Join-Path $env:RUNNER_TEMP 'rollback-release'
+          New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null
+          gh release download $fixture[0].sourceRef --repo IngvarConsulting/unica --pattern $asset.name --dir $downloadDir
+          $archive = Join-Path $downloadDir $asset.name
+          $actual = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $asset.sha256) { throw "Issue 90 fixture digest mismatch: $actual" }
+
+          $python = Get-Command python3 -ErrorAction SilentlyContinue
+          if (-not $python) { $python = Get-Command python }
+          & $python.Source scripts/legacy_migration_fixture.py --archive $archive --codex-home $env:CODEX_HOME --version 0.6.1 --layout issue-90-duplicate
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot rebuild the rollback fixture' }
+          & $python.Source scripts/legacy_migration_fixture.py --codex-home $env:CODEX_HOME --snapshot-output (Join-Path $env:RUNNER_TEMP 'rollback-before.json')
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot snapshot the rollback fixture' }
+
+          $installerDir = Join-Path $env:RUNNER_TEMP 'rollback-installer'
+          New-Item -ItemType Directory -Force -Path $installerDir | Out-Null
+          $installerName = if ($env:TARGET -eq 'win-x64') { 'install-unica.ps1' } else { 'install-unica.sh' }
+          gh release download "v$env:TARGET_VERSION" --repo IngvarConsulting/unica --pattern $installerName --dir $installerDir
+          $installer = Join-Path $installerDir $installerName
+          $expected = if ($env:TARGET -eq 'win-x64') { $env:TARGET_INSTALLER_PS1_SHA256 } else { $env:TARGET_INSTALLER_SH_SHA256 }
+          $actual = (Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "Rollback installer digest mismatch: $actual" }
+          "INSTALLER_PATH=$installer" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Inject one post-mutation Codex failure and require exact rollback
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $shimDir = Join-Path $env:RUNNER_TEMP 'codex-failure-shim'
+          $failureMarker = Join-Path $env:RUNNER_TEMP 'codex-failure-injected'
+          New-Item -ItemType Directory -Force -Path $shimDir | Out-Null
+          if ($env:TARGET -eq 'win-x64') {
+            $shim = Join-Path $shimDir 'codex.cmd'
+            @"
+          @echo off
+          if "%1 %2 %3"=="plugin add unica@unica" if not exist "$failureMarker" (
+            type nul > "$failureMarker"
+            echo injected transactional rollback failure 1>&2
+            exit /b 86
+          )
+          "$env:REAL_CODEX" %*
+          exit /b %ERRORLEVEL%
+          "@ | Set-Content -LiteralPath $shim -Encoding ASCII
+            $env:PATH = "$shimDir;$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
+            $migrationText = (& pwsh -NoProfile -File $env:INSTALLER_PATH -Ref $env:TARGET_MARKETPLACE_REF -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
+          } else {
+            $shim = Join-Path $shimDir 'codex'
+            @"
+          #!/bin/sh
+          if [ "`$1 `$2 `$3" = "plugin add unica@unica" ] && [ ! -e '$failureMarker' ]; then
+            : > '$failureMarker'
+            echo 'injected transactional rollback failure' >&2
+            exit 86
+          fi
+          exec '$env:REAL_CODEX' "`$@"
+          "@ | Set-Content -LiteralPath $shim -Encoding UTF8
+            chmod +x $shim
+            $env:PATH = "$shimDir`:/usr/bin:/bin"
+            $migrationText = (& sh $env:INSTALLER_PATH --ref $env:TARGET_MARKETPLACE_REF --target $env:TARGET --codex-home $env:CODEX_HOME 2>&1) | Out-String
+          }
+          $migrationCode = $LASTEXITCODE
+          if ($migrationCode -eq 0) { throw 'Injected migration failure unexpectedly succeeded' }
+          if (-not (Test-Path -LiteralPath $failureMarker -PathType Leaf)) {
+            throw 'Migration failed before reaching the injected post-mutation boundary'
+          }
+          $diagnostics = Get-ChildItem -LiteralPath (Join-Path $env:CODEX_HOME 'unica/migration-backups') -Filter diagnostics.jsonl -Recurse -File |
+            Get-Content -Raw
+          if (($diagnostics | Out-String) -notmatch 'rollback-succeeded') {
+            throw "Migration did not report rollback-succeeded`n$migrationText"
+          }
+          $python = Get-Command python3 -ErrorAction SilentlyContinue
+          if (-not $python) { $python = Get-Command python }
+          & $python.Source scripts/legacy_migration_fixture.py --codex-home $env:CODEX_HOME --compare-snapshot (Join-Path $env:RUNNER_TEMP 'rollback-before.json')
+          if ($LASTEXITCODE -ne 0) { throw 'Transactional rollback did not restore the exact fixture state' }
+
+      - name: Upload rollback evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rollback-${{ matrix.target }}
+          path: |
+            ${{ runner.temp }}/rollback-before.json
+            ${{ runner.temp }}/codex-rollback-home/unica/migration-backups
+          if-no-files-found: warn
+          retention-days: 90

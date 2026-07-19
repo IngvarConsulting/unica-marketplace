@@ -92,8 +92,14 @@ class MarketplaceContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
+        inventory = (
+            root / ".github" / "contracts" / "legacy-releases.json"
+        ).read_text(encoding="utf-8")
         for version in (
             "v0.3.3",
+            "v0.3.4",
+            "v0.3.5",
+            "v0.3.6",
             "v0.3.10",
             "v0.3.11",
             "v0.3.12",
@@ -105,9 +111,11 @@ class MarketplaceContractTests(unittest.TestCase):
             "v0.6.1",
             "v0.7.2",
         ):
-            self.assertIn(version, one_time)
-        self.assertIn("issue-90-duplicate", one_time)
-        self.assertIn("643046a111d15a1ffc13c836a930a7569b552c69", one_time)
+            self.assertIn(version, inventory)
+        self.assertIn("issue-90-duplicate", inventory)
+        self.assertIn("643046a111d15a1ffc13c836a930a7569b552c69", inventory)
+        self.assertIn("scripts/regression_policy.py matrix", one_time)
+        self.assertIn("fromJSON(needs.resolve-target.outputs.source_matrix)", one_time)
         self.assertIn("macos-15", migration_case)
         self.assertIn("ubuntu-latest", migration_case)
         self.assertIn("windows-2022", migration_case)
@@ -115,11 +123,11 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("$codexCommandName", migration_case)
         self.assertIn("'codex.exe'", migration_case)
         self.assertIn("unica-marketplace/archive/$env:SOURCE_RELEASE.tar.gz", migration_case)
-        self.assertIn("legacy-stable-upgrade:", verify)
-        self.assertIn("source_version: 0.6.1", verify)
-        self.assertIn("layout: issue-90-duplicate", verify)
+        self.assertIn("source-tag", migration_case)
+        self.assertNotIn("legacy-stable-upgrade:", verify)
+        self.assertNotIn("issue-90-duplicate", verify)
 
-    def test_automatic_issue_90_gate_resolves_catalog_promotion_event_commit(self) -> None:
+    def test_automatic_promotion_gate_resolves_catalog_event_commit(self) -> None:
         root = Path(__file__).resolve().parents[1]
         verify = (root / ".github" / "workflows" / "verify.yml").read_text(
             encoding="utf-8"
@@ -161,30 +169,17 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("isDraft,publishedAt,assets", verify)
         self.assertIn("Get-InstallerDigest 'install-unica.ps1'", verify)
         self.assertIn("Get-InstallerDigest 'install-unica.sh'", verify)
-        self.assertIn("legacy-stable-upgrade:", verify)
         self.assertIn("needs: [contract, resolve-migration-target]", verify)
         self.assertIn(
-            "target_marketplace_ref: ${{ needs.resolve-migration-target.outputs.marketplace_ref }}",
+            "TARGET_MARKETPLACE_REF: ${{ needs.resolve-migration-target.outputs.marketplace_ref }}",
             verify,
         )
         self.assertIn(
-            "target_marketplace_commit: ${{ needs.resolve-migration-target.outputs.marketplace_commit }}",
+            "TARGET_MARKETPLACE_COMMIT: ${{ needs.resolve-migration-target.outputs.marketplace_commit }}",
             verify,
         )
-        self.assertIn(
-            "target_version: ${{ needs.resolve-migration-target.outputs.target_version }}",
-            verify,
-        )
-        self.assertIn(
-            "target_installer_ps1_sha256: ${{ needs.resolve-migration-target.outputs.installer_ps1_sha256 }}",
-            verify,
-        )
-        self.assertIn(
-            "target_installer_sh_sha256: ${{ needs.resolve-migration-target.outputs.installer_sh_sha256 }}",
-            verify,
-        )
-        self.assertIn("source_version: 0.6.1", verify)
-        self.assertIn("layout: issue-90-duplicate", verify)
+        self.assertNotIn("legacy-stable-upgrade:", verify)
+        self.assertNotIn("issue-90-duplicate", verify)
         for runner in ("macos-15", "ubuntu-latest", "windows-2022"):
             self.assertIn(runner, migration_case)
 
@@ -226,7 +221,6 @@ class MarketplaceContractTests(unittest.TestCase):
         ]
         upgrade = verify[
             verify.index("  previous-stable-upgrade:"):
-            verify.index("  legacy-stable-upgrade:")
         ]
 
         self.assertIn("TARGET_MARKETPLACE_REF: main", seed)
@@ -309,9 +303,14 @@ class MarketplaceContractTests(unittest.TestCase):
             r"\s+throw \"Downloaded \$installerName SHA-256",
         )
 
-        self.assertIn("schedule:", regression)
-        self.assertIn("cron: '0 0 * * 0'", regression)
+        self.assertIn("workflow_dispatch:", regression)
+        self.assertNotIn("schedule:", regression)
         self.assertNotIn("pull_request:", regression)
+        self.assertIn("profile_set:", regression)
+        self.assertIn("current", regression)
+        self.assertIn("barrier", regression)
+        self.assertIn("manual-rollback:", regression)
+        self.assertIn("rollback-succeeded", regression)
         self.assertIn("marketplace_ref:", regression)
         self.assertIn("target_version:", regression)
         self.assertIn("github.ref_name", regression)

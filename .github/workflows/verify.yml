@@ -519,20 +519,3 @@ jobs:
           if ($env:TARGET -ne 'win-x64') { chmod +x $bootstrap }
           & $bootstrap verify --plugin-root $pluginRoot
           Assert-MarketplaceRefAtCommit
-
-  legacy-stable-upgrade:
-    needs: [contract, resolve-migration-target]
-    if: ${{ always() && needs.resolve-migration-target.result == 'success' }}
-    uses: ./.github/workflows/legacy-migration-case.yml
-    with:
-      label: legacy-stable-v0.6.1-issue-90
-      source_version: 0.6.1
-      source_release: v0.6.1
-      source_kind: platform-archive
-      layout: issue-90-duplicate
-      target_marketplace_ref: ${{ needs.resolve-migration-target.outputs.marketplace_ref }}
-      target_marketplace_commit: ${{ needs.resolve-migration-target.outputs.marketplace_commit }}
-      target_version: ${{ needs.resolve-migration-target.outputs.target_version }}
-      target_installer_ps1_sha256: ${{ needs.resolve-migration-target.outputs.installer_ps1_sha256 }}
-      target_installer_sh_sha256: ${{ needs.resolve-migration-target.outputs.installer_sh_sha256 }}
-    secrets: inherit

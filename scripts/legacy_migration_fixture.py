@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import stat
@@ -22,6 +23,14 @@ LAYOUTS = {
     "marketplace-canonical",
 }
 MARKETPLACE_SOURCE = "https://github.com/IngvarConsulting/unica-marketplace.git"
+ROLLBACK_ROOTS = (
+    "config.toml",
+    "marketplaces/unica",
+    "marketplaces/unica-local",
+    ".tmp/marketplaces/unica",
+    "plugins/cache/unica",
+    "plugins/cache/unica-local",
+)
 
 
 class FixtureError(ValueError):
@@ -165,6 +174,74 @@ def _copy_plugin(plugin_root: Path, destination: Path) -> None:
     shutil.copytree(plugin_root, destination)
 
 
+def _snapshot_entry(codex_home: Path, path: Path) -> Dict[str, object]:
+    relative = path.relative_to(codex_home).as_posix()
+    metadata = path.lstat()
+    entry: Dict[str, object] = {
+        "path": relative,
+        "mode": stat.S_IMODE(metadata.st_mode),
+    }
+    if path.is_symlink():
+        raise FixtureError(f"rollback state contains a forbidden link: {relative}")
+    if path.is_dir():
+        entry["kind"] = "directory"
+    elif path.is_file():
+        contents = path.read_bytes()
+        entry.update(
+            {
+                "kind": "file",
+                "size": len(contents),
+                "sha256": hashlib.sha256(contents).hexdigest(),
+            }
+        )
+    else:
+        raise FixtureError(f"rollback state contains an unsupported entry: {relative}")
+    return entry
+
+
+def snapshot_state(codex_home: Path) -> Dict[str, object]:
+    """Capture exact rollback-relevant Codex state, including file modes."""
+
+    codex_home = codex_home.resolve()
+    _require(codex_home.is_dir(), f"Codex home is missing: {codex_home}")
+    entries: List[Dict[str, object]] = []
+    for relative in ROLLBACK_ROOTS:
+        root = codex_home / relative
+        if not root.exists() and not root.is_symlink():
+            continue
+        entries.append(_snapshot_entry(codex_home, root))
+        if root.is_dir():
+            for path in sorted(root.rglob("*"), key=lambda item: item.as_posix()):
+                entries.append(_snapshot_entry(codex_home, path))
+    return {"schemaVersion": 1, "entries": entries}
+
+
+def compare_snapshot(codex_home: Path, expected: Dict[str, object]) -> None:
+    """Fail when rollback-relevant state differs from a captured snapshot."""
+
+    _require(expected.get("schemaVersion") == 1, "unsupported rollback snapshot schema")
+    expected_entries = expected.get("entries")
+    _require(isinstance(expected_entries, list), "rollback snapshot entries must be an array")
+    actual = snapshot_state(codex_home)
+    if actual != expected:
+        expected_by_path = {
+            entry.get("path"): entry for entry in expected_entries if isinstance(entry, dict)
+        }
+        actual_by_path = {
+            entry.get("path"): entry
+            for entry in actual["entries"]
+            if isinstance(entry, dict)
+        }
+        changed = sorted(
+            path
+            for path in set(expected_by_path) | set(actual_by_path)
+            if expected_by_path.get(path) != actual_by_path.get(path)
+        )
+        raise FixtureError(
+            "rollback state differs from the snapshot: " + ", ".join(str(path) for path in changed)
+        )
+
+
 def prepare_fixture(
     archive: Path,
     codex_home: Path,
@@ -254,11 +331,25 @@ def prepare_fixture(
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--archive", type=Path, required=True)
+    parser.add_argument("--archive", type=Path)
     parser.add_argument("--codex-home", type=Path, required=True)
-    parser.add_argument("--version", required=True)
-    parser.add_argument("--layout", choices=sorted(LAYOUTS), required=True)
+    parser.add_argument("--version")
+    parser.add_argument("--layout", choices=sorted(LAYOUTS))
+    snapshot = parser.add_mutually_exclusive_group()
+    snapshot.add_argument("--snapshot-output", type=Path)
+    snapshot.add_argument("--compare-snapshot", type=Path)
     args = parser.parse_args()
+    if args.snapshot_output:
+        args.snapshot_output.write_text(
+            json.dumps(snapshot_state(args.codex_home), indent=2) + "\n",
+            encoding="utf-8",
+        )
+        return
+    if args.compare_snapshot:
+        compare_snapshot(args.codex_home, _load_json(args.compare_snapshot))
+        return
+    if not args.archive or not args.version or not args.layout:
+        parser.error("--archive, --version, and --layout are required to prepare a fixture")
     print(
         json.dumps(
             prepare_fixture(args.archive, args.codex_home, args.version, args.layout),
