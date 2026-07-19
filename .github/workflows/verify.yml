@@ -1,0 +1,66 @@
+name: Verify marketplace
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    outputs:
+      has_plugin: ${{ steps.detect.outputs.has_plugin }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect staged plugin
+        id: detect
+        shell: bash
+        run: test -f plugins/unica/runtime-manifest.json && echo 'has_plugin=true' >> "$GITHUB_OUTPUT" || echo 'has_plugin=false' >> "$GITHUB_OUTPUT"
+      - name: Verify repository contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          test -d plugins/unica || args+=(--allow-empty)
+          python3 scripts/verify_marketplace.py "${args[@]}"
+          python3 -m unittest discover -s tests -v
+
+  runtime-smoke:
+    needs: contract
+    if: ${{ needs.contract.outputs.has_plugin == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: darwin-arm64
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: windows-2022
+            target: win-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify native bootstrap and MCP
+        shell: pwsh
+        env:
+          CODEX_HOME: ${{ runner.temp }}/codex-home
+          TARGET: ${{ matrix.target }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path $env:CODEX_HOME | Out-Null
+          if ($env:TARGET -eq 'win-x64') {
+            $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
+            if (Get-Command node -ErrorAction SilentlyContinue) { throw 'Node.js leaked into the consumer PATH' }
+            & plugins/unica/bootstrap/bin/win-x64/unica-bootstrap.exe verify --plugin-root plugins/unica
+          } else {
+            $env:PATH = '/usr/bin:/bin'
+            if (Get-Command node -ErrorAction SilentlyContinue) { throw 'Node.js leaked into the consumer PATH' }
+            chmod +x "plugins/unica/bootstrap/bin/$env:TARGET/unica-bootstrap"
+            & "plugins/unica/bootstrap/bin/$env:TARGET/unica-bootstrap" verify --plugin-root plugins/unica
+          }
