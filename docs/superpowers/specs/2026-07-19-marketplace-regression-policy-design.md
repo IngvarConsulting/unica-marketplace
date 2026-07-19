@@ -1,206 +1,82 @@
 # Marketplace Regression Policy Design
 
-**Status:** approved for implementation on 2026-07-19
+**Status:** approved for implementation on 2026-07-19 and revised to the
+maintainer-approved `v0.7.6` bridge boundary.
 
 ## Context
 
-The marketplace currently combines three different responsibilities in the same
-regression surface:
+Routine marketplace promotion, historical migration compatibility, and the
+one-off duplicate registration from Unica issue #90 have different costs and
+change rates. They must not share one automatic schedule.
 
-1. routine verification of a staged package and a normal marketplace promotion;
-2. historical compatibility evidence for legacy `0.x` installations;
-3. a one-off reproduction of the duplicate registration from Unica issue #90.
+Unica `v0.7.6` is the final package that understands old local and duplicated
+installations. After it normalizes an installation, `v0.8.0` supports ordinary
+updates from canonical `v0.7.5`, canonical `v0.7.6`, and canonical technical
+`0.7.x` installations. Version alone is not proof of canonical identity.
 
-Running the complete historical matrix on a weekly schedule is not useful. It
-repeats many equivalent legacy layouts even when neither Unica nor the
-marketplace changed. Conversely, the current automatic workflow does not test
-the normal previous-stable upgrade before a promotion is merged, and no single
-stable check represents the complete promotion policy.
+## Policy
 
-The transition to `1.0` also needs an explicit legacy-support boundary. Direct
-legacy migration will end at the latest stable `0.9.x`, so that release line
-must have durable full-history evidence before `1.0` can be promoted.
+### Automatic pull-request and promotion checks
 
-## Goals
+The marketplace exposes one stable aggregate job, `regression-policy`. It
+requires only signals that can change during a normal promotion:
 
-- Keep routine promotion checks small, deterministic, and suitable for a
-  required pull-request check.
-- Keep full historical coverage available on demand without any scheduled run.
-- Treat issue #90 as a historical fixture, not as a permanent promotion gate.
-- Prove the normal previous-stable marketplace update before merge.
-- Classify every published historical release instead of silently omitting
-  releases that lack the expected archive shape.
-- Create a machine-verifiable `0.9.x` barrier receipt that is required for the
-  first `1.x` promotion.
-- Pin the Codex CLI and published inputs used as regression evidence.
+1. repository and manifest contracts;
+2. staged package smoke on macOS, Linux, and Windows;
+3. fresh consumer installation on all three systems;
+4. exact candidate ref and source-release resolution;
+5. previous-stable seed integrity;
+6. canonical previous-stable update on all three systems.
 
-## Non-goals
+Conditional jobs may be skipped only when the event does not require them.
+Malformed event trees, catalog inputs, cache identity, or source releases fail
+closed.
 
-- The marketplace will not continuously test every historical version.
-- The issue #90 fixture will not run on ordinary pull requests or promotions.
-- A pull request will not change repository branch-protection settings. It will
-  expose a stable aggregate check that can be configured as required separately.
-- Prerelease builds are not part of the supported migration contract unless a
-  specific prerelease is explicitly retained as a transition fixture.
+### Manual full-history regression
 
-## Policy Layers
+`Full legacy migration regression` has only `workflow_dispatch`. It resolves
+the selected marketplace ref to an exact commit and builds a matrix from the
+tracked release inventory.
 
-### Repository contract
+Profile set `current` runs every supported legacy case and issue #90 once using
+the current locked Codex CLI. Profile set `bridge` additionally runs only
+`v0.3.11` and issue #90 on historical Codex CLI `0.144.1`; it does not multiply
+the full matrix.
 
-Every pull request and push to `main` validates marketplace metadata, package
-metadata, the promotion classifier, regression manifests, and workflow syntax.
-Malformed or unavailable event commits fail closed.
+The manual workflow verifies exact source commits or asset digests, canonical
+plugin identity, legacy cleanup, settings preservation, MCP and prompt
+visibility, idempotence, and consumer-level rollback after an injected failure.
 
-### Staged package
+### Compatibility boundary
 
-When `plugins/unica` exists, its native bootstrap and MCP contract are tested on
-macOS, Linux, and Windows. This checks the staged package bytes independently of
-the catalog.
+The full bridge regression is run against the promoted `v0.7.6` catalog before
+issue #90 is closed. The resulting successful GitHub workflow run is release
+evidence, not a receipt consumed by future promotions.
 
-### Fresh installation
+There is no weekly execution and no `0.9.x -> 1.x` barrier. Carrying that model
+would contradict the decision to remove legacy migration in `v0.8.0`.
 
-When the catalog and staged plugin versions match, Codex installs
-`unica@unica` from the candidate catalog on all three operating systems and
-verifies the installed bootstrap and MCP contract.
+## Locked inputs
 
-### Promotion upgrade
+Codex release names and SHA-256 asset digests are tracked per supported system.
+Published Unica archives are digest-locked where they exist; source-only
+fixtures use exact tag commits. Candidate installers are resolved from the
+published source release and verified by digest before execution.
 
-A semantic catalog `source.ref` change is a promotion. On both a promotion pull
-request and a direct promotion push to `main`, the workflow must:
+## Test strategy
 
-1. restore the exact previous-stable installation produced during the staging
-   phase;
-2. fail if the versioned seed is missing or does not match its recorded version,
-   Codex profile, and seed schema;
-3. update the marketplace to the exact candidate ref and commit;
-4. perform the documented remove-and-add plugin update;
-5. prove that exactly one expected version is installed and that the MCP
-   bootstrap verifies on macOS, Linux, and Windows.
+- unit tests validate manifests, profile selection, promotion event trees, and
+  fail-closed behavior;
+- workflow contract tests enforce manual-only full regression and the stable
+  aggregate truth table;
+- hosted jobs provide real macOS, Linux, and Windows consumer evidence;
+- issue #90 remains a manual fixture, not an automatic promotion dependency.
 
-The promotion pull request is the blocking proof. Repeating the same check on a
-direct `main` promotion is a safety net for unprotected or administrative
-pushes, not a replacement for branch protection.
+## Delivery sequence
 
-### Aggregate result
-
-The workflow exposes one job named `regression-policy`. It always runs after the
-conditional jobs and accepts a skipped result only when the event did not
-require that job. On a promotion, a skipped or failed fresh-install,
-previous-stable-upgrade, target-resolution, or barrier job fails the aggregate.
-
-`regression-policy` is the check that repository settings should mark as
-required after the workflow is merged into the default branch.
-
-## Manual Full-History Regression
-
-`Full legacy migration regression` is `workflow_dispatch` only. It has no
-`schedule` and no implicit pull-request trigger.
-
-The workflow resolves the selected marketplace branch or tag to an exact commit
-and runs a manifest-driven matrix on macOS, Linux, and Windows. The manifest
-classifies:
-
-- every supported stable local-release state in `0.x`;
-- stable tags such as `v0.3.4`, `v0.3.5`, and `v0.3.6` whose releases do not
-  contain marketplace archives, rebuilt from their exact locked source tag
-  commits;
-- the retained marketplace transition state;
-- the duplicate canonical/legacy issue #90 state;
-- excluded prereleases together with a machine-readable exclusion reason.
-
-No published release may disappear from the inventory without either a runnable
-case or an explicit policy classification.
-
-The manual workflow accepts a locked Codex profile set. At minimum the lock
-contains the current policy CLI and the historical `0.144.1` CLI used by issue
-#90. Normal full-history mode runs every case on the current policy CLI. Barrier
-mode additionally runs the issue #90 fixture and its representative `v0.3.11`
-legacy state on `0.144.1`; it does not multiply the entire historical matrix by
-both CLI versions. The issue #90 fixture is never selected by the automatic
-promotion workflow.
-
-Each successful case proves the migrated version, canonical plugin identity,
-legacy cleanup, settings preservation where applicable, doctor checks, MCP and
-prompt visibility, absence of duplicate MCP registrations, and an idempotent
-second run. A separate representative manual case injects a migration failure
-and verifies consumer-level rollback.
-
-## The `0.9.x` Legacy Barrier
-
-The latest promoted stable `0.9.x` is the final direct-migration target for
-legacy installations. If another `0.9.x` is promoted later, any older barrier
-receipt becomes stale.
-
-After the final `0.9.x` catalog is present at an exact marketplace commit, a
-maintainer runs the complete manual regression from that same workflow ref. A
-successful run emits a JSON receipt artifact containing:
-
-- schema version;
-- target Unica version and source release;
-- exact marketplace workflow ref and commit;
-- GitHub workflow run ID and URL;
-- completion timestamp;
-- regression-manifest digest;
-- Codex profiles used;
-- installer and locked-input digests.
-
-The reviewed receipt is committed to the marketplace before the first `1.x`
-promotion. The `1.x` promotion check validates that:
-
-1. the previous stable catalog version is `0.9.x`;
-2. the receipt targets that exact latest `0.9.x` version;
-3. the recorded workflow is `Full legacy migration regression`, was dispatched
-   manually, and completed successfully;
-4. its head commit is the recorded marketplace commit and is an ancestor of the
-   promotion base;
-5. the catalog at that commit points at the recorded `0.9.x` release;
-6. the manifest and required Codex-profile digests still match.
-
-Missing, stale, malformed, or unverifiable evidence fails the `1.x` promotion.
-The barrier is checked only at the legacy-support boundary; it is not rerun for
-ordinary `1.x` patch promotions.
-
-## Locked Inputs and Reproducibility
-
-The Codex release tag alone is insufficient because release assets can be
-replaced. A tracked lock records the release and SHA-256 digest for every Codex
-asset used on each operating system. Historical Unica release assets are
-verified against tracked digests where assets exist. Tag-based fixtures pin an
-exact commit.
-
-The candidate installer continues to be checked against published release
-metadata, but the barrier receipt records the accepted installer digests so the
-evidence remains meaningful after the run.
-
-## Maintainability
-
-Repeated Codex download, extraction, PATH isolation, and digest verification are
-moved to one local composite action or helper. Platform definitions and legacy
-release classifications live in data files rather than being copied across
-jobs. The unused issue #90 download of the `v0.3.11` archive is removed.
-
-Long-running consumer jobs receive explicit timeouts. The manual workflow uses a
-concurrency group so two full runs for the same target and Codex profile cannot
-consume duplicate runners simultaneously.
-
-## Test Strategy
-
-- Unit tests validate promotion and `0.9.x -> 1.x` boundary classification,
-  malformed receipts, stale receipts, and exact event-tree selection.
-- Manifest tests require every published release to have a runnable or excluded
-  classification and validate all locked digests.
-- Fixture tests cover each layout family, including issue #90.
-- Workflow contract tests validate event triggers and the aggregate-result truth
-  table without treating substring presence as runtime proof.
-- `actionlint` validates workflow and expression syntax.
-- Hosted macOS, Linux, and Windows jobs provide the consumer evidence that local
-  unit tests cannot provide.
-
-## Delivery Sequence
-
-1. Merge this policy implementation while the catalog remains on `0.x`.
-2. Configure `regression-policy` as a required check for `main`.
-3. Continue normal staged-package and catalog-promotion releases through `0.9.x`.
-4. Run and review the full manual regression against the final stable `0.9.x`.
-5. Commit its verified barrier receipt.
-6. Permit the first `1.x` promotion only after the barrier check passes.
+1. Merge this policy in marketplace PR #9.
+2. Publish and promote source `v0.7.6`.
+3. Run profile set `bridge` against the exact promoted catalog.
+4. Close issue #90 using the successful workflow URL as evidence.
+5. Keep automatic promotions bounded to fresh and previous-stable canonical
+   paths while source issue #135 removes current legacy migration code.

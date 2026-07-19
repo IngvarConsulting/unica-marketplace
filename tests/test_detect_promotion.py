@@ -102,7 +102,7 @@ class PromotionDetectionTests(unittest.TestCase):
 
             self.assertEqual(outputs["catalog_promoted"], "true")
             self.assertEqual(outputs["promotion_required"], "true")
-            self.assertEqual(outputs["barrier_required"], "false")
+            self.assertNotIn("barrier_required", outputs)
             self.assertEqual(outputs["catalog_version"], "1.1.0")
             self.assertEqual(outputs["previous_catalog_version"], "1.0.0")
 
@@ -172,7 +172,7 @@ class PromotionDetectionTests(unittest.TestCase):
             self.assertEqual(outputs["catalog_promoted"], "true")
             self.assertEqual(outputs["promotion_required"], "true")
 
-    def test_final_zero_nine_to_one_promotion_requires_legacy_barrier(self) -> None:
+    def test_zero_nine_to_one_is_an_ordinary_canonical_promotion(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             self.initialize(root)
@@ -186,7 +186,7 @@ class PromotionDetectionTests(unittest.TestCase):
             outputs = self.detect_pr(root, base, head)
 
             self.assertEqual(outputs["promotion_required"], "true")
-            self.assertEqual(outputs["barrier_required"], "true")
+            self.assertNotIn("barrier_required", outputs)
 
     def test_main_staging_push_requires_seed_for_current_catalog(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

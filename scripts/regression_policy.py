@@ -11,7 +11,7 @@ from typing import Any, Sequence
 
 
 TARGETS = {"darwin-arm64", "linux-x64", "win-x64"}
-PROFILE_SETS = {"current", "barrier"}
+PROFILE_SETS = {"current", "bridge"}
 RUNNABLE_CLASSIFICATIONS = {"supported", "transition"}
 CLASSIFICATIONS = RUNNABLE_CLASSIFICATIONS | {"excluded"}
 SOURCE_KINDS = {"version-bundle", "platform-archive", "source-tag", "marketplace-promotion"}
@@ -134,7 +134,7 @@ def build_manual_cases(inventory: dict[str, Any], profile_set: str) -> list[dict
         if entry.get("classification") in RUNNABLE_CLASSIFICATIONS
     ]
     cases.extend(_case_for(entry, "current") for entry in inventory.get("fixtures", []))
-    if profile_set == "barrier":
+    if profile_set == "bridge":
         cases.extend(
             _case_for(entry, "historical-0.144.1")
             for entry in inventory.get("releases", [])
@@ -145,19 +145,6 @@ def build_manual_cases(inventory: dict[str, Any], profile_set: str) -> list[dict
             for entry in inventory.get("fixtures", [])
         )
     return cases
-
-
-def _version(value: str) -> tuple[int, int, int]:
-    match = SEMVER.fullmatch(value)
-    if not match:
-        raise ValueError(f"invalid release version: {value}")
-    return tuple(int(part) for part in match.groups())
-
-
-def requires_legacy_barrier(previous_version: str, target_version: str) -> bool:
-    previous = _version(previous_version)
-    target = _version(target_version)
-    return previous[0:2] == (0, 9) and target[0] == 1
 
 
 def _parser() -> argparse.ArgumentParser:

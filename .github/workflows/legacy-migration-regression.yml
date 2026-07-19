@@ -12,13 +12,13 @@ on:
         required: false
         type: string
       profile_set:
-        description: Current CLI coverage, or the final 0.9.x barrier with representative historical CLI cases.
+        description: Current CLI coverage, or the v0.7.6 bridge with representative historical CLI cases.
         required: true
         type: choice
         default: current
         options:
           - current
-          - barrier
+          - bridge
 
 concurrency:
   group: legacy-migration-${{ github.ref }}-${{ inputs.marketplace_ref || github.ref_name }}-${{ inputs.profile_set }}

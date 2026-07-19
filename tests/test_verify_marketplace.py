@@ -296,6 +296,26 @@ class MarketplaceContractTests(unittest.TestCase):
         ):
             self.assertIn(job, aggregate)
 
+    def test_v076_bridge_has_no_future_legacy_receipt(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        automatic = (root / ".github/workflows/verify.yml").read_text(
+            encoding="utf-8"
+        )
+        manual = (
+            root / ".github/workflows/legacy-migration-regression.yml"
+        ).read_text(encoding="utf-8")
+        aggregate = automatic[automatic.index("  regression-policy:"):]
+
+        self.assertIn("profile_set:", manual)
+        self.assertIn("bridge", manual)
+        self.assertIn("v0.7.6", manual)
+        self.assertNotIn("barrier-receipt:", manual)
+        self.assertNotIn("legacy-migration-barrier.json", manual)
+        self.assertNotIn("verify-legacy-barrier:", automatic)
+        self.assertNotIn("barrier_required", automatic)
+        self.assertNotIn("legacy_barrier.py", manual + automatic)
+        self.assertNotIn("verify-legacy-barrier", aggregate)
+
     def test_manual_full_history_regression_pins_the_selected_commit_and_verified_installer_assets(self) -> None:
         root = Path(__file__).resolve().parents[1]
         regression = (
@@ -353,7 +373,8 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertNotIn("pull_request:", regression)
         self.assertIn("profile_set:", regression)
         self.assertIn("current", regression)
-        self.assertIn("barrier", regression)
+        self.assertIn("bridge", regression)
+        self.assertNotIn("barrier", regression)
         self.assertIn("manual-rollback:", regression)
         self.assertIn("rollback-succeeded", regression)
         self.assertIn("marketplace_ref:", regression)
@@ -397,6 +418,9 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("selected workflow ref", migration_guide)
         self.assertIn("published semantic-version source release", migration_guide)
         self.assertIn("captured SHA-256 digests", migration_guide)
+        self.assertIn("v0.7.6", migration_guide)
+        self.assertNotIn("weekly", migration_guide.lower())
+        self.assertNotIn("0.9.x", migration_guide)
 
 
 if __name__ == "__main__":

@@ -149,22 +149,12 @@ def detect(
         and bool(catalog_version)
         and not catalog_matches_plugin
     )
-    previous_parts = previous_catalog_version.split(".")
-    target_parts = catalog_version.split(".")
-    barrier_required = (
-        promotion_required
-        and len(previous_parts) == 3
-        and previous_parts[0:2] == ["0", "9"]
-        and len(target_parts) == 3
-        and target_parts[0] == "1"
-    )
     return {
         "has_plugin": str(has_plugin).lower(),
         "catalog_promoted": str(catalog_promoted).lower(),
         "catalog_matches_plugin": str(catalog_matches_plugin).lower(),
         "promotion_required": str(promotion_required).lower(),
         "seed_required": str(seed_required).lower(),
-        "barrier_required": str(barrier_required).lower(),
         "previous_catalog_version": previous_catalog_version,
         "catalog_version": catalog_version,
         "plugin_version": plugin_version,

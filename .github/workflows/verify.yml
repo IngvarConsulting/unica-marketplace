@@ -22,7 +22,6 @@ jobs:
       catalog_promoted: ${{ steps.detect.outputs.catalog_promoted }}
       promotion_required: ${{ steps.detect.outputs.promotion_required }}
       seed_required: ${{ steps.detect.outputs.seed_required }}
-      barrier_required: ${{ steps.detect.outputs.barrier_required }}
     steps:
       - uses: actions/checkout@v4
         with:

@@ -98,11 +98,11 @@ class RegressionPolicyTests(unittest.TestCase):
         self.assertNotIn("v0.7.1", {case["label"] for case in cases})
         self.assertNotIn("v0.7.4", {case["label"] for case in cases})
 
-    def test_barrier_profile_does_not_double_the_full_matrix(self) -> None:
+    def test_bridge_profile_does_not_double_the_full_matrix(self) -> None:
         policy = load_policy()
         inventory = policy.load_release_inventory(RELEASES)
 
-        cases = policy.build_manual_cases(inventory, "barrier")
+        cases = policy.build_manual_cases(inventory, "bridge")
 
         historical = [
             case["label"]
@@ -111,13 +111,10 @@ class RegressionPolicyTests(unittest.TestCase):
         ]
         self.assertEqual(historical, ["v0.3.11", "issue-90-duplicate"])
 
-    def test_only_final_zero_nine_to_one_requires_barrier(self) -> None:
+    def test_policy_has_no_future_legacy_barrier_api(self) -> None:
         policy = load_policy()
 
-        self.assertTrue(policy.requires_legacy_barrier("0.9.8", "1.0.0"))
-        self.assertFalse(policy.requires_legacy_barrier("0.9.7", "0.9.8"))
-        self.assertFalse(policy.requires_legacy_barrier("0.8.9", "1.0.0"))
-        self.assertFalse(policy.requires_legacy_barrier("1.0.0", "1.0.1"))
+        self.assertFalse(hasattr(policy, "requires_legacy_barrier"))
 
     def test_cli_writes_compact_matrix_to_github_output(self) -> None:
         policy = load_policy()
