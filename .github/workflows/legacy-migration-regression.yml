@@ -86,7 +86,7 @@ jobs:
           $catalogTag = [string]$source.ref
           $tagMatch = [regex]::Match($catalogTag, '^v(?<version>[0-9]+\.[0-9]+\.[0-9]+)$')
           if (-not $tagMatch.Success) {
-            throw "Marketplace catalog tag must be an immutable version tag: $catalogTag"
+            throw "Marketplace catalog tag must be a semantic version tag: $catalogTag"
           }
           $targetVersion = $tagMatch.Groups['version'].Value
           $requestedVersion = $env:REQUESTED_VERSION.Trim()
@@ -103,7 +103,7 @@ jobs:
           }
           $release = $releaseText | ConvertFrom-Json
           if ($release.tagName -ne $catalogTag) {
-            throw "Immutable source release $($release.tagName) does not match marketplace catalog tag $catalogTag"
+            throw "Source release $($release.tagName) does not match marketplace catalog tag $catalogTag"
           }
           if ($release.isDraft -or [string]::IsNullOrWhiteSpace([string]$release.publishedAt)) {
             throw "Source release $catalogTag must be published and not a draft"

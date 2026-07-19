@@ -19,10 +19,11 @@ jobs:
       plugin_version: ${{ steps.detect.outputs.plugin_version }}
       catalog_version: ${{ steps.detect.outputs.catalog_version }}
       previous_catalog_version: ${{ steps.detect.outputs.previous_catalog_version }}
+      staged_plugin_changed: ${{ steps.detect.outputs.staged_plugin_changed }}
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
       - name: Detect staged and stable versions
         id: detect
         shell: bash
@@ -30,6 +31,8 @@ jobs:
           BEFORE_SHA: ${{ github.event.before }}
           EVENT_NAME: ${{ github.event_name }}
           EVENT_REF: ${{ github.ref }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           python3 - <<'PY'
           import json
@@ -45,6 +48,7 @@ jobs:
               ref = json.loads(catalog_path.read_text())["plugins"][0]["source"]["ref"]
               catalog_version = ref.removeprefix("v")
           previous_version = ""
+          staged_plugin_changed = False
           before = os.environ.get("BEFORE_SHA", "")
           if (
               os.environ.get("EVENT_NAME") == "push"
@@ -62,12 +66,25 @@ jobs:
               if previous.returncode == 0:
                   ref = json.loads(previous.stdout)["plugins"][0]["source"]["ref"]
                   previous_version = ref.removeprefix("v")
+          if os.environ.get("EVENT_NAME") == "pull_request":
+              base = os.environ.get("PR_BASE_SHA", "")
+              head = os.environ.get("PR_HEAD_SHA", "")
+              if not base or not head:
+                  raise RuntimeError("Pull request is missing a base or head commit")
+              diff = subprocess.run(
+                  ["git", "diff", "--quiet", base, head, "--", "plugins/unica"],
+                  check=False,
+              )
+              if diff.returncode not in (0, 1):
+                  raise RuntimeError("Cannot determine whether the pull request stages Unica")
+              staged_plugin_changed = diff.returncode == 1
           outputs = {
               "has_plugin": str(bool(plugin_version)).lower(),
               "catalog_matches_plugin": str(bool(plugin_version) and plugin_version == catalog_version).lower(),
               "plugin_version": plugin_version,
               "catalog_version": catalog_version,
               "previous_catalog_version": previous_version,
+              "staged_plugin_changed": str(staged_plugin_changed).lower(),
           }
           with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
               for key, value in outputs.items():
@@ -81,6 +98,106 @@ jobs:
           test -d plugins/unica || args+=(--allow-empty)
           python3 scripts/verify_marketplace.py "${args[@]}"
           python3 -m unittest discover -s tests -v
+
+  resolve-migration-target:
+    needs: contract
+    if: >-
+      (github.event_name == 'pull_request' &&
+       needs.contract.outputs.staged_plugin_changed == 'true') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+       needs.contract.outputs.catalog_matches_plugin == 'true' &&
+       needs.contract.outputs.previous_catalog_version != '' &&
+       needs.contract.outputs.previous_catalog_version != needs.contract.outputs.catalog_version)
+    runs-on: ubuntu-latest
+    outputs:
+      marketplace_ref: ${{ steps.resolve.outputs.marketplace_ref }}
+      marketplace_commit: ${{ steps.resolve.outputs.marketplace_commit }}
+      target_version: ${{ steps.resolve.outputs.target_version }}
+      installer_ps1_sha256: ${{ steps.resolve.outputs.installer_ps1_sha256 }}
+      installer_sh_sha256: ${{ steps.resolve.outputs.installer_sh_sha256 }}
+    steps:
+      - name: Select the candidate or promoted marketplace ref
+        id: select
+        shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_HEAD_REF: ${{ github.head_ref }}
+          PR_HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
+          MARKETPLACE_REPOSITORY: ${{ github.repository }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:EVENT_NAME -eq 'pull_request' -and
+              $env:PR_HEAD_REPOSITORY -ne $env:MARKETPLACE_REPOSITORY) {
+            throw 'A staged marketplace candidate must come from this repository'
+          }
+          $targetRef = if ($env:EVENT_NAME -eq 'pull_request') {
+            $env:PR_HEAD_REF
+          } else {
+            'main'
+          }
+          if ($targetRef -notmatch '^[A-Za-z0-9][A-Za-z0-9._/-]*$' -or
+              $targetRef.EndsWith('/') -or $targetRef.Contains('//') -or $targetRef.Contains('..')) {
+            throw "Unsafe marketplace ref: $targetRef"
+          }
+          "marketplace_ref=$targetRef" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.select.outputs.marketplace_ref }}
+          fetch-depth: 1
+
+      - name: Resolve the staged package's published source release
+        id: resolve
+        shell: pwsh
+        env:
+          MARKETPLACE_REF: ${{ steps.select.outputs.marketplace_ref }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pluginPath = Join-Path $env:GITHUB_WORKSPACE 'plugins/unica/.codex-plugin/plugin.json'
+          if (-not (Test-Path -LiteralPath $pluginPath -PathType Leaf)) {
+            throw "Selected marketplace ref $env:MARKETPLACE_REF has no staged Unica plugin"
+          }
+          $plugin = Get-Content -LiteralPath $pluginPath -Raw -Encoding UTF8 | ConvertFrom-Json
+          $targetVersion = [string]$plugin.version
+          if ($targetVersion -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') {
+            throw "Staged Unica plugin has an invalid version: $targetVersion"
+          }
+          $sourceRelease = "v$targetVersion"
+          $marketplaceCommit = (& git rev-parse HEAD).Trim()
+          if ($marketplaceCommit -notmatch '^[0-9a-f]{40}$') {
+            throw "Selected marketplace ref $env:MARKETPLACE_REF did not resolve to a commit"
+          }
+          $releaseText = (& gh release view $sourceRelease --repo IngvarConsulting/unica --json tagName,isDraft,publishedAt,assets) | Out-String
+          if ($LASTEXITCODE -ne 0) {
+            throw "Source release $sourceRelease is not published for selected marketplace ref $env:MARKETPLACE_REF"
+          }
+          $release = $releaseText | ConvertFrom-Json
+          if ($release.tagName -ne $sourceRelease) {
+            throw "Source release $($release.tagName) does not match staged plugin version $targetVersion"
+          }
+          if ($release.isDraft -or [string]::IsNullOrWhiteSpace([string]$release.publishedAt)) {
+            throw "Source release $sourceRelease must be published and not a draft"
+          }
+          function Get-InstallerDigest([string]$assetName) {
+            $matches = @($release.assets | Where-Object { $_.name -eq $assetName })
+            if ($matches.Count -ne 1) {
+              throw "Source release $sourceRelease must contain exactly one $assetName asset"
+            }
+            $digest = [string]$matches[0].digest
+            $digestMatch = [regex]::Match($digest, '^sha256:(?<sha>[0-9a-fA-F]{64})$')
+            if (-not $digestMatch.Success) {
+              throw "Source release $sourceRelease asset $assetName has no SHA-256 digest"
+            }
+            return $digestMatch.Groups['sha'].Value.ToLowerInvariant()
+          }
+          $installerPs1Sha256 = Get-InstallerDigest 'install-unica.ps1'
+          $installerShSha256 = Get-InstallerDigest 'install-unica.sh'
+          "marketplace_ref=$env:MARKETPLACE_REF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "marketplace_commit=$marketplaceCommit" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "target_version=$targetVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "installer_ps1_sha256=$installerPs1Sha256" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "installer_sh_sha256=$installerShSha256" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
   staged-package-smoke:
     needs: contract
@@ -387,10 +504,8 @@ jobs:
           & $bootstrap verify --plugin-root $pluginRoot
 
   legacy-stable-upgrade:
-    needs: contract
-    if: >-
-      github.event_name == 'push' && github.ref == 'refs/heads/main' &&
-      needs.contract.outputs.catalog_matches_plugin == 'true'
+    needs: [contract, resolve-migration-target]
+    if: ${{ always() && needs.resolve-migration-target.result == 'success' }}
     uses: ./.github/workflows/legacy-migration-case.yml
     with:
       label: legacy-stable-v0.6.1-issue-90
@@ -398,9 +513,9 @@ jobs:
       source_release: v0.6.1
       source_kind: platform-archive
       layout: issue-90-duplicate
-      target_marketplace_ref: main
-      target_marketplace_commit: ${{ github.sha }}
-      target_version: ${{ needs.contract.outputs.plugin_version }}
-      target_installer_ps1_sha256: 046dfe9b5c0c9e0b6bc7dc15c06a667d7bda8d7fa47e4c87a350cca0a5794bbf
-      target_installer_sh_sha256: 62812330445bc95c68f9d47a216d9d6cf83d6fc6925cf480e5838d54b6df8559
+      target_marketplace_ref: ${{ needs.resolve-migration-target.outputs.marketplace_ref }}
+      target_marketplace_commit: ${{ needs.resolve-migration-target.outputs.marketplace_commit }}
+      target_version: ${{ needs.resolve-migration-target.outputs.target_version }}
+      target_installer_ps1_sha256: ${{ needs.resolve-migration-target.outputs.installer_ps1_sha256 }}
+      target_installer_sh_sha256: ${{ needs.resolve-migration-target.outputs.installer_sh_sha256 }}
     secrets: inherit

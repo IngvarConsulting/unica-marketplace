@@ -119,6 +119,52 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("source_version: 0.6.1", verify)
         self.assertIn("layout: issue-90-duplicate", verify)
 
+    def test_automatic_issue_90_gate_resolves_candidate_pr_and_promoted_main(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        verify = (root / ".github" / "workflows" / "verify.yml").read_text(
+            encoding="utf-8"
+        )
+        migration_case = (
+            root / ".github" / "workflows" / "legacy-migration-case.yml"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("staged_plugin_changed", verify)
+        self.assertIn("resolve-migration-target:", verify)
+        self.assertIn("github.head_ref", verify)
+        self.assertIn("github.ref == 'refs/heads/main'", verify)
+        self.assertIn("previous_catalog_version != needs.contract.outputs.catalog_version", verify)
+        self.assertIn("git rev-parse HEAD", verify)
+        self.assertIn("gh release view", verify)
+        self.assertIn("isDraft,publishedAt,assets", verify)
+        self.assertIn("Get-InstallerDigest 'install-unica.ps1'", verify)
+        self.assertIn("Get-InstallerDigest 'install-unica.sh'", verify)
+        self.assertIn("legacy-stable-upgrade:", verify)
+        self.assertIn("needs: [contract, resolve-migration-target]", verify)
+        self.assertIn(
+            "target_marketplace_ref: ${{ needs.resolve-migration-target.outputs.marketplace_ref }}",
+            verify,
+        )
+        self.assertIn(
+            "target_marketplace_commit: ${{ needs.resolve-migration-target.outputs.marketplace_commit }}",
+            verify,
+        )
+        self.assertIn(
+            "target_version: ${{ needs.resolve-migration-target.outputs.target_version }}",
+            verify,
+        )
+        self.assertIn(
+            "target_installer_ps1_sha256: ${{ needs.resolve-migration-target.outputs.installer_ps1_sha256 }}",
+            verify,
+        )
+        self.assertIn(
+            "target_installer_sh_sha256: ${{ needs.resolve-migration-target.outputs.installer_sh_sha256 }}",
+            verify,
+        )
+        self.assertIn("source_version: 0.6.1", verify)
+        self.assertIn("layout: issue-90-duplicate", verify)
+        for runner in ("macos-15", "ubuntu-latest", "windows-2022"):
+            self.assertIn(runner, migration_case)
+
     def test_manual_full_history_regression_pins_the_selected_commit_and_verified_installer_assets(self) -> None:
         root = Path(__file__).resolve().parents[1]
         regression = (
@@ -207,10 +253,8 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("target_installer_sh_sha256: ${{ needs.resolve-target.outputs.installer_sh_sha256 }}", regression)
         self.assertIn("target_marketplace_ref: ${{ needs.resolve-target.outputs.marketplace_ref }}", regression)
         self.assertIn("target_version: ${{ needs.resolve-target.outputs.target_version }}", regression)
-        self.assertIn("target_marketplace_commit: ${{ github.sha }}", verify)
-        self.assertIn("target_marketplace_ref: main", verify)
-        self.assertRegex(verify, r"target_installer_ps1_sha256: [0-9a-f]{64}")
-        self.assertRegex(verify, r"target_installer_sh_sha256: [0-9a-f]{64}")
+        self.assertNotIn("immutable version tag", regression)
+        self.assertNotIn("Immutable source release", regression)
 
         self.assertIn("Manual full-history regression", migration_guide)
         self.assertIn("selected workflow ref", migration_guide)

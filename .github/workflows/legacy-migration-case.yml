@@ -190,6 +190,9 @@ jobs:
           function Assert-MarketplaceRefAtCommit {
             $remoteUrl = 'https://github.com/IngvarConsulting/unica-marketplace.git'
             $refName = $env:TARGET_MARKETPLACE_REF
+            if ($env:TARGET_MARKETPLACE_COMMIT -notmatch '^[0-9a-f]{40}$') {
+              throw "Expected marketplace commit is invalid: $env:TARGET_MARKETPLACE_COMMIT"
+            }
             $remoteLines = @(& git ls-remote $remoteUrl "refs/heads/$refName" "refs/tags/$refName" "refs/tags/$refName^{}" 2>&1)
             if ($LASTEXITCODE -ne 0) { throw "Cannot resolve marketplace ref $refName" }
             $remoteRefs = @($remoteLines | ForEach-Object {
