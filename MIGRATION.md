@@ -1,28 +1,27 @@
-# Migration through the v0.7.7 bridge
+# Migration through the v0.7.8 bridge
 
-Unica `v0.7.7` is the immutable migration bridge for old local, duplicated,
+Unica `v0.7.8` is the immutable migration bridge for old local, duplicated,
 and `unica-local` installations. Later releases do not own direct migration
 from those layouts.
 
-The intended `v0.7.6` bridge is superseded: its manual full-history barrier
-found an overlapping-cache cleanup defect. Do not use its installers for a
-legacy migration.
+Versions `v0.7.6` and `v0.7.7` are technical releases. Do not use their
+installers for a legacy migration.
 
-Use the installer published by the source `v0.7.7` release, not a mutable copy
+Use the installer published by the source `v0.7.8` release, not a mutable copy
 from a repository branch.
 
 POSIX:
 
 ```sh
-curl -fLO https://github.com/IngvarConsulting/unica/releases/download/v0.7.7/install-unica.sh
-sh install-unica.sh
+curl -fLO https://github.com/IngvarConsulting/unica/releases/download/v0.7.8/install-unica.sh
+sh install-unica.sh --ref v0.7.8
 ```
 
 Windows PowerShell 5.1 or newer:
 
 ```powershell
-Invoke-WebRequest https://github.com/IngvarConsulting/unica/releases/download/v0.7.7/install-unica.ps1 -OutFile install-unica.ps1
-& .\install-unica.ps1
+Invoke-WebRequest https://github.com/IngvarConsulting/unica/releases/download/v0.7.8/install-unica.ps1 -OutFile install-unica.ps1
+& .\install-unica.ps1 -Ref v0.7.8
 ```
 
 The published script itself needs only Codex CLI and Git. It selects the
@@ -32,19 +31,12 @@ finishes before any change. A failed migration rolls successful steps back in
 reverse order and restores the exact Codex configuration and owned paths. The
 retained backup directory is printed for diagnostics.
 
-## Supported transition boundary
+## What to do
 
-| Starting state | Required path |
+| Your version | What to do |
 | --- | --- |
-| Local, duplicated, `unica-local`, or another legacy layout | Run the frozen `v0.7.7` installer above. |
-| Canonical marketplace `v0.7.5` | Use the ordinary marketplace update path. |
-| Canonical marketplace `v0.7.6` or `v0.7.7` | Use the ordinary marketplace update path to `v0.8.0`. |
-| Canonical technical `0.7.x` | Use the ordinary marketplace update path to `v0.8.0`; version alone does not make a legacy layout canonical. |
-
-Starting with `v0.8.0`, direct migration from non-marketplace installations is
-not part of the current package. Removal of the legacy implementation is
-tracked in
-[IngvarConsulting/unica#135](https://github.com/IngvarConsulting/unica/issues/135).
+| `0.3.0`–`0.7.4` | Run the `v0.7.8` installer above. |
+| `0.7.5` or newer | Run the ordinary marketplace update. |
 
 ## Automatic promotion policy
 
@@ -86,4 +78,4 @@ all three operating systems inject a post-mutation Codex failure and compare the
 restored consumer state with its exact preflight snapshot.
 
 There is no later migration receipt or `1.0` barrier. The durable compatibility
-artifact is the published and manually verified `v0.7.7` bridge itself.
+artifact is the published and manually verified `v0.7.8` bridge itself.

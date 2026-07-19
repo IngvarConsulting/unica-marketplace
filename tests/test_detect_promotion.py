@@ -102,6 +102,9 @@ class PromotionDetectionTests(unittest.TestCase):
 
             self.assertEqual(outputs["catalog_promoted"], "true")
             self.assertEqual(outputs["promotion_required"], "true")
+            self.assertEqual(outputs["seed_required"], "true")
+            self.assertEqual(outputs["seed_version"], "1.0.0")
+            self.assertEqual(outputs["seed_commit"], base)
             self.assertNotIn("barrier_required", outputs)
             self.assertEqual(outputs["catalog_version"], "1.1.0")
             self.assertEqual(outputs["previous_catalog_version"], "1.0.0")
@@ -209,6 +212,8 @@ class PromotionDetectionTests(unittest.TestCase):
             )
 
             self.assertEqual(outputs["seed_required"], "true")
+            self.assertEqual(outputs["seed_version"], "0.7.5")
+            self.assertEqual(outputs["seed_commit"], event_sha)
             self.assertEqual(outputs["promotion_required"], "false")
 
     def test_malformed_current_catalog_fails_closed(self) -> None:

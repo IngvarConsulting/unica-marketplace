@@ -22,6 +22,8 @@ jobs:
       catalog_promoted: ${{ steps.detect.outputs.catalog_promoted }}
       promotion_required: ${{ steps.detect.outputs.promotion_required }}
       seed_required: ${{ steps.detect.outputs.seed_required }}
+      seed_version: ${{ steps.detect.outputs.seed_version }}
+      seed_commit: ${{ steps.detect.outputs.seed_commit }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -219,6 +221,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
       - name: Install the current locked Codex CLI
         uses: ./.github/actions/setup-locked-codex
         with:
@@ -284,7 +289,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ runner.temp }}/codex-upgrade-home
-          key: unica-upgrade-v2-${{ matrix.target }}-current-${{ needs.contract.outputs.catalog_version }}
+          key: unica-upgrade-v2-${{ matrix.target }}-current-${{ needs.contract.outputs.seed_version }}
       - name: Install the current locked Codex CLI
         if: steps.seed-cache.outputs.cache-hit != 'true'
         uses: ./.github/actions/setup-locked-codex
@@ -297,9 +302,9 @@ jobs:
         shell: pwsh
         env:
           TARGET: ${{ matrix.target }}
-          EXPECTED_VERSION: ${{ needs.contract.outputs.catalog_version }}
+          EXPECTED_VERSION: ${{ needs.contract.outputs.seed_version }}
           TARGET_MARKETPLACE_REF: main
-          TARGET_MARKETPLACE_COMMIT: ${{ github.sha }}
+          TARGET_MARKETPLACE_COMMIT: ${{ needs.contract.outputs.seed_commit }}
           GH_TOKEN: ${{ github.token }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -345,12 +350,13 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ runner.temp }}/codex-upgrade-home
-          key: unica-upgrade-v2-${{ matrix.target }}-current-${{ needs.contract.outputs.catalog_version }}
+          key: unica-upgrade-v2-${{ matrix.target }}-current-${{ needs.contract.outputs.seed_version }}
 
   previous-stable-upgrade:
-    needs: [contract, resolve-migration-target]
+    needs: [contract, resolve-migration-target, previous-stable-seed]
     if: >-
       always() && needs.resolve-migration-target.result == 'success' &&
+      needs.previous-stable-seed.result == 'success' &&
       needs.contract.outputs.promotion_required == 'true'
     strategy:
       fail-fast: false

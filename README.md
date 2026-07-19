@@ -28,6 +28,7 @@ codex plugin add unica@unica
 ## Delivery contract
 
 Stable catalog entries point at immutable version tags. A release is staged in
-`plugins/unica`, tagged only after its checks pass, and promoted in a separate
-catalog-only change. See [MIGRATION.md](MIGRATION.md) for transition details.
-
+`plugins/unica` first. A separate promotion commit updates the stable catalog;
+the signed version tag is created on that exact commit, and the promotion is
+merged only after its checks pass. See [MIGRATION.md](MIGRATION.md) for
+transition details.
