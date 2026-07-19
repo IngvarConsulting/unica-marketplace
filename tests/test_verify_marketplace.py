@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -295,6 +296,39 @@ class MarketplaceContractTests(unittest.TestCase):
             "previous-stable-upgrade",
         ):
             self.assertIn(job, aggregate)
+
+    def test_candidate_ref_rewrite_preserves_the_next_toml_table_newline(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        workflow = (root / ".github/workflows/verify.yml").read_text(
+            encoding="utf-8"
+        )
+        upgrade = workflow[
+            workflow.index("  previous-stable-upgrade:"):
+            workflow.index("  regression-policy:")
+        ]
+
+        pattern_match = re.search(
+            r"\$candidateSection = \[regex\]::Replace\(\n\s+\$section,\n\s+'([^']+)'",
+            upgrade,
+        )
+        self.assertIsNotNone(pattern_match)
+        self.assertEqual(
+            pattern_match.group(1),
+            r'''(?m)^ref\s*=\s*"main"[ \t]*$''',
+        )
+        section = (
+            '[marketplaces.unica]\n'
+            'source_type = "git"\n'
+            'source = "https://github.com/IngvarConsulting/unica-marketplace.git"\n'
+            'ref = "main"\n'
+        )
+        rewritten = re.sub(
+            pattern_match.group(1),
+            'ref = "codex/promote-v0.7.6-example"',
+            section,
+            count=1,
+        )
+        self.assertTrue(rewritten.endswith("\n"), rewritten)
 
     def test_v076_bridge_has_no_future_legacy_receipt(self) -> None:
         root = Path(__file__).resolve().parents[1]

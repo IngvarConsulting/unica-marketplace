@@ -448,7 +448,7 @@ jobs:
             }
             $candidateSection = [regex]::Replace(
               $section,
-              '(?m)^ref\s*=\s*"main"\s*$',
+              '(?m)^ref\s*=\s*"main"[ \t]*$',
               "ref = `"$env:TARGET_MARKETPLACE_REF`"",
               1
             )
