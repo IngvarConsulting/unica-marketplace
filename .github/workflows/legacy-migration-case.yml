@@ -1,0 +1,315 @@
+name: Legacy migration case
+
+on:
+  workflow_call:
+    inputs:
+      label:
+        required: true
+        type: string
+      source_version:
+        required: true
+        type: string
+      source_release:
+        required: true
+        type: string
+      source_kind:
+        required: true
+        type: string
+      source_commit:
+        required: true
+        type: string
+      source_assets:
+        required: false
+        type: string
+        default: "{}"
+      layout:
+        required: true
+        type: string
+      codex_profile:
+        required: true
+        type: string
+      target_version:
+        required: true
+        type: string
+      target_marketplace_ref:
+        required: true
+        type: string
+      target_marketplace_commit:
+        required: true
+        type: string
+      target_installer_ps1_sha256:
+        required: true
+        type: string
+      target_installer_sh_sha256:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    name: ${{ inputs.label }} / ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            target: darwin-arm64
+          - os: ubuntu-latest
+            target: linux-x64
+          - os: windows-2022
+            target: win-x64
+    runs-on: ${{ matrix.os }}
+    env:
+      SOURCE_VERSION: ${{ inputs.source_version }}
+      SOURCE_RELEASE: ${{ inputs.source_release }}
+      SOURCE_KIND: ${{ inputs.source_kind }}
+      SOURCE_COMMIT: ${{ inputs.source_commit }}
+      SOURCE_ASSETS: ${{ inputs.source_assets }}
+      FIXTURE_LAYOUT: ${{ inputs.layout }}
+      CODEX_PROFILE: ${{ inputs.codex_profile }}
+      TARGET_VERSION: ${{ inputs.target_version }}
+      TARGET_MARKETPLACE_REF: ${{ inputs.target_marketplace_ref }}
+      TARGET_MARKETPLACE_COMMIT: ${{ inputs.target_marketplace_commit }}
+      TARGET_INSTALLER_PS1_SHA256: ${{ inputs.target_installer_ps1_sha256 }}
+      TARGET_INSTALLER_SH_SHA256: ${{ inputs.target_installer_sh_sha256 }}
+      TARGET: ${{ matrix.target }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install the pinned native Codex CLI
+        uses: ./.github/actions/setup-locked-codex
+        with:
+          profile: ${{ inputs.codex_profile }}
+          target: ${{ matrix.target }}
+          codex-home: ${{ runner.temp }}/codex-home
+
+      - name: Rebuild the historical installation from published bits
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $downloadDir = Join-Path $env:RUNNER_TEMP 'historical-release'
+          New-Item -ItemType Directory -Force -Path $downloadDir | Out-Null
+          if ($env:SOURCE_COMMIT -notmatch '^[0-9a-f]{40}$') {
+            throw "Historical source commit is invalid: $env:SOURCE_COMMIT"
+          }
+          if ($env:SOURCE_KIND -eq 'marketplace-promotion') {
+            $archive = Join-Path $downloadDir "unica-marketplace-$env:SOURCE_RELEASE.tar.gz"
+            Invoke-WebRequest `
+              -Uri "https://github.com/IngvarConsulting/unica-marketplace/archive/$env:SOURCE_RELEASE.tar.gz" `
+              -OutFile $archive
+          } elseif ($env:SOURCE_KIND -eq 'source-tag') {
+            $sourceDir = Join-Path $downloadDir 'unica-source'
+            & git init $sourceDir | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot initialize historical source checkout' }
+            & git -C $sourceDir remote add origin https://github.com/IngvarConsulting/unica.git
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot configure historical source remote' }
+            & git -C $sourceDir fetch --depth 1 origin "refs/tags/$env:SOURCE_RELEASE"
+            if ($LASTEXITCODE -ne 0) { throw "Cannot fetch historical source tag $env:SOURCE_RELEASE" }
+            $resolvedCommit = (& git -C $sourceDir rev-parse 'FETCH_HEAD^{commit}').Trim()
+            if ($resolvedCommit -ne $env:SOURCE_COMMIT) {
+              throw "Historical source tag $env:SOURCE_RELEASE moved: expected $env:SOURCE_COMMIT, got $resolvedCommit"
+            }
+            $archive = Join-Path $downloadDir "unica-source-$env:SOURCE_RELEASE.tar.gz"
+            & git -C $sourceDir archive --format=tar.gz --output=$archive $resolvedCommit
+            if ($LASTEXITCODE -ne 0) { throw "Cannot archive historical source $env:SOURCE_RELEASE" }
+          } else {
+            $assets = $env:SOURCE_ASSETS | ConvertFrom-Json -AsHashtable
+            if (-not $assets.ContainsKey($env:TARGET)) {
+              throw "Historical release contract has no asset for $env:TARGET"
+            }
+            $asset = [string]$assets[$env:TARGET].name
+            $expectedSourceSha256 = [string]$assets[$env:TARGET].sha256
+            if ($expectedSourceSha256 -notmatch '^[0-9a-f]{64}$') {
+              throw "Historical release asset has an invalid SHA-256 for $env:TARGET"
+            }
+            gh release download $env:SOURCE_RELEASE `
+              --repo IngvarConsulting/unica `
+              --pattern $asset `
+              --dir $downloadDir
+            $archive = Join-Path $downloadDir $asset
+            $actualSourceSha256 = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actualSourceSha256 -ne $expectedSourceSha256) {
+              throw "Historical release asset SHA-256 $actualSourceSha256 does not match locked digest $expectedSourceSha256"
+            }
+          }
+          $python = Get-Command python3 -ErrorAction SilentlyContinue
+          if (-not $python) { $python = Get-Command python }
+          & $python.Source scripts/legacy_migration_fixture.py `
+            --archive $archive `
+            --codex-home $env:CODEX_HOME `
+            --version $env:SOURCE_VERSION `
+            --layout $env:FIXTURE_LAYOUT
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot rebuild the historical Unica fixture' }
+
+          $installerDir = Join-Path $env:RUNNER_TEMP 'target-installer'
+          New-Item -ItemType Directory -Force -Path $installerDir | Out-Null
+          $installerName = if ($env:TARGET -eq 'win-x64') { 'install-unica.ps1' } else { 'install-unica.sh' }
+          gh release download "v$env:TARGET_VERSION" `
+            --repo IngvarConsulting/unica `
+            --pattern $installerName `
+            --dir $installerDir
+          $installerPath = Join-Path $installerDir $installerName
+          $expectedInstallerSha256 = if ($env:TARGET -eq 'win-x64') {
+            $env:TARGET_INSTALLER_PS1_SHA256
+          } else {
+            $env:TARGET_INSTALLER_SH_SHA256
+          }
+          if ($expectedInstallerSha256 -notmatch '^[0-9a-f]{64}$') {
+            throw "Expected installer SHA-256 is invalid for $installerName"
+          }
+          $actualInstallerSha256 = (Get-FileHash -LiteralPath $installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualInstallerSha256 -ne $expectedInstallerSha256) {
+            throw "Downloaded $installerName SHA-256 $actualInstallerSha256 does not match published asset digest $expectedInstallerSha256"
+          }
+          "INSTALLER_PATH=$installerPath" |
+            Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Migrate to the target release and verify the consumer contract
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $evidence = Join-Path $env:RUNNER_TEMP 'migration-evidence'
+          New-Item -ItemType Directory -Force -Path $evidence | Out-Null
+
+          if ($env:TARGET -eq 'win-x64') {
+            $env:PATH = "$env:CODEX_BIN_DIR;$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
+          } else {
+            $env:PATH = "$env:CODEX_BIN_DIR`:/usr/bin:/bin"
+          }
+          if (Get-Command node -ErrorAction SilentlyContinue) { throw 'Node.js leaked into the consumer PATH' }
+
+          function Assert-MarketplaceRefAtCommit {
+            $remoteUrl = 'https://github.com/IngvarConsulting/unica-marketplace.git'
+            $refName = $env:TARGET_MARKETPLACE_REF
+            if ($env:TARGET_MARKETPLACE_COMMIT -notmatch '^[0-9a-f]{40}$') {
+              throw "Expected marketplace commit is invalid: $env:TARGET_MARKETPLACE_COMMIT"
+            }
+            $remoteLines = @(& git ls-remote $remoteUrl "refs/heads/$refName" "refs/tags/$refName" "refs/tags/$refName^{}" 2>&1)
+            if ($LASTEXITCODE -ne 0) { throw "Cannot resolve marketplace ref $refName" }
+            $remoteRefs = @($remoteLines | ForEach-Object {
+              $parts = $_ -split '\s+', 2
+              if ($parts.Count -eq 2) {
+                [PSCustomObject]@{ Commit = $parts[0]; Name = $parts[1] }
+              }
+            })
+            $branchRefs = @($remoteRefs | Where-Object { $_.Name -eq "refs/heads/$refName" })
+            $tagRefs = @($remoteRefs | Where-Object { $_.Name -eq "refs/tags/$refName" })
+            if ($branchRefs.Count + $tagRefs.Count -ne 1) {
+              throw "Marketplace ref $refName must resolve to exactly one branch or tag"
+            }
+            $remoteCommit = if ($branchRefs.Count -eq 1) {
+              $branchRefs[0].Commit
+            } else {
+              $peeledTagRefs = @($remoteRefs | Where-Object { $_.Name -eq "refs/tags/$refName^{}" })
+              if ($peeledTagRefs.Count -gt 1) { throw "Marketplace tag $refName resolved ambiguously" }
+              if ($peeledTagRefs.Count -eq 1) { $peeledTagRefs[0].Commit } else { $tagRefs[0].Commit }
+            }
+            if ($remoteCommit -ne $env:TARGET_MARKETPLACE_COMMIT) {
+              throw "Marketplace ref $refName moved: expected $env:TARGET_MARKETPLACE_COMMIT, got $remoteCommit"
+            }
+          }
+
+          $seedStateText = (& $env:CODEX_BIN plugin list --available --json) | Out-String
+          if ($LASTEXITCODE -ne 0) { throw 'Codex cannot discover the historical fixture' }
+          Set-Content -LiteralPath (Join-Path $evidence 'before.json') -Value $seedStateText
+          $seedState = $seedStateText | ConvertFrom-Json
+          if ($env:FIXTURE_LAYOUT -ne 'legacy-alias') {
+            $seedMatches = @($seedState.installed | Where-Object {
+              $_.pluginId -eq 'unica@unica' -and $_.version -eq $env:SOURCE_VERSION
+            })
+            if ($seedMatches.Count -ne 1) { throw "Historical fixture is not installed as Unica $env:SOURCE_VERSION" }
+          }
+
+          $seedDoctorText = (& $env:CODEX_BIN doctor --json 2>$null) | Out-String
+          Set-Content -LiteralPath (Join-Path $evidence 'before-doctor.json') -Value $seedDoctorText
+          $seedDoctor = $seedDoctorText | ConvertFrom-Json
+          foreach ($check in @('config.load', 'mcp.config')) {
+            if ($seedDoctor.checks.$check.status -ne 'ok') { throw "Historical fixture failed $check" }
+          }
+
+          Assert-MarketplaceRefAtCommit
+          if ($env:TARGET -eq 'win-x64') {
+            $migrationText = (& $env:INSTALLER_PATH -Ref $env:TARGET_MARKETPLACE_REF -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
+          } else {
+            $migrationText = (& sh $env:INSTALLER_PATH --ref $env:TARGET_MARKETPLACE_REF --target $env:TARGET --codex-home $env:CODEX_HOME 2>&1) | Out-String
+          }
+          $migrationCode = $LASTEXITCODE
+          Set-Content -LiteralPath (Join-Path $evidence 'migration.log') -Value $migrationText
+          if ($migrationCode -ne 0) { throw "Migration exited with code $migrationCode`n$migrationText" }
+          if ($migrationText -notmatch "Preflight Unica migration from v$([regex]::Escape($env:TARGET_VERSION))") {
+            throw "Installer did not target Unica v$env:TARGET_VERSION"
+          }
+          Assert-MarketplaceRefAtCommit
+
+          $stateText = (& $env:CODEX_BIN plugin list --available --json) | Out-String
+          if ($LASTEXITCODE -ne 0) { throw 'Codex cannot discover the migrated installation' }
+          Set-Content -LiteralPath (Join-Path $evidence 'after.json') -Value $stateText
+          $state = $stateText | ConvertFrom-Json
+          $matches = @($state.installed | Where-Object {
+            $_.pluginId -eq 'unica@unica' -and $_.version -eq $env:TARGET_VERSION
+          })
+          if ($matches.Count -ne 1) { throw "Expected exactly one installed unica@unica $env:TARGET_VERSION" }
+          if (@($state.available | Where-Object { $_.name -eq 'unica' }).Count -ne 0) {
+            throw 'Migration left another Unica version available'
+          }
+
+          $configPath = Join-Path $env:CODEX_HOME 'config.toml'
+          $config = Get-Content -LiteralPath $configPath -Raw
+          if ($config -match 'unica@unica-local') { throw 'Migration left the legacy plugin selector' }
+          if (Test-Path -LiteralPath (Join-Path $env:CODEX_HOME 'marketplaces/unica-local')) {
+            throw 'Migration left the legacy marketplace directory'
+          }
+          if (Test-Path -LiteralPath (Join-Path $env:CODEX_HOME 'plugins/cache/unica-local')) {
+            throw 'Migration left the legacy plugin cache'
+          }
+          if ($env:FIXTURE_LAYOUT -eq 'issue-90-duplicate' -and $config -notmatch 'issue_90_marker\s*=\s*"preserve-me"') {
+            throw 'Migration lost the canonical nested plugin setting from issue #90'
+          }
+
+          $doctorText = (& $env:CODEX_BIN doctor --json 2>$null) | Out-String
+          Set-Content -LiteralPath (Join-Path $evidence 'doctor.json') -Value $doctorText
+          $doctor = $doctorText | ConvertFrom-Json
+          foreach ($check in @('config.load', 'mcp.config')) {
+            if ($doctor.checks.$check.status -ne 'ok') { throw "Migrated installation failed $check" }
+          }
+
+          $promptText = (& $env:CODEX_BIN debug prompt-input 'Проверь доступность Unica skills') | Out-String
+          if ($LASTEXITCODE -ne 0) { throw 'Fresh prompt-input failed after migration' }
+          Set-Content -LiteralPath (Join-Path $evidence 'prompt-input.json') -Value $promptText
+          foreach ($skill in @('unica:code-search', 'unica:platform-help', 'unica:release-support', 'unica:v8-runner')) {
+            if ($promptText -notmatch [regex]::Escape($skill)) { throw "Fresh prompt-input is missing $skill" }
+          }
+
+          Assert-MarketplaceRefAtCommit
+          if ($env:TARGET -eq 'win-x64') {
+            $rerunText = (& $env:INSTALLER_PATH -Ref $env:TARGET_MARKETPLACE_REF -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
+          } else {
+            $rerunText = (& sh $env:INSTALLER_PATH --ref $env:TARGET_MARKETPLACE_REF --target $env:TARGET --codex-home $env:CODEX_HOME 2>&1) | Out-String
+          }
+          $rerunCode = $LASTEXITCODE
+          Set-Content -LiteralPath (Join-Path $evidence 'rerun.log') -Value $rerunText
+          if ($rerunCode -ne 0 -or $rerunText -notmatch '"changed"\s*:\s*false') {
+            throw 'Second migration run was not a successful no-op'
+          }
+          Assert-MarketplaceRefAtCommit
+
+          $logRoot = Join-Path $env:CODEX_HOME 'log'
+          if (Test-Path -LiteralPath $logRoot) {
+            $conflicts = Get-ChildItem -LiteralPath $logRoot -Recurse -File |
+              Select-String -Pattern 'duplicate plugin MCP server name|conflicting MCP server actions'
+            if ($conflicts) { throw 'Codex logs contain a duplicate Unica MCP registration' }
+          }
+
+      - name: Upload migration evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: migration-${{ inputs.label }}-${{ matrix.target }}
+          path: ${{ runner.temp }}/migration-evidence
+          if-no-files-found: warn
+          retention-days: 90

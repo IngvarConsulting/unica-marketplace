@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "profiles": {
+    "current": {
+      "release": "rust-v0.145.0-alpha.18",
+      "targets": {
+        "darwin-arm64": {
+          "asset": "codex-aarch64-apple-darwin.tar.gz",
+          "executable": "codex-aarch64-apple-darwin",
+          "sha256": "aa782c95956dd29846f4ab7736560de0118e7885913d786ec24a31a8c249e0ea"
+        },
+        "linux-x64": {
+          "asset": "codex-x86_64-unknown-linux-musl.tar.gz",
+          "executable": "codex-x86_64-unknown-linux-musl",
+          "sha256": "32a80dc99deee63989d21572c2b3a7ef91ddb0701c4fa7c2a93fc5db037f532a"
+        },
+        "win-x64": {
+          "asset": "codex-x86_64-pc-windows-msvc.exe.zip",
+          "executable": "codex-x86_64-pc-windows-msvc.exe",
+          "sha256": "f719bcb43de2bcfed3af1055e53a57fa9b7ed00dcbce70c13ec71fd1f41ba86a"
+        }
+      }
+    },
+    "historical-0.144.1": {
+      "release": "rust-v0.144.1",
+      "targets": {
+        "darwin-arm64": {
+          "asset": "codex-aarch64-apple-darwin.tar.gz",
+          "executable": "codex-aarch64-apple-darwin",
+          "sha256": "88e72ac8bd30815f7d18e62dac333dc20ce3ad1cba94be1649a1977dd9bfdbb8"
+        },
+        "linux-x64": {
+          "asset": "codex-x86_64-unknown-linux-musl.tar.gz",
+          "executable": "codex-x86_64-unknown-linux-musl",
+          "sha256": "84091ae20c65fcc7d4120db97d1bd57d7ff8df9c7609fb781c78c2ebbd4f5a28"
+        },
+        "win-x64": {
+          "asset": "codex-x86_64-pc-windows-msvc.exe.zip",
+          "executable": "codex-x86_64-pc-windows-msvc.exe",
+          "sha256": "976844ab2d3d77187b70a10c93f0952d6a58b2f67219734fc37785e4334b4c4a"
+        }
+      }
+    }
+  }
+}
