@@ -13,14 +13,12 @@ on:
         type: string
   schedule:
     - cron: '0 0 * * 0'
-  pull_request:
 
 permissions:
   contents: read
 
 jobs:
   resolve-target:
-    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'codex/issue-90-migration-regression' }}
     runs-on: ubuntu-latest
     outputs:
       marketplace_ref: ${{ steps.resolve.outputs.marketplace_ref }}
@@ -34,7 +32,6 @@ jobs:
         shell: pwsh
         env:
           WORKFLOW_REF: ${{ github.ref_name }}
-          PR_HEAD_REF: ${{ github.head_ref }}
           REQUESTED_REF: ${{ inputs.marketplace_ref }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
@@ -43,8 +40,6 @@ jobs:
             $env:REQUESTED_REF.Trim()
           } elseif ($env:EVENT_NAME -eq 'schedule') {
             'main'
-          } elseif ($env:EVENT_NAME -eq 'pull_request') {
-            $env:PR_HEAD_REF
           } else {
             $env:WORKFLOW_REF
           }
@@ -130,7 +125,6 @@ jobs:
 
   regression:
     needs: resolve-target
-    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'codex/issue-90-migration-regression' }}
     strategy:
       fail-fast: false
       matrix:

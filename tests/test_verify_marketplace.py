@@ -311,15 +311,12 @@ class MarketplaceContractTests(unittest.TestCase):
 
         self.assertIn("schedule:", regression)
         self.assertIn("cron: '0 0 * * 0'", regression)
+        self.assertNotIn("pull_request:", regression)
         self.assertIn("marketplace_ref:", regression)
         self.assertIn("target_version:", regression)
         self.assertIn("github.ref_name", regression)
-        self.assertIn("github.head_ref", regression)
-        self.assertIn("PR_HEAD_REF", regression)
-        self.assertRegex(
-            regression,
-            r"elseif \(\$env:EVENT_NAME -eq 'pull_request'\) \{\n\s+\$env:PR_HEAD_REF",
-        )
+        self.assertNotIn("github.head_ref", regression)
+        self.assertNotIn("PR_HEAD_REF", regression)
         self.assertIn("actions/checkout@v4", regression)
         self.assertIn("git rev-parse HEAD", regression)
         self.assertIn("marketplace_commit", regression)

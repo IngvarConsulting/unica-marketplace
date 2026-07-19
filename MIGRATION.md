@@ -49,6 +49,9 @@ branch or tag that contains the candidate catalog. With no inputs, the workflow
 uses the selected workflow ref; the weekly schedule intentionally uses `main`.
 An optional `marketplace_ref` override is accepted only when it is a safe Git
 ref, and `target_version` can assert the expected source-release version.
+Pull requests use the smaller promotion gate below; they do not implicitly run
+the full historical matrix. This keeps the manual workflow reusable instead of
+binding it to a one-time development branch.
 
 Before rebuilding any historical fixture, the workflow resolves the selected
 marketplace ref to an exact commit, reads that commit's catalog, requires a
