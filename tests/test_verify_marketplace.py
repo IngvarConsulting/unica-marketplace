@@ -330,7 +330,7 @@ class MarketplaceContractTests(unittest.TestCase):
         )
         self.assertTrue(rewritten.endswith("\n"), rewritten)
 
-    def test_v076_bridge_has_no_future_legacy_receipt(self) -> None:
+    def test_selected_bridge_has_no_future_legacy_receipt(self) -> None:
         root = Path(__file__).resolve().parents[1]
         automatic = (root / ".github/workflows/verify.yml").read_text(
             encoding="utf-8"
@@ -342,7 +342,8 @@ class MarketplaceContractTests(unittest.TestCase):
 
         self.assertIn("profile_set:", manual)
         self.assertIn("bridge", manual)
-        self.assertIn("v0.7.6", manual)
+        self.assertIn("selected bridge", manual)
+        self.assertNotIn("v0.7.6 bridge", manual)
         self.assertNotIn("barrier-receipt:", manual)
         self.assertNotIn("legacy-migration-barrier.json", manual)
         self.assertNotIn("verify-legacy-barrier:", automatic)
@@ -411,6 +412,12 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertNotIn("barrier", regression)
         self.assertIn("manual-rollback:", regression)
         self.assertIn("rollback-succeeded", regression)
+        self.assertIn(
+            "$powerShell = (Get-Command pwsh -CommandType Application).Source",
+            regression,
+        )
+        self.assertIn("$migrationText = (& $powerShell -NoProfile -File", regression)
+        self.assertNotIn("$migrationText = (& pwsh -NoProfile -File", regression)
         self.assertIn("marketplace_ref:", regression)
         self.assertIn("target_version:", regression)
         self.assertIn("github.ref_name", regression)
