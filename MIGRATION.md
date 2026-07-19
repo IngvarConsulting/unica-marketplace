@@ -41,3 +41,17 @@ stable `0.6` version on macOS, Linux, and Windows. The `0.6` fixture retains the
 duplicate canonical/legacy registration from
 [IngvarConsulting/unica#90](https://github.com/IngvarConsulting/unica/issues/90)
 so nested canonical plugin settings cannot be silently lost again.
+
+## Manual full-history regression
+
+Run the **One-time legacy migration regression** workflow from the marketplace
+branch or tag that contains the candidate catalog. With no inputs, the workflow
+uses the selected workflow ref; the weekly schedule intentionally uses `main`.
+An optional `marketplace_ref` override is accepted only when it is a safe Git
+ref, and `target_version` can assert the expected source-release version.
+
+Before rebuilding any historical fixture, the workflow checks out that selected
+marketplace ref, reads its catalog, requires an immutable `vX.Y.Z` Unica tag,
+and verifies the matching source release is published. It then runs every
+supported historical state and the issue #90 duplicate fixture on macOS, Linux,
+and Windows against that exact marketplace ref.

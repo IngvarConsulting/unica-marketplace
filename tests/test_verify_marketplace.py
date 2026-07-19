@@ -119,6 +119,39 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("source_version: 0.6.1", verify)
         self.assertIn("layout: issue-90-duplicate", verify)
 
+    def test_manual_full_history_regression_uses_the_selected_verified_marketplace_ref(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        regression = (
+            root / ".github" / "workflows" / "legacy-migration-regression.yml"
+        ).read_text(encoding="utf-8")
+        migration_case = (
+            root / ".github" / "workflows" / "legacy-migration-case.yml"
+        ).read_text(encoding="utf-8")
+        verify = (root / ".github" / "workflows" / "verify.yml").read_text(encoding="utf-8")
+        migration_guide = (root / "MIGRATION.md").read_text(encoding="utf-8")
+
+        self.assertIn("target_marketplace_ref:", migration_case)
+        self.assertIn("TARGET_MARKETPLACE_REF: ${{ inputs.target_marketplace_ref }}", migration_case)
+        self.assertIn("-Ref $env:TARGET_MARKETPLACE_REF", migration_case)
+        self.assertIn("--ref $env:TARGET_MARKETPLACE_REF", migration_case)
+        self.assertNotIn("-Ref main", migration_case)
+        self.assertNotIn("--ref main", migration_case)
+
+        self.assertIn("schedule:", regression)
+        self.assertIn("cron: '0 0 * * 0'", regression)
+        self.assertIn("marketplace_ref:", regression)
+        self.assertIn("target_version:", regression)
+        self.assertIn("github.ref_name", regression)
+        self.assertIn("actions/checkout@v4", regression)
+        self.assertIn("gh release view", regression)
+        self.assertIn("Marketplace catalog tag", regression)
+        self.assertIn("target_marketplace_ref: ${{ needs.resolve-target.outputs.marketplace_ref }}", regression)
+        self.assertIn("target_version: ${{ needs.resolve-target.outputs.target_version }}", regression)
+        self.assertIn("target_marketplace_ref: main", verify)
+
+        self.assertIn("Manual full-history regression", migration_guide)
+        self.assertIn("selected workflow ref", migration_guide)
+
 
 if __name__ == "__main__":
     unittest.main()

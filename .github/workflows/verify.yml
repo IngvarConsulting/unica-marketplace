@@ -398,5 +398,6 @@ jobs:
       source_release: v0.6.1
       source_kind: platform-archive
       layout: issue-90-duplicate
+      target_marketplace_ref: main
       target_version: ${{ needs.contract.outputs.plugin_version }}
     secrets: inherit

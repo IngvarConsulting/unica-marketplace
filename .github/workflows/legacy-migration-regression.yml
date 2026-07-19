@@ -2,14 +2,103 @@ name: One-time legacy migration regression
 
 on:
   workflow_dispatch:
+    inputs:
+      marketplace_ref:
+        description: Optional safe marketplace branch or tag override; defaults to the selected workflow ref.
+        required: false
+        type: string
+      target_version:
+        description: Optional source release version assertion, without the v prefix.
+        required: false
+        type: string
+  schedule:
+    - cron: '0 0 * * 0'
   pull_request:
 
 permissions:
   contents: read
 
 jobs:
+  resolve-target:
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'codex/issue-90-migration-regression' }}
+    runs-on: ubuntu-latest
+    outputs:
+      marketplace_ref: ${{ steps.resolve.outputs.marketplace_ref }}
+      target_version: ${{ steps.resolve.outputs.target_version }}
+    steps:
+      - name: Select the marketplace ref
+        id: select
+        shell: pwsh
+        env:
+          WORKFLOW_REF: ${{ github.ref_name }}
+          REQUESTED_REF: ${{ inputs.marketplace_ref }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $targetRef = if ([string]::IsNullOrWhiteSpace($env:REQUESTED_REF)) {
+            if ($env:EVENT_NAME -eq 'schedule') { 'main' } else { $env:WORKFLOW_REF }
+          } else {
+            $env:REQUESTED_REF.Trim()
+          }
+          if ($targetRef -notmatch '^[A-Za-z0-9][A-Za-z0-9._/-]*$' -or
+              $targetRef.EndsWith('/') -or $targetRef.Contains('//') -or $targetRef.Contains('..')) {
+            throw "Unsafe marketplace ref: $targetRef"
+          }
+          "marketplace_ref=$targetRef" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.select.outputs.marketplace_ref }}
+          fetch-depth: 1
+
+      - name: Verify the selected marketplace catalog and source release
+        id: resolve
+        shell: pwsh
+        env:
+          MARKETPLACE_REF: ${{ steps.select.outputs.marketplace_ref }}
+          REQUESTED_VERSION: ${{ inputs.target_version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $catalogPath = Join-Path $env:GITHUB_WORKSPACE '.agents/plugins/marketplace.json'
+          if (-not (Test-Path -LiteralPath $catalogPath -PathType Leaf)) {
+            throw "Selected marketplace ref $env:MARKETPLACE_REF has no catalog: $catalogPath"
+          }
+          $catalog = Get-Content -LiteralPath $catalogPath -Raw -Encoding UTF8 | ConvertFrom-Json
+          $plugins = @($catalog.plugins | Where-Object { $_.name -eq 'unica' })
+          if ($plugins.Count -ne 1) {
+            throw "Selected marketplace ref $env:MARKETPLACE_REF must contain exactly one Unica plugin"
+          }
+          $source = $plugins[0].source
+          if ($source.source -ne 'git-subdir' -or
+              $source.url -ne 'https://github.com/IngvarConsulting/unica-marketplace.git' -or
+              $source.path -ne './plugins/unica') {
+            throw 'Selected marketplace catalog has an unexpected Unica source'
+          }
+          $catalogTag = [string]$source.ref
+          $tagMatch = [regex]::Match($catalogTag, '^v(?<version>[0-9]+\.[0-9]+\.[0-9]+)$')
+          if (-not $tagMatch.Success) {
+            throw "Marketplace catalog tag must be an immutable version tag: $catalogTag"
+          }
+          $targetVersion = $tagMatch.Groups['version'].Value
+          $requestedVersion = $env:REQUESTED_VERSION.Trim()
+          if ($requestedVersion -and $requestedVersion -ne $targetVersion) {
+            throw "Marketplace catalog tag $catalogTag does not match requested target version $requestedVersion"
+          }
+          $releaseText = (& gh release view $catalogTag --repo IngvarConsulting/unica --json tagName) | Out-String
+          if ($LASTEXITCODE -ne 0) {
+            throw "Immutable source release $catalogTag is not published for selected marketplace ref $env:MARKETPLACE_REF"
+          }
+          $release = $releaseText | ConvertFrom-Json
+          if ($release.tagName -ne $catalogTag) {
+            throw "Immutable source release $($release.tagName) does not match marketplace catalog tag $catalogTag"
+          }
+          "marketplace_ref=$env:MARKETPLACE_REF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "target_version=$targetVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
   regression:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.head_ref == 'codex/issue-90-migration-regression' }}
+    needs: resolve-target
+    if: ${{ github.event_name != 'pull_request' || github.head_ref == 'codex/issue-90-migration-regression' }}
     strategy:
       fail-fast: false
       matrix:
@@ -81,5 +170,6 @@ jobs:
       source_release: ${{ matrix.source.release }}
       source_kind: ${{ matrix.source.kind }}
       layout: ${{ matrix.source.layout }}
-      target_version: 0.7.5
+      target_marketplace_ref: ${{ needs.resolve-target.outputs.marketplace_ref }}
+      target_version: ${{ needs.resolve-target.outputs.target_version }}
     secrets: inherit

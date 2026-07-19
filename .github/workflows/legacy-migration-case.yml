@@ -21,6 +21,9 @@ on:
       target_version:
         required: true
         type: string
+      target_marketplace_ref:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -51,6 +54,7 @@ jobs:
       SOURCE_KIND: ${{ inputs.source_kind }}
       FIXTURE_LAYOUT: ${{ inputs.layout }}
       TARGET_VERSION: ${{ inputs.target_version }}
+      TARGET_MARKETPLACE_REF: ${{ inputs.target_marketplace_ref }}
       TARGET: ${{ matrix.target }}
       CODEX_ASSET: ${{ matrix.codex_asset }}
       CODEX_NAME: ${{ matrix.codex_name }}
@@ -177,9 +181,9 @@ jobs:
           }
 
           if ($env:TARGET -eq 'win-x64') {
-            $migrationText = (& $env:INSTALLER_PATH -Ref main -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
+            $migrationText = (& $env:INSTALLER_PATH -Ref $env:TARGET_MARKETPLACE_REF -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
           } else {
-            $migrationText = (& sh $env:INSTALLER_PATH --ref main --target $env:TARGET --codex-home $env:CODEX_HOME 2>&1) | Out-String
+            $migrationText = (& sh $env:INSTALLER_PATH --ref $env:TARGET_MARKETPLACE_REF --target $env:TARGET --codex-home $env:CODEX_HOME 2>&1) | Out-String
           }
           $migrationCode = $LASTEXITCODE
           Set-Content -LiteralPath (Join-Path $evidence 'migration.log') -Value $migrationText
@@ -228,9 +232,9 @@ jobs:
           }
 
           if ($env:TARGET -eq 'win-x64') {
-            $rerunText = (& $env:INSTALLER_PATH -Ref main -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
+            $rerunText = (& $env:INSTALLER_PATH -Ref $env:TARGET_MARKETPLACE_REF -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
           } else {
-            $rerunText = (& sh $env:INSTALLER_PATH --ref main --target $env:TARGET --codex-home $env:CODEX_HOME 2>&1) | Out-String
+            $rerunText = (& sh $env:INSTALLER_PATH --ref $env:TARGET_MARKETPLACE_REF --target $env:TARGET --codex-home $env:CODEX_HOME 2>&1) | Out-String
           }
           $rerunCode = $LASTEXITCODE
           Set-Content -LiteralPath (Join-Path $evidence 'rerun.log') -Value $rerunText
