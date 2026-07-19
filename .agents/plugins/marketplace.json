@@ -10,7 +10,7 @@
         "source": "git-subdir",
         "url": "https://github.com/IngvarConsulting/unica-marketplace.git",
         "path": "./plugins/unica",
-        "ref": "v0.7.2"
+        "ref": "v0.7.5"
       },
       "policy": {
         "installation": "AVAILABLE",
