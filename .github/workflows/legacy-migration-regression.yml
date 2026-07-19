@@ -12,7 +12,7 @@ on:
         required: false
         type: string
       profile_set:
-        description: Current CLI coverage, or the v0.7.6 bridge with representative historical CLI cases.
+        description: Current CLI coverage, or the selected bridge with representative historical CLI cases.
         required: true
         type: choice
         default: current
@@ -247,6 +247,7 @@ jobs:
           $failureMarker = Join-Path $env:RUNNER_TEMP 'codex-failure-injected'
           New-Item -ItemType Directory -Force -Path $shimDir | Out-Null
           if ($env:TARGET -eq 'win-x64') {
+            $powerShell = (Get-Command pwsh -CommandType Application).Source
             $shim = Join-Path $shimDir 'codex.cmd'
             @"
           @echo off
@@ -259,7 +260,7 @@ jobs:
           exit /b %ERRORLEVEL%
           "@ | Set-Content -LiteralPath $shim -Encoding ASCII
             $env:PATH = "$shimDir;$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
-            $migrationText = (& pwsh -NoProfile -File $env:INSTALLER_PATH -Ref $env:TARGET_MARKETPLACE_REF -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
+            $migrationText = (& $powerShell -NoProfile -File $env:INSTALLER_PATH -Ref $env:TARGET_MARKETPLACE_REF -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
           } else {
             $shim = Join-Path $shimDir 'codex'
             @"
