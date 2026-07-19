@@ -80,9 +80,12 @@ jobs:
             Where-Object { $_.Name -eq $env:CODEX_NAME } |
             Select-Object -First 1
           if (-not $codex) { throw "Native Codex executable $env:CODEX_NAME is missing" }
-          if ($env:TARGET -ne 'win-x64') { chmod +x $codex.FullName }
-          "CODEX_BIN=$($codex.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "CODEX_BIN_DIR=$($codex.Directory.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $codexCommandName = if ($env:TARGET -eq 'win-x64') { 'codex.exe' } else { 'codex' }
+          $codexCommand = Join-Path $codexDir $codexCommandName
+          Copy-Item -LiteralPath $codex.FullName -Destination $codexCommand -Force
+          if ($env:TARGET -ne 'win-x64') { chmod +x $codexCommand }
+          "CODEX_BIN=$codexCommand" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "CODEX_BIN_DIR=$codexDir" | Out-File -FilePath $env:GITHUB_ENV -Append
 
       - name: Rebuild the historical installation from published bits
         shell: pwsh
