@@ -25,7 +25,22 @@ class MarketplaceContractTests(unittest.TestCase):
             with self.assertRaisesRegex(ContractError, "catalog cannot exist"):
                 verify(root, allow_empty=True)
 
+    def test_workflow_verifies_staged_package_fresh_install_and_previous_stable_update(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        workflow = (root / ".github" / "workflows" / "verify.yml").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("staged-package-smoke:", workflow)
+        self.assertIn("$pluginRoot = (Resolve-Path -LiteralPath 'plugins/unica').Path", workflow)
+        self.assertIn("consumer-fresh-install:", workflow)
+        self.assertIn("previous-stable-seed:", workflow)
+        self.assertIn("previous-stable-upgrade:", workflow)
+        self.assertIn("plugin marketplace upgrade unica --json", workflow)
+        self.assertIn("plugin remove unica@unica --json", workflow)
+        self.assertIn("plugin add unica@unica --json", workflow)
+        self.assertIn("Node.js leaked into the consumer PATH", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
-
