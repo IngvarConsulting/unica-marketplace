@@ -96,7 +96,7 @@ jobs:
           if ($env:SOURCE_KIND -eq 'marketplace-promotion') {
             $archive = Join-Path $downloadDir "unica-marketplace-$env:SOURCE_RELEASE.tar.gz"
             Invoke-WebRequest `
-              -Uri "https://github.com/IngvarConsulting/unica-marketplace/archive/refs/tags/$env:SOURCE_RELEASE.tar.gz" `
+              -Uri "https://github.com/IngvarConsulting/unica-marketplace/archive/$env:SOURCE_RELEASE.tar.gz" `
               -OutFile $archive
           } else {
             if ($env:SOURCE_KIND -eq 'version-bundle') {

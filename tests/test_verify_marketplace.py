@@ -114,6 +114,7 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertIn("issue_90_marker", migration_case)
         self.assertIn("$codexCommandName", migration_case)
         self.assertIn("'codex.exe'", migration_case)
+        self.assertIn("unica-marketplace/archive/$env:SOURCE_RELEASE.tar.gz", migration_case)
         self.assertIn("legacy-stable-upgrade:", verify)
         self.assertIn("source_version: 0.6.1", verify)
 
