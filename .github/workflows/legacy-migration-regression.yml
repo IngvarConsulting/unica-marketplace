@@ -248,17 +248,62 @@ jobs:
           New-Item -ItemType Directory -Force -Path $shimDir | Out-Null
           if ($env:TARGET -eq 'win-x64') {
             $powerShell = (Get-Command pwsh -CommandType Application).Source
-            $shim = Join-Path $shimDir 'codex.cmd'
-            @"
-          @echo off
-          if "%1 %2 %3"=="plugin add unica@unica" if not exist "$failureMarker" (
-            type nul > "$failureMarker"
-            echo injected transactional rollback failure 1>&2
-            exit /b 86
-          )
-          "$env:REAL_CODEX" %*
-          exit /b %ERRORLEVEL%
-          "@ | Set-Content -LiteralPath $shim -Encoding ASCII
+            $shimProject = Join-Path $env:RUNNER_TEMP 'codex-failure-shim-src'
+            New-Item -ItemType Directory -Force -Path $shimProject | Out-Null
+            @'
+          <Project Sdk="Microsoft.NET.Sdk">
+            <PropertyGroup>
+              <OutputType>Exe</OutputType>
+              <TargetFramework>net8.0</TargetFramework>
+              <AssemblyName>codex</AssemblyName>
+              <UseAppHost>true</UseAppHost>
+            </PropertyGroup>
+          </Project>
+          '@ | Set-Content -LiteralPath (Join-Path $shimProject 'codex.csproj') -Encoding UTF8
+            $shimSource = @'
+          using System;
+          using System.Diagnostics;
+          using System.IO;
+
+          public static class CodexFailureShim
+          {
+              public static int Main(string[] args)
+              {
+                  string marker = Environment.GetEnvironmentVariable("FAILURE_MARKER");
+                  string realCodex = Environment.GetEnvironmentVariable("REAL_CODEX");
+                  if (String.IsNullOrEmpty(marker) || String.IsNullOrEmpty(realCodex))
+                  {
+                      Console.Error.WriteLine("failure shim environment is incomplete");
+                      return 87;
+                  }
+                  if (args.Length >= 3 && args[0] == "plugin" && args[1] == "add" &&
+                      args[2] == "unica@unica" && !File.Exists(marker))
+                  {
+                      File.WriteAllText(marker, String.Empty);
+                      Console.Error.WriteLine("injected transactional rollback failure");
+                      return 86;
+                  }
+                  var startInfo = new ProcessStartInfo(realCodex) { UseShellExecute = false };
+                  foreach (string argument in args)
+                  {
+                      startInfo.ArgumentList.Add(argument);
+                  }
+                  using (Process process = Process.Start(startInfo))
+                  {
+                      process.WaitForExit();
+                      return process.ExitCode;
+                  }
+              }
+          }
+          '@
+            $shimSource | Set-Content -LiteralPath (Join-Path $shimProject 'Program.cs') -Encoding UTF8
+            & dotnet publish (Join-Path $shimProject 'codex.csproj') --configuration Release --runtime win-x64 --self-contained false --output $shimDir --nologo
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot build the Windows Codex failure shim' }
+            $shim = Join-Path $shimDir 'codex.exe'
+            if (-not (Test-Path -LiteralPath $shim -PathType Leaf)) {
+              throw "Windows Codex failure shim is missing: $shim"
+            }
+            $env:FAILURE_MARKER = $failureMarker
             $env:PATH = "$shimDir;$env:SystemRoot\System32;$env:SystemRoot;$env:ProgramFiles\Git\cmd"
             $migrationText = (& $powerShell -NoProfile -File $env:INSTALLER_PATH -Ref $env:TARGET_MARKETPLACE_REF -Target win-x64 -CodexHome $env:CODEX_HOME 2>&1) | Out-String
           } else {
@@ -279,7 +324,7 @@ jobs:
           $migrationCode = $LASTEXITCODE
           if ($migrationCode -eq 0) { throw 'Injected migration failure unexpectedly succeeded' }
           if (-not (Test-Path -LiteralPath $failureMarker -PathType Leaf)) {
-            throw 'Migration failed before reaching the injected post-mutation boundary'
+            throw "Migration failed before reaching the injected post-mutation boundary`n$migrationText"
           }
           $diagnostics = Get-ChildItem -LiteralPath (Join-Path $env:CODEX_HOME 'unica/migration-backups') -Filter diagnostics.jsonl -Recurse -File |
             Get-Content -Raw
