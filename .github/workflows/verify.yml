@@ -60,10 +60,8 @@ jobs:
       marketplace_ref: ${{ steps.resolve.outputs.marketplace_ref }}
       marketplace_commit: ${{ steps.resolve.outputs.marketplace_commit }}
       target_version: ${{ steps.resolve.outputs.target_version }}
-      installer_ps1_sha256: ${{ steps.resolve.outputs.installer_ps1_sha256 }}
-      installer_sh_sha256: ${{ steps.resolve.outputs.installer_sh_sha256 }}
     steps:
-      - name: Select the promotion event commit and installer ref
+      - name: Select the promotion event commit and marketplace ref
         id: select
         shell: pwsh
         env:
@@ -141,25 +139,9 @@ jobs:
           if ($release.isDraft -or [string]::IsNullOrWhiteSpace([string]$release.publishedAt)) {
             throw "Source release $sourceRelease must be published and not a draft"
           }
-          function Get-InstallerDigest([string]$assetName) {
-            $matches = @($release.assets | Where-Object { $_.name -eq $assetName })
-            if ($matches.Count -ne 1) {
-              throw "Source release $sourceRelease must contain exactly one $assetName asset"
-            }
-            $digest = [string]$matches[0].digest
-            $digestMatch = [regex]::Match($digest, '^sha256:(?<sha>[0-9a-fA-F]{64})$')
-            if (-not $digestMatch.Success) {
-              throw "Source release $sourceRelease asset $assetName has no SHA-256 digest"
-            }
-            return $digestMatch.Groups['sha'].Value.ToLowerInvariant()
-          }
-          $installerPs1Sha256 = Get-InstallerDigest 'install-unica.ps1'
-          $installerShSha256 = Get-InstallerDigest 'install-unica.sh'
           "marketplace_ref=$env:MARKETPLACE_REF" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "marketplace_commit=$marketplaceCommit" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "target_version=$targetVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "installer_ps1_sha256=$installerPs1Sha256" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          "installer_sh_sha256=$installerShSha256" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
   staged-package-smoke:
     needs: contract
