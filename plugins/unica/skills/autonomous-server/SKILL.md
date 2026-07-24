@@ -8,7 +8,6 @@ description: "Автономный сервер отладки 1С. Исполь
 ## MCP routing
 
 - Preferred path: use MCP `unica` tools `unica.project.map`, `unica.runtime.execute`, `unica.meta.info`, `unica.code.search`, and `unica.code.diagnostics`.
-- Use `web-test` only after there is a concrete web-client URL to validate.
 - Do not call internal runtime, server, analyzer, or package adapters directly. They are hidden behind MCP `unica`.
 
 ## Workflow
@@ -17,7 +16,7 @@ description: "Автономный сервер отладки 1С. Исполь
 2. Map project source-sets with `unica.project.map`; inspect HTTP/WebService metadata with `unica.meta.info` and handlers with `unica.code.search`.
 3. Prepare the infobase through `unica.runtime.execute` operations in order: `config-init` if needed, `init`, `build`, then `syntax`.
 4. Launch the isolated client/debug surface with `unica.runtime.execute` and `operation=launch`. Use `clientMode=mcp` or `clientMode=mcp-va` when browser/client automation is the goal.
-5. If the user provides or the runtime returns a web URL, validate it with `web-test`; otherwise report that no public MCP `unica` operation currently produced a web-client URL.
+5. If the user provides or the runtime returns a web URL, report it as the hand-off point for an external browser-testing tool; otherwise report that no public MCP `unica` operation currently produced a web-client URL.
 6. Analyze server artifacts: startup command/result, URL, source-set, platform mode, handler metadata, diagnostics, event log or technological log files if provided.
 
 ## Diagnostics

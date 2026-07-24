@@ -45,7 +45,13 @@ allowed-tools:
 
 Для пустого репозитория сначала создай `src/`, затем `v8project.yaml`, затем реши источник правды.
 
-Если исходники отсутствуют или `src/` пустой, считай существующую базу источником правды и сделай полный `dump`. Если исходники уже есть, не выполняй `build` автоматически: спроси, база или Git является источником правды.
+Если исходники отсутствуют или `src/` пустой, считай существующую базу
+источником правды и выполни синхронный полный `dump`. Для source-set типа
+`CONFIGURATION` или `EXTENSION` Unica принудительно выбирает проверенную
+платформу 8.3.27, направляет runner в private staging и публикует дерево только
+после проверки exact 2.20. Асинхронный и external-source-set dump пока
+preview-only. Если исходники уже есть, не выполняй `build` автоматически:
+спроси, база или Git является источником правды.
 
 ### Новый `v8project.yaml`
 
@@ -147,6 +153,13 @@ allowed-tools:
 Используй `v8project.local.yaml` для локальных `workPath`, `infobase.connection`, credentials, `tools`, `tests` и `mcp`. Не передавай local overlay как `config`. Не добавляй туда `source-set`, `format`, `builder` или `execution_timeout`: эти поля должны жить в основном проектном конфиге.
 
 Для долгих операций меняй `execution_timeout` в `v8project.yaml` (миллисекунды, default `300000`, диапазон `1..=86400000`). Не прокидывай отдельный `timeoutMs` в `unica.runtime.execute`: Unica не владеет таймаутом runner-а.
+
+Если ignored EPF workspace уже содержит основной `v8project.yaml` только с
+`EXTERNAL_DATA_PROCESSORS`, привяжи его к личной локальной ИБ через
+`config-init` с явными `config`, `sourceSet` и `connection`. Unica проверит
+выбранный source-set и создаст рядом только `v8project.local.yaml`; runner не
+запускается, а основной конфиг не меняется. В этом режиме не передавай
+`format`, `builder` или `force`, и не перезаписывай существующий local overlay.
 
 ## Build/load/artifacts
 
@@ -268,6 +281,31 @@ allowed-tools:
 
 Перед `dump` проверь `git status --short`, чтобы не смешать чужие изменения с выгрузкой из базы.
 
+`ConfigDumpInfo.xml` с корнем `<ConfigDumpInfo>` — platform-generated CDFI sidecar
+и локальное состояние конкретной ИБ: не добавляй его в Git
+и не используй как XML-исходник. Это правило не относится к metadata-файлу
+реального объекта: legitimate metadata descriptor (включая external EPF/ERF)
+с именем `ConfigDumpInfo.xml` remains source и должен храниться в Git.
+Синхронный applied `mode=full` разрешён только для DESIGNER source-set типа
+`CONFIGURATION` или `EXTENSION`: Unica независимо проверяет установленную
+платформу 8.3.27, подменяет выбранный target на private staging, проверяет
+владелец и все XML version-bearing roots на exact raw `2.20`, затем атомарно с
+rollback публикует целое дерево. Асинхронный full dump и external source-set
+пока доступны только как preview. `incremental` и `partial` также preview-only:
+до private CDFI, точного receipt и divergence-safe merge
+(alkoleft/v8-runner-rust#30) им нельзя писать в Git-visible root.
+
+На Windows synchronous applied full dump сейчас fail-closed: owner-only ACL и
+handle-safe no-clobber публикация каталогов ещё не реализованы. Preview остаётся
+read-only. На поддерживаемой POSIX-ветке Unica сверяет физические маркеры
+DESIGNER, получает exact 8.3.27.x через sibling `ibcmd --version`, а recovery
+хранится отдельно от effective config и не содержит credentials.
+Установка платформы должна быть системной и неизменяемой вызывающим
+пользователем: весь install tree и его предки принадлежат root, не имеют
+group/world write, ACL и ссылок; сам Unica запускается не от root. Пользовательская
+или изменяемая установка отклоняется до запуска `ibcmd`/`v8-runner`. Проверка
+ACL реализована для macOS и Linux; остальные Unix пока fail-closed.
+
 ### Incremental dump
 
 ```json
@@ -280,7 +318,7 @@ allowed-tools:
       "cwd": "<workspace>",
       "operation": "dump",
       "mode": "incremental",
-      "dryRun": false
+      "dryRun": true
     }
   }
 }
@@ -299,7 +337,7 @@ allowed-tools:
       "operation": "dump",
       "mode": "partial",
       "object": "Catalog:Номенклатура",
-      "dryRun": false
+      "dryRun": true
     }
   }
 }
@@ -318,7 +356,7 @@ allowed-tools:
       "operation": "dump",
       "mode": "partial",
       "objects": ["Catalog:Номенклатура", "Document:ЗаказПокупателя"],
-      "dryRun": false
+      "dryRun": true
     }
   }
 }
@@ -337,7 +375,7 @@ allowed-tools:
       "operation": "dump",
       "mode": "full",
       "extension": "MyExtension",
-      "sourceSet": "main",
+      "sourceSet": "MyExtension",
       "dryRun": false
     }
   }
@@ -357,7 +395,7 @@ allowed-tools:
       "operation": "convert",
       "sourceSet": "main",
       "output": "build/convert",
-      "dryRun": false
+      "dryRun": true
     }
   }
 }
@@ -439,7 +477,7 @@ allowed-tools:
       "operation": "dump",
       "mode": "full",
       "sourceSet": "external-processors",
-      "dryRun": false
+      "dryRun": true
     }
   }
 }
@@ -604,6 +642,31 @@ allowed-tools:
 
 ## Tools
 
+### Download Vanessa Automation
+
+Если Vanessa Automation ещё не подготовлена в workspace, сначала скачай
+управляемый v8-runner артефакт:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "unica.runtime.execute",
+    "arguments": {
+      "cwd": "<workspace>",
+      "operation": "tools-download",
+      "tool": "vanessa",
+      "dryRun": false
+    }
+  }
+}
+```
+
+При стандартной конфигурации runner сохраняет EPF как
+`build/tools/vanessa-automation-single.epf`. Если effective project config
+переопределяет `tools.va.epf_path`, используй в `execute` именно это значение.
+
 ### Download client MCP sources
 
 ```json
@@ -661,6 +724,52 @@ allowed-tools:
   }
 }
 ```
+
+### Дождаться завершения внешней EPF, передав команду в `/C`
+
+Для bounded-запуска локальной внешней обработки используй только прямой thin
+client и явно задай разные файлы: `output` — платформенный `/Out`, а
+`stderrOutput` — stderr клиентского процесса 1С. Если обработке нужна команда
+запуска, передавай содержимое платформенного `/C` через типизированное поле `c`,
+не через `rawKeys`.
+
+Ниже bounded-запуск Vanessa Automation с профилем `VAParams.json` использует
+стандартный managed path после `tools-download`. Если задан
+`tools.va.epf_path`, подставь его значение вместо пути из примера:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "unica.runtime.execute",
+    "arguments": {
+      "cwd": "<workspace>",
+      "operation": "launch",
+      "clientMode": "thin",
+      "execute": "build/tools/vanessa-automation-single.epf",
+      "c": "StartFeaturePlayer;VAParams=tools/VAParams.json",
+      "rawKeys": ["/TESTMANAGER"],
+      "output": "build/va.platform-out.log",
+      "stderrOutput": "build/va.client.stderr.log",
+      "waitForExit": true,
+      "waitTimeoutMs": 30000,
+      "dryRun": false
+    }
+  }
+}
+```
+
+`waitForExit` не меняет обычный асинхронный launch по умолчанию. В bounded-режиме
+Unica возвращает код завершения EPF как успех/ошибку и включает оба объявленных
+файла в `artifacts`. Наблюдаемый receipt доступен в
+`data.external_epf_wait` и `diagnostics.external_epf_wait`: там есть `pid`,
+`execute_path`, `exit_code`, `timed_out`, `output_path` и `stderr_path`.
+Этот режим доступен только через `unica.runtime.execute`;
+`unica.runtime.job.start` не принимает bounded-поля.
+Поле `c` runner преобразует в единственный ключ `/C`.
+Дополнительные нерезервированные ключи, например `/TESTMANAGER`, можно передать
+через `rawKeys`; не дублируй там `/C`, `/Execute` или `/Out`.
 
 ### Client MCP без VA
 

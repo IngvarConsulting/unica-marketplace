@@ -1,7 +1,9 @@
 # Спецификация корневой структуры конфигурации 1С
 
+> Активный контракт Unica: платформа `8.3.27`, формат выгрузки `2.20`.
+
 Формат: XML-выгрузка конфигурации 1С:Предприятие 8.3 (Конфигуратор → Конфигурация → Выгрузить конфигурацию в файлы).
-Версии формата: `2.17` (платформа 8.3.20–8.3.24), `2.20` (платформа 8.3.27+).
+Текущие инструкции и XML-примеры относятся к формату `2.20`; сравнение с прежним форматом вынесено в историческую справку.
 
 Источники: выгрузки Бухгалтерия предприятия (платформы 8.3.20, 8.3.24, 8.3.27), ERP 2 (8.3.24).
 
@@ -16,7 +18,7 @@
 
 ```
 Configuration.xml                  # Корневой файл — свойства и состав конфигурации
-ConfigDumpInfo.xml                 # Служебный файл — версии объектов
+ConfigDumpInfo.xml                 # Platform-generated CDFI sidecar (не хранится в Git)
 Ext/                               # Корневой каталог модулей и интерфейса
 Languages/                         # Языки конфигурации
 Subsystems/                        # Подсистемы
@@ -24,6 +26,12 @@ Catalogs/                          # Справочники
 Documents/                         # Документы
 ...                                # Каталоги всех типов объектов (см. раздел 2.4)
 ```
+
+Здесь показан platform-generated CDFI sidecar с корнем `<ConfigDumpInfo>` как
+часть физической выгрузки платформы. Это локальное состояние конкретной ИБ, а
+не XML-исходник: Git-visible дерево и чистый checkout не обязаны его содержать.
+Legitimate metadata descriptor реального объекта с именем `ConfigDumpInfo`,
+включая external EPF/ERF, остаётся metadata-исходником и не подпадает под это правило.
 
 Полный перечень каталогов объектов и их формат — [1c-config-objects-spec.md § 1](1c-config-objects-spec.md#1-общая-структура-выгрузки).
 
@@ -41,7 +49,7 @@ Documents/                         # Документы
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:app="http://v8.1c.ru/8.2/managed-application/core"
-    ... version="2.17">
+    ... version="2.20">
   <Configuration uuid="e0666db2-...">
     <InternalInfo>...</InternalInfo>
     <Properties>...</Properties>
@@ -287,6 +295,10 @@ ClassId — фиксированные идентификаторы классо
 
 Содержит информацию о версиях всех объектов конфигурации. Используется платформой для определения изменений при загрузке.
 
+Файл генерируется платформой для конкретной ИБ и остаётся локальным runtime-
+состоянием. Не добавляй его в Git, не используй как признак формата source-set
+и не синтезируй `id`/`configVersion` в mutation-инструментах.
+
 ### 3.1. Общая структура
 
 ```xml
@@ -295,7 +307,7 @@ ClassId — фиксированные идентификаторы классо
     xmlns:xen="http://v8.1c.ru/8.3/xcf/enums"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    format="Hierarchical" version="2.17">
+    format="Hierarchical" version="2.20">
   <ConfigVersions>
     <Metadata name="..." id="..." configVersion="...">
       <Metadata name="..." id="..."/>
@@ -311,7 +323,7 @@ ClassId — фиксированные идентификаторы классо
 | Атрибут | Описание |
 |---------|----------|
 | `format` | Формат выгрузки (`Hierarchical`) |
-| `version` | Версия формата (`2.17` / `2.20`) — совпадает с Configuration.xml |
+| `version` | Версия активного формата (`2.20`) — совпадает с Configuration.xml |
 
 ### 3.3. Структура записей Metadata
 
@@ -321,7 +333,11 @@ ClassId — фиксированные идентификаторы классо
 |---------|----------|
 | `name` | Полное имя в dot-нотации (напр. `Catalog.Банки.Attribute.Код`) |
 | `id` | UUID объекта (с суффиксом `.N` для модулей/форм/справки) |
-| `configVersion` | Хеш версии (32 hex-символа + `00000000`), только у записей с файлами |
+| `configVersion` | Непрозрачное значение платформы, только у записей с файлами |
+
+`configVersion` — непрозрачное значение платформы. Даже если оно выглядит как
+hex-хеш фиксированной длины, его нельзя считать source-хешем, сравнивать между
+ИБ или синтезировать вручную.
 
 **Правила:**
 - Корневой объект содержит вложенные `<Metadata>` для реквизитов, измерений, ресурсов (без `configVersion`, т.к. они не имеют отдельных файлов)
@@ -370,7 +386,7 @@ ClassId — фиксированные идентификаторы классо
 **CommandInterface.xml** — описывает порядок подсистем и видимость команд для главного окна:
 
 ```xml
-<CommandInterface xmlns="http://v8.1c.ru/8.3/xcf/extrnprops" ... version="2.17">
+<CommandInterface xmlns="http://v8.1c.ru/8.3/xcf/extrnprops" ... version="2.20">
   <SubsystemsOrder>
     <Subsystem>Subsystem.Руководителю</Subsystem>
     <Subsystem>Subsystem.БанкИКасса</Subsystem>
@@ -434,7 +450,7 @@ ClassId — фиксированные идентификаторы классо
 | `HomePageWorkArea.xml` | Рабочая область начальной страницы |
 
 ```xml
-<HomePageWorkArea xmlns="http://v8.1c.ru/8.3/xcf/extrnprops" ... version="2.17">
+<HomePageWorkArea xmlns="http://v8.1c.ru/8.3/xcf/extrnprops" ... version="2.20">
   <WorkingAreaTemplate>TwoColumnsVariableWidth</WorkingAreaTemplate>
   <LeftColumn>
     <Item>
@@ -463,7 +479,7 @@ ClassId — фиксированные идентификаторы классо
 Формат XML-описания картинки:
 
 ```xml
-<ExtPicture xmlns="http://v8.1c.ru/8.3/xcf/extrnprops" ... version="2.17">
+<ExtPicture xmlns="http://v8.1c.ru/8.3/xcf/extrnprops" ... version="2.20">
   <Picture>
     <xr:Abs>Picture.png</xr:Abs>
     <xr:LoadTransparent>false</xr:LoadTransparent>
@@ -486,7 +502,7 @@ ClassId — фиксированные идентификаторы классо
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" ... version="2.17">
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" ... version="2.20">
   <Language uuid="db4a9ccb-9ef5-4b3c-8577-b6fe5db1b62e">
     <Properties>
       <Name>Русский</Name>
@@ -960,6 +976,7 @@ ChildObjects содержат `IntegrationServiceChannel` (каналы) — inl
 
 ---
 
+<!-- legacy-format-reference:start -->
 ## 7. Различия версий 2.17 → 2.20
 
 ### 7.1. Атрибут version
@@ -973,13 +990,15 @@ ChildObjects содержат `IntegrationServiceChannel` (каналы) — inl
 
 ### 7.2. Configuration.xml — Properties
 
-Набор свойств Properties **идентичен** в обеих версиях. Отличия только в значениях:
+В исследованных выгрузках набор непосредственных элементов в `Properties`
+совпадает. Меняются значения и допустимые элементы коллекций внутри этих
+свойств:
 
 | Свойство | Изменение |
 |----------|-----------|
 | `CompatibilityMode` | `Version8_3_24` → `Version8_3_24` / `Version8_3_27` (зависит от конфигурации) |
 | `ConfigurationExtensionCompatibilityMode` | аналогично |
-| `UsedMobileApplicationFunctionalities` | В v2.20 добавлена функциональность `TextToSpeech` |
+| `UsedMobileApplicationFunctionalities` | В v2.20 в коллекцию добавлено значение `TextToSpeech` |
 
 ### 7.3. Configuration.xml — ChildObjects
 
@@ -998,6 +1017,7 @@ ChildObjects содержат `IntegrationServiceChannel` (каналы) — inl
 В v2.20 пустые элементы записываются без пробела: `<Comment/>` вместо `<Comment />`. Это косметическое отличие, не влияющее на парсинг.
 
 ---
+<!-- legacy-format-reference:end -->
 
 ## 8. Пространства имён XML
 

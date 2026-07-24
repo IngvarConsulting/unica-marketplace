@@ -123,6 +123,24 @@
 
 #### Режимы выгрузки
 
+> Ниже приведён низкоуровневый синтаксис платформы, а не рекомендуемый путь
+> Unica. Не направляй incremental/partial/CDFI-only команды прямо в
+> Git-visible source root: они допустимы только во временный private staging,
+> принадлежащий runtime-слою. Синхронный applied `mode=full` для DESIGNER
+> configuration/extension проходит через внешний private stage Unica:
+> платформа независимо фиксируется на exact 8.3.27.x, XML проверяется на raw
+> `version="2.20"` до целой публикации. Async full и external source-set пока
+> preview-only. Неполные режимы дополнительно не имеют безопасного merge receipt.
+> На Windows applied full dump пока fail-closed: owner-only ACL и handle-safe
+> no-clobber публикация каталогов ещё не реализованы; preview остаётся
+> read-only. Поддерживаемый POSIX-маршрут проверяет физические DESIGNER-маркеры,
+> exact sibling `ibcmd --version` и отделяет secret-bearing effective config от
+> сохраняемого recovery. Установка платформы должна целиком принадлежать root,
+> не иметь group/world write, ACL и ссылок и быть неизменяемой для запускающего
+> non-root пользователя. Пользовательская установка отклоняется до `ibcmd` и
+> `v8-runner`; ACL-доказательство поддержано на macOS/Linux, прочие Unix
+> fail-closed.
+
 **Полная выгрузка** — все объекты конфигурации:
 ```
 1cv8.exe DESIGNER /F <база> /DisableStartupDialogs /DumpConfigToFiles "C:\src\config" /Out log.txt
@@ -130,22 +148,22 @@
 
 **Инкрементальная выгрузка** — только изменённые объекты:
 ```
-1cv8.exe DESIGNER /F <база> /DisableStartupDialogs /DumpConfigToFiles "C:\src\config" -update -force /Out log.txt
+1cv8.exe DESIGNER /F <база> /DisableStartupDialogs /DumpConfigToFiles "C:\runtime\private-staging\config" -update -force /Out log.txt
 ```
 
 Инкрементальная выгрузка с отслеживанием изменений:
 ```
-1cv8.exe DESIGNER /F <база> /DisableStartupDialogs /DumpConfigToFiles "C:\src\config" -update -getChanges "changes.txt" -configDumpInfoForChanges "old\ConfigDumpInfo.xml" /Out log.txt
+1cv8.exe DESIGNER /F <база> /DisableStartupDialogs /DumpConfigToFiles "C:\runtime\private-staging\config" -update -getChanges "changes.txt" -configDumpInfoForChanges "C:\runtime\ib-state\ConfigDumpInfo.xml" /Out log.txt
 ```
 
 **Частичная выгрузка** — выбранные объекты по списку:
 ```
-1cv8.exe DESIGNER /F <база> /DisableStartupDialogs /DumpConfigToFiles "C:\src\config" -listFile "dump_objects.txt" /Out log.txt
+1cv8.exe DESIGNER /F <база> /DisableStartupDialogs /DumpConfigToFiles "C:\runtime\private-staging\config" -listFile "dump_objects.txt" /Out log.txt
 ```
 
 **Обновление ConfigDumpInfo.xml** — без выгрузки файлов:
 ```
-1cv8.exe DESIGNER /F <база> /DisableStartupDialogs /DumpConfigToFiles "C:\src\config" -configDumpInfoOnly /Out log.txt
+1cv8.exe DESIGNER /F <база> /DisableStartupDialogs /DumpConfigToFiles "C:\runtime\ib-state" -configDumpInfoOnly /Out log.txt
 ```
 
 #### Параметры выгрузки
@@ -303,13 +321,16 @@ EPF/ERF workflows в packaged Unica plugin идут через `v8-runner` и MC
       "operation": "dump",
       "cwd": "<workspace>",
       "sourceSet": "external-processors",
-      "mode": "full"
+      "mode": "full",
+      "dryRun": true
     }
   }
 }
 ```
 
 Для выгрузки внешних отчетов используй `sourceSet: "external-reports"`.
+Сейчас это только preview: applied external dump блокируется до появления
+такой же проверяемой private-stage публикации, как для configuration/extension.
 
 ### Загрузка XML-исходников в базу
 
@@ -331,7 +352,7 @@ EPF/ERF workflows в packaged Unica plugin идут через `v8-runner` и MC
 
 ### Примечания
 
-- `operation=load` предназначен для `.cf` и `.cfe`; `.epf` и `.erf` проходят через `build`, `dump` и `make` external source-set.
+- `operation=load` предназначен для `.cf` и `.cfe`; `.epf` и `.erf` проходят через `build` и `make` external source-set, а `dump` external source-set пока доступен только с `dryRun=true`.
 - Внешние source-set должны быть объявлены в `v8project.yaml` с типами `EXTERNAL_DATA_PROCESSORS` или `EXTERNAL_REPORTS`.
 - Dump требует базу с конфигурацией, содержащей используемые типы. Dump в пустой базе может потерять ссылочные типы (`CatalogRef.XXX` превращается в `xs:string`).
 - Категории колонок регистров (Dimension/Resource/Attribute) зависят от Form.xml и конфигурации базы; при round-trip через неподходящую базу привязки полей формы могут не сохраниться.
@@ -373,6 +394,14 @@ EPF/ERF workflows в packaged Unica plugin идут через `v8-runner` и MC
 
 `ConfigDumpInfo.xml` — служебный файл, создаваемый при выгрузке конфигурации в файлы (`/DumpConfigToFiles`). Содержит информацию о составе и версиях объектов конфигурации на момент выгрузки.
 
+Platform-generated CDFI sidecar с корнем `<ConfigDumpInfo>` — локальное
+runtime-состояние конкретной ИБ, а не коллективный XML-исходник. Не добавляй
+этот sidecar в Git и не передавай его в `unica.cf.*` или `unica.meta.*`. Чистый
+checkout без него является нормальным состоянием. Unica не считает его
+признаком формата source-set и не включает в mutation targets/receipts.
+Legitimate metadata descriptor (включая external EPF/ERF) объекта с именем
+`ConfigDumpInfo` остаётся исходником и хранится в Git.
+
 **Назначение:**
 - Определение изменений при инкрементальной выгрузке (`-update`, `-configDumpInfoForChanges`)
 - Синхронизация состояния выгрузки с конфигурацией ИБ
@@ -382,7 +411,19 @@ EPF/ERF workflows в packaged Unica plugin идут через `v8-runner` и MC
 - `-configDumpInfoOnly` — обновить только этот файл без выгрузки объектов
 - `-updateConfigDumpInfo` — обновить файл после частичной загрузки (`/LoadConfigFromFiles`)
 
-**Расположение:** корень каталога выгрузки (рядом с `Configuration.xml`).
+Платформа предоставляет параметры для использования вспомогательного CDFI при
+сравнении, но управление приватным CDFI для пары `source-set + ИБ` относится к
+runtime-слою. Синхронный applied `mode=full` для DESIGNER
+configuration/extension безопасно оборачивается Unica: выбранный source-set
+перенаправляется во внешний private stage, платформа проверяется как exact
+8.3.27.x, а version-bearing XML roots — как raw `2.20`; только затем целое
+дерево публикуется с проверкой preimage и rollback. До реализации private state
+и shadow publication в `alkoleft/v8-runner-rust#30`
+`mode=incremental|partial` остаётся preview-only: закреплённый runner не
+возвращает точные processed paths/hashes и не выполняет divergence-safe merge.
+Applied-маршрут принимает только системную root-owned установку платформы,
+неизменяемую для вызывающего non-root пользователя; user-owned install не
+исполняется.
 
 ## Переменные окружения
 

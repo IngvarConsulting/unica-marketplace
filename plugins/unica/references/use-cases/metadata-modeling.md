@@ -25,10 +25,17 @@ source-set. The format decision belongs to the selected source-set.
 
 Use native MCP tools exposed by the public `unica` server:
 
-- `unica.cf.*` for `Configuration.xml`, `ConfigDumpInfo.xml`, languages, roles, and child-object registration.
+- `unica.cf.*` for `Configuration.xml`, languages, roles, and child-object registration.
 - `unica.meta.*` for metadata object info/compile/edit/remove/validate.
 - `unica.subsystem.*` and `unica.interface.*` for sections and command interface.
 - `unica.template.*` for adding or removing metadata templates.
+
+A platform-generated CDFI sidecar `ConfigDumpInfo.xml` whose root is
+`ConfigDumpInfo` is per-infobase runtime state, not metadata source. Do not edit
+or generate that sidecar with Unica metadata tools, do not use it as source
+format evidence, and keep it out of Git. A legitimate metadata descriptor
+(including an external EPF/ERF descriptor) for an object actually named
+`ConfigDumpInfo` remains source and belongs in Git.
 
 ## Related references
 

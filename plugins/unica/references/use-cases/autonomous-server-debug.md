@@ -14,7 +14,7 @@ server deployment skill surface; runtime setup must stay behind MCP `unica`.
 - `autonomous-server` prepares and analyzes the isolated runtime contour.
 - `v8-runner` calls MCP `unica.runtime.execute` for `config-init`, `init`,
   `build`, `syntax`, and `launch`.
-- `web-test` validates browser behavior after a concrete URL exists.
+- A concrete web-client URL is the hand-off point for an external browser-testing tool.
 - `log-analysis` analyzes journal registration and technological log evidence.
 
 If no public MCP `unica` operation can produce the required debug URL or server

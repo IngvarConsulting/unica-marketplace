@@ -1,7 +1,9 @@
 # Спецификация формата выгрузки расширений конфигурации 1С (CFE)
 
+> Активный контракт Unica: платформа `8.3.27`, формат выгрузки `2.20`.
+
 Формат: XML-выгрузка расширения конфигурации 1С:Предприятие 8.3 (Конфигуратор → Конфигурация → Расширения → Выгрузить расширение в файлы).
-Версия формата: `2.17` (платформа 8.3.17–8.3.24).
+Версия формата: `2.20`.
 
 > **Связанные спецификации:**
 > - Корневая структура конфигурации — [1c-configuration-spec.md](1c-configuration-spec.md)
@@ -17,7 +19,7 @@
 
 ```
 Configuration.xml                  # Корневой файл — свойства и состав расширения
-ConfigDumpInfo.xml                 # Служебный файл — версии объектов
+ConfigDumpInfo.xml                 # Platform-generated CDFI sidecar (не хранится в Git)
 Languages/                         # Языки (всегда заимствованные)
 Roles/                             # Роли (собственные)
 Subsystems/                        # Подсистемы (собственные или заимствованные)
@@ -29,6 +31,12 @@ Documents/                         # Документы
 Enums/                             # Перечисления
 ...                                # Другие типы объектов
 ```
+
+Platform-generated CDFI sidecar `ConfigDumpInfo.xml` с корнем
+`<ConfigDumpInfo>` показан как часть физической выгрузки. Он связан с конкретной
+ИБ, не является исходником расширения и отсутствует в минимальном Git-visible
+дереве. Legitimate metadata descriptor реального объекта с именем
+`ConfigDumpInfo`, включая external EPF/ERF, остаётся metadata-исходником.
 
 ### Ключевые отличия от конфигурации
 
@@ -57,7 +65,7 @@ Enums/                             # Перечисления
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:app="http://v8.1c.ru/8.2/managed-application/core"
-    ... version="2.17">
+    ... version="2.20">
   <Configuration uuid="...">
     <InternalInfo>...</InternalInfo>
     <Properties>...</Properties>
@@ -183,23 +191,27 @@ Enums/                             # Перечисления
 
 Формат идентичен конфигурации:
 
+Это platform-generated CDFI sidecar конкретной ИБ. Не добавляй его в Git, не
+используй как format evidence и не создавай/не изменяй его средствами Unica.
+Правило не относится к legitimate metadata descriptor одноимённого объекта.
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <ConfigDumpInfo xmlns="http://v8.1c.ru/8.3/xcf/dumpinfo"
     xmlns:xen="http://v8.1c.ru/8.3/xcf/enums"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    format="Hierarchical" version="2.17">
+    format="Hierarchical" version="2.20">
   <ConfigVersions>
-    <Metadata name="Configuration.ИмяРасширения" id="uuid" configVersion="sha1"/>
-    <Metadata name="Language.Русский" id="uuid" configVersion="sha1"/>
-    <Metadata name="Role.Расш1_ОсновнаяРоль" id="uuid" configVersion="sha1"/>
+    <Metadata name="Configuration.ИмяРасширения" id="uuid" configVersion="..."/>
+    <Metadata name="Language.Русский" id="uuid" configVersion="..."/>
+    <Metadata name="Role.Расш1_ОсновнаяРоль" id="uuid" configVersion="..."/>
     <!-- ... все объекты расширения ... -->
   </ConfigVersions>
 </ConfigDumpInfo>
 ```
 
-Включает записи для **всех** объектов расширения (и собственных, и заимствованных). Атрибут `configVersion` — 40-символьный SHA1-хеш версии объекта.
+Включает записи для **всех** объектов расширения (и собственных, и заимствованных). `configVersion` — непрозрачное значение платформы: даже если оно выглядит как 40 шестнадцатеричных символов, его нельзя считать source-хешем или синтезировать вручную.
 
 ---
 
@@ -403,7 +415,7 @@ Form.xml заимствованной формы — **двухчастный ф
 Когда форма заимствована без модификации модуля — Form.xml содержит **только свойства формы**, AutoCommandBar без кнопок и пустые Attributes. **Нет ChildItems**. Обе секции (Part 1 и BaseForm) идентичны.
 
 ```xml
-<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" ... version="2.17">
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" ... version="2.20">
   <AutoTitle>false</AutoTitle>
   <AutoTime>CurrentOrLast</AutoTime>
   <!-- ... другие свойства формы ... -->
@@ -413,7 +425,7 @@ Form.xml заимствованной формы — **двухчастный ф
   <Attributes/>
   <!-- Events, Commands — только расширения (если есть) -->
 
-  <BaseForm version="2.17">
+  <BaseForm version="2.20">
     <AutoTitle>false</AutoTitle>
     <AutoTime>CurrentOrLast</AutoTime>
     <!-- те же свойства -->
@@ -430,7 +442,7 @@ Form.xml заимствованной формы — **двухчастный ф
 Когда в расширении заимствуется процедура из модуля формы, Конфигуратор выгружает **полное дерево ChildItems** с применением правил очистки.
 
 ```xml
-<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" ... version="2.17">
+<Form xmlns="http://v8.1c.ru/8.3/xcf/logform" ... version="2.20">
   <AutoTitle>false</AutoTitle>
   <!-- свойства формы -->
   <AutoCommandBar name="ФормаКоманднаяПанель" id="-1">
@@ -443,7 +455,7 @@ Form.xml заимствованной формы — **двухчастный ф
   <Attributes/>
   <!-- Events, Commands — только расширения -->
 
-  <BaseForm version="2.17">
+  <BaseForm version="2.20">
     <!-- Идентичная копия (свойства + AutoCommandBar + ChildItems + Attributes) -->
   </BaseForm>
 </Form>
@@ -588,7 +600,7 @@ Form.xml заимствованной формы — **двухчастный ф
 
 ```xml
 <!-- Содержимое: Forms/МояФорма/Ext/Form.xml — обычная форма без BaseForm -->
-<Form ... version="2.17">
+<Form ... version="2.20">
   <Events>
     <Event name="OnCreateAtServer">ПриСозданииНаСервере</Event>
   </Events>
@@ -662,6 +674,12 @@ Form.xml заимствованной формы — **двухчастный ф
 |----------|----------|
 | `Notify` | Свойство изменено расширением, платформа выводит предупреждение |
 | `MultiState` | Свойство расширено (тип отличается от основной конфигурации) |
+| `Extended` | Свойство объекта расширено; в 8.3.27 этим состоянием, в частности, помечаются подключённые модули и расширение формы |
+
+Для модулей платформа 8.3.27 записывает `Extended` в дескриптор
+заимствованного объекта. Значение `xr:Property` зависит от роли модуля:
+`Module` для общего модуля, `ObjectModule`, `ManagerModule`,
+`RecordSetModule`, `ValueManagerModule` или `Form`.
 
 ### 6.2. ExtendedProperty — расширение типа
 
@@ -708,6 +726,25 @@ Form.xml заимствованной формы — **двухчастный ф
 | `&После("ИмяПроцедуры")` | Выполняется **после** оригинальной процедуры |
 | `&Вместо("ИмяПроцедуры")` | **Заменяет** оригинальную процедуру |
 | `&ИзменениеИКонтроль("ИмяПроцедуры")` | Копия с контролем изменений (diff-маркеры) |
+
+Одного файла BSL с декоратором недостаточно для платформенного формата
+8.3.27. Дескриптор заимствованного объекта должен одновременно содержать
+соответствующее состояние модуля:
+
+```xml
+<InternalInfo>
+  <xr:PropertyState>
+    <xr:Property>ObjectModule</xr:Property>
+    <xr:State>Extended</xr:State>
+  </xr:PropertyState>
+</InternalInfo>
+```
+
+Поэтому `unica.cfe.patch_method` изменяет BSL и дескриптор XML одной
+атомарной транзакцией. При ошибке предусловия, несовместимом существующем
+`PropertyState` или конкурентном изменении не должен сохраняться ни один из
+двух файлов. Уже существующая ровно одна запись с тем же свойством и
+`Extended` считается идемпотентной.
 
 #### Пример &Перед / &После
 
@@ -796,7 +833,7 @@ Form.xml заимствованной формы — **двухчастный ф
     xmlns:xr="http://v8.1c.ru/8.3/xcf/readable"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:type="CatalogPredefinedItems" version="2.17">
+    xsi:type="CatalogPredefinedItems" version="2.20">
   <Item id="9b751d8b-...">
     <Name>НовыйЭлемент</Name>
     <Code>000000001</Code>
@@ -918,7 +955,7 @@ UUID в `ExtendedConfigurationObject` одинаков для всех расш�
 Командный интерфейс подсистемы в расширении: `Subsystems/Имя/Ext/CommandInterface.xml`.
 
 ```xml
-<CommandInterface version="2.17">
+<CommandInterface version="2.20">
   <CommandsVisibility>
     <xr:Command>
       <xr:CommandID>Document.ЗаказНаПеремещение.StandardCommand.OpenList</xr:CommandID>
@@ -1209,16 +1246,17 @@ Catalogs/Валюты/
 
 ```
 Configuration.xml                                # Корневой файл
-ConfigDumpInfo.xml                               # Версии объектов
 Languages/
   Русский.xml                                    # Язык (заимствованный)
 ```
+
+Это минимальное Git-visible дерево. Платформа может создать локальный
+`ConfigDumpInfo.xml` при runtime-операции, но файл остаётся untracked.
 
 ### 15.4. Типичное расширение с ролью
 
 ```
 Configuration.xml
-ConfigDumpInfo.xml
 Languages/
   Русский.xml
 Roles/
