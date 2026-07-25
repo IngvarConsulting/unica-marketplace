@@ -4,11 +4,14 @@
       "command": "git",
       "args": [
         "-c",
-        "alias.unica-bootstrap=!f() { root=\"$PWD/${GIT_PREFIX:-}\"; exec sh \"${root}bootstrap/launch.sh\" \"$root\"; }; f",
+        "alias.unica-bootstrap=!f() { root=\"${CLAUDE_PLUGIN_ROOT}\"; [ -n \"$root\" ] || root=\"$PWD/${GIT_PREFIX:-}\"; exec sh \"${root%/}/bootstrap/launch.sh\" \"${root%/}\"; }; f",
         "unica-bootstrap"
       ],
-      "note": "Single public Unica stdio MCP orchestrator. The public Git package enters through a command-scoped Git shell alias, selects a native bootstrap for the host, verifies the pinned runtime, and transparently launches unica.",
-      "cwd": "."
+      "note": "Single public Unica stdio MCP orchestrator. The public Git package enters through a command-scoped Git shell alias, resolves the plugin root from the host, selects a native bootstrap, verifies the pinned runtime, and transparently launches unica.",
+      "cwd": ".",
+      "env": {
+        "UNICA_RUNTIME_CACHE_DIR": "${CLAUDE_PLUGIN_DATA}/runtimes"
+      }
     }
   }
 }
