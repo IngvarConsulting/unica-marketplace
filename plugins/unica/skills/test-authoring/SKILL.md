@@ -37,7 +37,7 @@ description: "Проектирование и запуск тестов 1С: tes
 - Read `references/platform/runtime-diagnostics.md` when a test is meant to reproduce a user-facing runtime failure.
 - Treat tests as executable debugging: one test should prove the intended user/API scenario, the failure mode, and the regression boundary.
 - For API scenarios, cover success, validation error, auth error, duplicate/idempotent retry, remote timeout, and stable error semantics.
-- For UI or web-client scenarios, pair `operation=test` with an autonomous URL or `web-test` only after the runtime surface exists.
+- For UI or web-client scenarios, use `operation=test` for the 1C test suite and hand a concrete autonomous URL to an external browser-testing tool when UI automation is required.
 
 ## MCP examples
 

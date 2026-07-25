@@ -44,6 +44,22 @@ codex plugin remove unica@unica
 codex plugin marketplace remove unica
 ```
 
+## DCS naming migration
+
+The release containing [issue #158](https://github.com/IngvarConsulting/unica/issues/158)
+atomically replaces the transliterated `skd` domain with the official
+**Data Composition System (`dcs`)** term. There is no deprecated alias:
+
+| Removed contract | Canonical contract |
+| --- | --- |
+| `unica.skd.compile` | `unica.dcs.compile` |
+| `unica.skd.edit` | `unica.dcs.edit` |
+| `unica.skd.info` | `unica.dcs.info` |
+| `unica.skd.validate` | `unica.dcs.validate` |
+| `skd-compile/edit/info/validate` | `dcs-compile/edit/info/validate` |
+
+The operation arguments and `DataCompositionSchema` XML format are unchanged.
+
 ## Runtime delivery
 
 The marketplace plugin contains skills, references, assets, `launch.sh`, and
@@ -68,10 +84,10 @@ The runtime archive contains the target's `unica`, `bsl-analyzer`, `v8-runner`,
 ## Skills
 
 The `skills/` tree covers configuration and extension metadata, forms, roles,
-SKD/MXL, command interfaces, EPF/ERF and BSP registration, database/build
+DCS/MXL, command interfaces, EPF/ERF and BSP registration, database/build
 workflows, BSL search and diagnostics, integrations, background jobs,
 performance, security, data separation, release support, autonomous runtime,
-web testing, and platform help.
+and platform help.
 
 ## Local development
 
@@ -83,6 +99,14 @@ marketplace with:
 ```sh
 scripts/dev/install-local-unica.sh
 ```
+
+On native Windows x64, run the script from **Git Bash** included with 64-bit Git
+for Windows. The local build requires Python 3.10 or newer, stable Rust with the
+native MSVC toolchain, Microsoft C++ Build Tools, and the Windows SDK. A current
+Codex CLI is required for the install and fresh-prompt verification steps.
+
+WSL keeps Linux semantics and builds `linux-x64`. MSYS2 and Cygwin are not
+supported shells for this installer; use Git Bash.
 
 Useful flags:
 
@@ -115,4 +139,5 @@ cargo test --workspace -- --test-threads=1
 git diff --check
 ```
 
+[Авторы, источники и лицензии](ATTRIBUTIONS.md).
 License: LGPL-3.0-or-later.
