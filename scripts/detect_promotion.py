@@ -84,11 +84,13 @@ def catalog_ref_at(root: Path, commit: str) -> str:
     ):
         raise RuntimeError(f"catalog at {commit} must contain exactly one Unica plugin")
     source = plugins[0].get("source")
+    # Both path forms stay accepted: this reads historical commits, and
+    # catalogs promoted before v0.10.x carry the legacy "./" prefix.
     if (
         not isinstance(source, dict)
         or source.get("source") != "git-subdir"
         or source.get("url") != MARKETPLACE
-        or source.get("path") != "./plugins/unica"
+        or source.get("path") not in {"plugins/unica", "./plugins/unica"}
     ):
         raise RuntimeError(f"catalog source at {commit} must use the expected Unica git-subdir")
     ref = source.get("ref")

@@ -88,7 +88,9 @@ def verify_catalog(root: Path, version: str) -> None:
     source = entry.get("source", {})
     require(source.get("source") == "git-subdir", "stable source must use git-subdir")
     require(source.get("url") == MARKETPLACE, "stable source repository mismatch")
-    require(source.get("path") == "./plugins/unica", "stable source path mismatch")
+    # Bare form only: a "./" prefix breaks `git sparse-checkout set --cone`
+    # on git <= 2.34, where the argument lands as a literal non-matching pattern.
+    require(source.get("path") == "plugins/unica", "stable source path mismatch")
     stable_ref = source.get("ref")
     require(isinstance(stable_ref, str) and re.fullmatch(r"v\d+\.\d+\.\d+", stable_ref),
             "stable source ref is not a semantic version tag")
