@@ -13,10 +13,10 @@
         "source": "git-subdir",
         "url": "https://github.com/IngvarConsulting/unica-marketplace.git",
         "path": "plugins/unica",
-        "ref": "v0.10.0"
+        "ref": "v0.11.0"
       },
       "description": "Practical 1C:Enterprise development workflows for Claude Code.",
-      "version": "0.10.0",
+      "version": "0.11.0",
       "author": {
         "name": "Ingvar Consulting, LLC",
         "url": "https://ingvar.pro"
