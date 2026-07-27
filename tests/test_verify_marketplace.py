@@ -10,7 +10,7 @@ from scripts.verify_marketplace import ContractError, verify, verify_catalog
 
 
 class MarketplaceContractTests(unittest.TestCase):
-    def write_catalog(self, root: Path, version: str) -> None:
+    def write_catalog(self, root: Path, version: str, *, path: str = "plugins/unica") -> None:
         catalog = root / ".agents" / "plugins" / "marketplace.json"
         catalog.parent.mkdir(parents=True)
         catalog.write_text(
@@ -23,7 +23,7 @@ class MarketplaceContractTests(unittest.TestCase):
                             "source": {
                                 "source": "git-subdir",
                                 "url": "https://github.com/IngvarConsulting/unica-marketplace.git",
-                                "path": "./plugins/unica",
+                                "path": path,
                                 "ref": f"v{version}",
                             },
                             "policy": {"installation": "AVAILABLE"},
@@ -56,6 +56,16 @@ class MarketplaceContractTests(unittest.TestCase):
             self.write_catalog(root, "0.7.2")
 
             verify_catalog(root, "0.7.5")
+
+    def test_catalog_path_with_dot_slash_prefix_is_rejected(self) -> None:
+        # git <= 2.34 turns a leading-"./" sparse-checkout argument into a
+        # pattern that matches nothing, so the catalog must never ship it.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_catalog(root, "0.7.2", path="./plugins/unica")
+
+            with self.assertRaisesRegex(ContractError, "stable source path mismatch"):
+                verify_catalog(root, "0.7.2")
 
     def test_staged_plugin_cannot_be_older_than_the_stable_catalog(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

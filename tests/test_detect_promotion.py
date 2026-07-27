@@ -30,7 +30,9 @@ class PromotionDetectionTests(unittest.TestCase):
         descriptor.parent.mkdir(parents=True, exist_ok=True)
         descriptor.write_text(json.dumps({"version": version}), encoding="utf-8")
 
-    def write_catalog(self, root: Path, version: str, **extra: object) -> None:
+    def write_catalog(
+        self, root: Path, version: str, *, path: str = "plugins/unica", **extra: object
+    ) -> None:
         catalog = root / ".agents" / "plugins" / "marketplace.json"
         catalog.parent.mkdir(parents=True, exist_ok=True)
         document = {
@@ -41,7 +43,7 @@ class PromotionDetectionTests(unittest.TestCase):
                     "source": {
                         "source": "git-subdir",
                         "url": "https://github.com/IngvarConsulting/unica-marketplace.git",
-                        "path": "./plugins/unica",
+                        "path": path,
                         "ref": f"v{version}",
                     },
                 }
@@ -80,6 +82,25 @@ class PromotionDetectionTests(unittest.TestCase):
             base = self.commit(root, "base")
             self.write_catalog(root, "1.0.0", description="format-only policy metadata")
             head = self.commit(root, "same ref")
+
+            outputs = self.detect_pr(root, base, head)
+
+            self.assertEqual(outputs["catalog_promoted"], "false")
+            self.assertEqual(outputs["catalog_matches_plugin"], "true")
+            self.assertEqual(outputs["previous_catalog_version"], "1.0.0")
+
+    def test_legacy_dot_slash_catalog_history_is_still_readable(self) -> None:
+        # Catalogs promoted before v0.10.x carry "./plugins/unica"; detection
+        # reads those historical commits, so dropping the prefix in a new
+        # commit must not read as a promotion or a contract violation.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            self.write_plugin(root, "1.0.0")
+            self.write_catalog(root, "1.0.0", path="./plugins/unica")
+            base = self.commit(root, "legacy path form")
+            self.write_catalog(root, "1.0.0")
+            head = self.commit(root, "bare path form")
 
             outputs = self.detect_pr(root, base, head)
 

@@ -81,9 +81,10 @@ jobs:
             throw "Selected marketplace ref $env:MARKETPLACE_REF must contain exactly one Unica plugin"
           }
           $source = $plugins[0].source
+          # Historical refs carry the legacy "./" prefix; current catalogs use the bare form.
           if ($source.source -ne 'git-subdir' -or
               $source.url -ne 'https://github.com/IngvarConsulting/unica-marketplace.git' -or
-              $source.path -ne './plugins/unica') {
+              $source.path -notin @('plugins/unica', './plugins/unica')) {
             throw 'Selected marketplace catalog has an unexpected Unica source'
           }
           $catalogTag = [string]$source.ref
