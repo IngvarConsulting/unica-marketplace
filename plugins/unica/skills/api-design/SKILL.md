@@ -9,7 +9,8 @@ description: "Проектирование и ревью API 1С: публичн
 
 ## MCP routing
 
-- Preferred path: use MCP `unica` tools `unica.code.search`, `unica.code.definition`, `unica.code.outline`, `unica.code.grep`, `unica.code.graph`, `unica.code.diagnostics`, `unica.project.map`, `unica.subsystem.info`, `unica.meta.info`, `unica.meta.profile`, `unica.standards.search`, `unica.standards.explain`, and `unica.runtime.execute`.
+- Preferred path: use MCP `unica` tools `unica.code.search`, `unica.code.definition`, `unica.code.outline`, `unica.code.graph`, `unica.code.diagnostics`, `unica.project.map`, `unica.subsystem.info`, `unica.meta.info`, `unica.standards.search`, `unica.standards.explain`, and `unica.runtime.execute`.
+- По INV-MCP-RUNTIME-RECEIPT текущий runtime-контракт: `unica.runtime.execute` — preview-only и вызывается только с `dryRun: true`; любой applied-режим возвращает fail-closed до workspace discovery и process spawn. Preview не является runtime verification. Не обходи этот отказ прямым runner-ом, через `unica.build.*` или fallback через `unica.runtime.job.*`.
 - Use v8std through public `unica.standards.*` tools for standards 483, 543, 551, 553, and 644 before making compatibility claims.
 - Use `test-authoring` for unit tests that model API consumer scenarios; use `integration-implement` only when the task is about HTTP/REST/SOAP/gRPC transport implementation.
 - Do not call internal analyzer, standards, runtime, or package adapters directly. They are hidden behind MCP `unica`.
@@ -29,13 +30,13 @@ Classify every exported method before changing or calling it:
 ## Workflow
 
 1. Map source-sets with `unica.project.map` and inspect subsystem/object boundaries with `unica.subsystem.info` or `unica.meta.info`.
-2. When the API belongs to a concrete metadata object, inspect `unica.meta.profile` for related modules, roles, subscriptions, and functional options before classifying the boundary.
+2. When the API belongs to a concrete metadata object, inspect `unica.meta.info` for related modules, roles, subscriptions, and functional options before classifying the boundary.
 3. Find the candidate API with `unica.code.definition`; inspect the module with `unica.code.outline` before reading broad code.
-4. Use `unica.code.graph` for callers, callees, and impact analysis of exported methods. Use `unica.code.search` and `unica.code.grep` for export area comments, module suffixes, deprecated sections, literal contract mentions, and call sites not represented in graph edges.
+4. Use `unica.code.graph` for callers, callees, and impact analysis of exported methods. Use `unica.code.search` for export area comments, module suffixes, deprecated sections, literal contract mentions, and call sites not represented in graph edges.
 5. Check standards through `unica.standards.explain` / `unica.standards.search`: functional subsystems, libraries, overridable modules, version numbering, and backward compatibility.
 6. Classify the change: new method, optional parameter, mandatory parameter, removed/renamed method, changed parameter type, behavior change, deprecated method, or direct data access across a boundary.
 7. Decide the required version impact and migration path.
-8. Verify with `unica.code.diagnostics`, `unica.runtime.execute` syntax/tests, and consumer-style tests when the API has real callers.
+8. Verify statically with `unica.code.diagnostics`; use `unica.runtime.execute` only to preview the typed syntax/test request, then report syntax and runtime behavior as unverified unless separate evidence is supplied. Keep consumer-style tests for APIs with real callers.
 
 ## Compatibility rules
 
@@ -97,6 +98,7 @@ For переопределяемые modules:
     "name": "unica.code.search",
     "arguments": {
       "cwd": "<workspace>",
+      "sourceSet": "<source-set-from-project-map>",
       "query": "Устаревшие процедуры и функции",
       "limit": 20
     }

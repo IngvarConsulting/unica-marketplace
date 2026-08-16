@@ -1,10 +1,10 @@
 # Авторы, источники и лицензии
 
 Эта страница описывает компоненты публичного пакета Unica, источники идей и
-адаптированного поведения, а также границы применимых лицензий. Версии,
-репозитории и закреплённые коммиты инструментов задаются в
-[`third-party/tools.lock.json`](third-party/tools.lock.json), а происхождение
-skills — в [`provenance/skill-upstreams.json`](provenance/skill-upstreams.json).
+адаптированного поведения, а также границы применимых лицензий. Она
+самодостаточна: каждый источник назван здесь поимённо. Версии, репозитории и
+закреплённые коммиты поставляемых инструментов задаются в
+[`third-party/tools.lock.json`](third-party/tools.lock.json).
 
 ## Unica
 
@@ -26,8 +26,12 @@ skills — в [`provenance/skill-upstreams.json`](provenance/skill-upstreams.jso
 
 - Репозиторий: [itrous/bsl-analyzer](https://github.com/itrous/bsl-analyzer)
 - Автор: [BSL Analyzer Contributors](https://github.com/itrous/bsl-analyzer/graphs/contributors)
-- Закреплённая версия: `0.2.62`, commit `9a6cb15d60c0381dce6a3b5e536434adb12da89b`
+- Закреплённая версия: `0.2.67`, commit `9a92766691bbd0191a5ff02c34fa9058e4570b85`
 - Лицензия: [LGPL-3.0-or-later](third-party/licenses/bsl-analyzer/LICENSE-LGPL)
+- Полный набор текстов лицензий компонентов: [MIT](third-party/licenses/bsl-analyzer/LICENSE-MIT),
+  [Apache-2.0](third-party/licenses/bsl-analyzer/LICENSE-APACHE),
+  [LGPL-3.0-or-later](third-party/licenses/bsl-analyzer/LICENSE-LGPL) и
+  [GPL-3.0](third-party/licenses/bsl-analyzer/LICENSE-GPL)
 - Дополнительные условия и происхождение: [NOTICE](third-party/licenses/bsl-analyzer/NOTICE)
 
 Unica поставляет LSP-бинарник `bsl-analyzer`. Его лицензионная заметка
@@ -49,20 +53,24 @@ Unica поставляет LSP-бинарник `bsl-analyzer`. Его лице�
 распространяемый бинарник и исходный код действует AGPL-3.0-only; лицензия
 LGPL-3.0-or-later проекта Unica не заменяет эти условия.
 
-### rlm-tools-bsl и rlm-bsl-index
+### rlm-bsl-mcp и rlm-bsl-index
 
-<!-- unica-attribution: tool rlm-tools-bsl -->
+<!-- unica-attribution: tool rlm-bsl-mcp -->
 <!-- unica-attribution: tool rlm-bsl-index -->
 
 - Репозиторий: [Dach-Coin/rlm-tools-bsl](https://github.com/Dach-Coin/rlm-tools-bsl)
 - Автор: [Roman Starchenko](https://github.com/Dach-Coin); исходный проект
   `rlm-tools` — [Stefan O'Shea](https://github.com/stefanoshea)
-- Закреплённая версия: `1.26.0`, commit `dcfff95ce678f49971b14d8acd82b042a6855470`
+- Закреплённая версия: `1.33.0`, commit `3e6920cd015a61af4ba7aa1a5f1fedd8bc935549`
+- Архив standalone runtime: `rlm-tools-bsl-v1.33.0-build.3`
+- Инструмент сборки standalone runtime: [Nuitka](https://nuitka.net/) `4.1.3`
 - Лицензия: [MIT](third-party/licenses/rlm-tools-bsl/LICENSE)
 
 Оба бинарника собираются из одного репозитория. MIT notice сохраняет
 благодарность Stefan O'Shea за исходный `rlm-tools` и Roman Starchenko за
 адаптацию `rlm-tools-bsl`.
+Nuitka применяется только как инструмент сборки и не расширяет публичный API
+Unica.
 
 ## Внешние сервисы
 

@@ -89,6 +89,53 @@ response. Consumers must read `stdout`/structured response data instead of
 reading a file created by Unica. If a durable artifact is needed, the caller
 must save the returned value explicitly outside the read-only tool contract.
 
+## Logical source target migration
+
+Tools migrate to one logical target, one merge request at a time. There is no
+deprecated alias:
+
+| Tool | Removed selector | Canonical selector |
+| --- | --- | --- |
+| `unica.code.patch` | `path` + `sourceDir` | `sourceSet` + `metadataPath` |
+| `unica.meta.info` | `ObjectPath` / `Path` | `sourceSet` + `metadataPath` |
+
+Calls that still pass a removed field fail with `legacy_target_removed` and
+name the canonical replacement. The logical selector addresses existing
+Platform XML Configuration and Extension targets; Unica resolves the physical
+`*Module.bsl` or descriptor location privately. `unica.meta.info` also stops
+accepting `Detailed`, which it never read.
+
+`unica.source.resolve` finds an address by name, and `unica.source.locate`
+converts a path discovered by other means into one.
+
+### Readers that accept either selector
+
+Thirteen readers and validators are in the transitional state ADR-0049
+defines: they accept the logical selector **and** still accept their existing
+path. Nothing is removed here, so no call breaks; removing each path is its own
+later merge request.
+
+| Tool | Logical selector | Path kept for now |
+| --- | --- | --- |
+| `unica.cf.info`, `unica.cf.validate` | `sourceSet` | `ConfigPath` |
+| `unica.subsystem.info` | `sourceSet`, optional `metadataPath` | `SubsystemPath` |
+| `unica.subsystem.validate` | `sourceSet` + `metadataPath` | `SubsystemPath` |
+| `unica.role.info`, `unica.role.validate` | `sourceSet` + `metadataPath` | `RightsPath` |
+| `unica.form.info`, `unica.form.validate` | `sourceSet` + `metadataPath` | `FormPath` |
+| `unica.dcs.info`, `unica.dcs.validate` | `sourceSet` + `metadataPath` | `TemplatePath` |
+| `unica.mxl.info`, `unica.mxl.validate`, `unica.mxl.decompile` | `sourceSet` + `metadataPath` | `TemplatePath` |
+
+Exactly one selector per call. Passing both fails with `selector_conflict`,
+because resolving a conflict silently would hide which selector produced the
+answer. A configuration root has no address, so `unica.cf.*` takes `sourceSet`
+alone and no longer publishes `metadataPath`; `unica.subsystem.info` reads the
+whole registered tree when the address is omitted.
+
+An addressed object whose requested body is missing — a template whose
+`TemplateType` writes `Template.bin` rather than `Template.xml` — fails with
+`resource_absent`, not `target_not_found`: the object exists and is
+addressable, that body does not.
+
 ## Runtime delivery
 
 The marketplace plugin contains skills, references, assets, `launch.sh`, and
@@ -119,7 +166,7 @@ literal token, and the bootstrap discards any value that still contains `${`
 rather than creating a directory named after it.
 
 The runtime archive contains the target's `unica`, `bsl-analyzer`, `v8-runner`,
-`rlm-tools-bsl`, and `rlm-bsl-index` binaries plus the generated
+`rlm-bsl-mcp`, and `rlm-bsl-index` binaries plus the generated
 `third-party/manifest.json`. Internal launches re-check the pinned binary hash.
 
 ## Skills
@@ -128,7 +175,18 @@ The `skills/` tree covers configuration and extension metadata, forms, roles,
 DCS/MXL, command interfaces, EPF/ERF and BSP registration, database/build
 workflows, BSL search and diagnostics, integrations, background jobs,
 performance, security, data separation, release support, autonomous runtime,
-and platform help.
+platform help, and logical source-resource inspection with a guarded BSL
+replacement fallback.
+
+It also covers applied-solution design, where the question is what to build
+rather than how to write it: choosing the object class and typing its attributes
+(`metadata-modeling`), designing registers (`register-design`), what a document
+records and under which locks (`document-posting`), which event handler owns a
+piece of logic (`object-events`), the managed form module and its client/server
+boundary (`form-events`), which module hosts a procedure
+(`module-placement`), the transaction, lock and responsible-read rules the
+others defer to (`transactions-locks`), and concurrent editing of one object by
+several users (`object-locks`).
 
 ## Local development
 
@@ -184,6 +242,7 @@ and immutable marketplace tag exist.
 ## Verification
 
 ```sh
+python3.12 -m pip install -r tests/ci/requirements.txt
 python3.12 -m unittest discover -s tests/ci
 python3.12 -m py_compile scripts/ci/*.py tests/ci/*.py
 cargo fmt --all -- --check

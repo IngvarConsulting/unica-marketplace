@@ -7,7 +7,8 @@ description: "Производительность БД и запросов 1С.
 
 ## MCP routing
 
-- Preferred path: use MCP `unica` tools `unica.project.map`, `unica.code.search`, `unica.code.outline`, `unica.code.grep`, `unica.code.graph`, `unica.meta.info`, `unica.meta.profile`, `unica.dcs.info`, `unica.code.diagnostics`, `unica.standards.search`, `unica.standards.explain`, and `unica.runtime.execute`.
+- Preferred path: use MCP `unica` tools `unica.project.map`, `unica.code.search`, `unica.code.outline`, `unica.code.graph`, `unica.meta.info`, `unica.dcs.info`, `unica.code.diagnostics`, `unica.standards.search`, `unica.standards.explain`, and `unica.runtime.execute`.
+- По INV-MCP-RUNTIME-RECEIPT текущий runtime-контракт: `unica.runtime.execute` — preview-only и вызывается только с `dryRun: true`; любой applied-режим возвращает fail-closed до workspace discovery и process spawn. Preview не является runtime verification. Не обходи этот отказ прямым runner-ом, через `unica.build.*` или fallback через `unica.runtime.job.*`.
 - Use `unica.role.info` when performance behavior depends on rights filters, RLS, or tenant boundaries.
 - Do not call internal analyzer, runtime, standards, or package adapters directly. They are hidden behind MCP `unica`.
 
@@ -15,16 +16,17 @@ description: "Производительность БД и запросов 1С.
 
 - Read `../../references/platform/db-performance.md` for DB-aware workflow, indexes, virtual tables, locks, and DBMS evidence.
 - Read `../../references/platform/runtime-diagnostics.md` when performance evidence comes from ЖР/ТЖ, process ids, sessions, or runtime timeline.
+- Read `../../references/platform/transactions-locks.md` once evidence points at contention; this skill keeps the evidence side, that document owns the lock and transaction rules.
 
 ## Workflow
 
 1. Name the slow scenario first: user action, API call, report, background job, exchange step, or posting.
-2. Extract exact query/DCS/DCS text with `unica.code.grep`, `unica.code.search`, or `unica.dcs.info`; inspect large candidate modules with `unica.code.outline` before reading full bodies.
+2. Extract exact query/DCS text with `unica.code.search` or `unica.dcs.info`; inspect large candidate modules with `unica.code.outline` before reading full bodies.
 3. Use `unica.code.graph` for callers/callees when the performance issue depends on execution path, query-in-loop risk, or impact of moving logic.
-4. Inspect metadata with `unica.meta.profile` for the affected object when roles, subscriptions, functional options, predefined items, or object modules can change the performance path. Use `unica.meta.info` when XML-level object structure is needed.
+4. Inspect `unica.meta.info` for both the local object structure and related modules, roles, subscriptions, functional options, or predefined items that can change the performance path.
 5. Gather evidence: row counts, generated SQL, query plan, managed locks, lock order, lock/deadlock participants, long transaction boundaries, temp storage, TEMPDB or WAL pressure, and table/index names.
 6. Separate causes: inefficient platform query, missing or harmful index, broad virtual table read, query-in-loop, lock contention, DBMS maintenance, or data growth.
-7. Propose one measurable change at a time and verify with `unica.runtime.execute` for syntax/tests plus the same timing/DBMS evidence after the change.
+7. Propose one measurable change at a time; use `unica.runtime.execute` only to preview typed syntax/test arguments, and require separate runtime plus timing/DBMS evidence before calling the change verified.
 
 ## Stop rules
 
