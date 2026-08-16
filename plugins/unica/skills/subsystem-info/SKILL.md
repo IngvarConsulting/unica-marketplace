@@ -1,7 +1,7 @@
 ---
 name: subsystem-info
-description: Анализ структуры подсистемы 1С из XML-выгрузки — состав, дочерние подсистемы, командный интерфейс, дерево иерархии. Используй для изучения структуры подсистем и навигации по конфигурации
-argument-hint: <SubsystemPath> [-Mode overview|content|ci|tree|full] [-Name <элемент>]
+description: Анализ структуры подсистемы 1С из XML-выгрузки — состав, дочерние подсистемы, командный интерфейс и полное или сфокусированное дерево. Используй для изучения структуры подсистем и навигации по конфигурации
+argument-hint: <SubsystemPath>
 allowed-tools:
   - Bash
   - Read
@@ -19,16 +19,65 @@ allowed-tools:
 
 Читает XML подсистемы из выгрузки конфигурации 1С и выводит компактное описание структуры.
 
-В `overview` и `full` показывает `Поддержка` подсистемы по `Ext/ParentConfigurations.bin`. Используй строку поддержки как guardrail перед `unica.subsystem.edit` или `unica.interface.edit`.
+Поле `support` показывает поддержку подсистемы по
+`Ext/ParentConfigurations.bin`. Используй его как guardrail перед
+`unica.subsystem.edit` или `unica.interface.edit`.
 
 ## MCP параметры
 
 | Параметр | Описание |
 |----------|----------|
-| `SubsystemPath` | Путь к XML-файлу подсистемы, каталогу подсистемы или каталогу `Subsystems/` (для tree) |
-| `Mode` | Режим: `overview` (default), `content`, `ci`, `tree`, `full` |
-| `Name` | Drill-down: тип объекта в content, секция в ci, имя подсистемы в tree |
-| `Limit` / `Offset` | Пагинация (по умолчанию 150 строк) |
+| `SubsystemPath` | Каталог `Subsystems`, зарегистрированный XML подсистемы или самостоятельный незарегистрированный XML |
+| `sourceSet`     | Имя набора исходников из `v8project.yaml`                                                            |
+| `metadataPath`  | Логический адрес; без него читается всё зарегистрированное дерево                                    |
+
+Селектор цели ровно один: либо `sourceSet` — с `metadataPath` для одной
+подсистемы или без него для всего зарегистрированного дерева, — либо
+`SubsystemPath`. Оба сразу отклоняются кодом `selector_conflict` (ADR-0049).
+
+Типизированный результат определяется формой цели в `SubsystemPath`:
+
+- каталог `Subsystems` возвращает полное зарегистрированное `tree` в пределах
+  этого каталога;
+- зарегистрированный XML возвращает сфокусированное `tree`: цепочку от корня до
+  выбранной подсистемы и всех её потомков;
+- самостоятельный незарегистрированный XML возвращает только локальные поля без
+  `tree`.
+
+## Поля `data`
+
+Для одной подсистемы:
+
+| Поле | Что содержит |
+|------|--------------|
+| `name`, `synonym`, `comment`, `explanation`, `picture` | Идентичность и оформление; отсутствующее — `null` |
+| `includeInCommandInterface`, `useOneCommand` | Свойства командного интерфейса подсистемы |
+| `support` | Поддержка по `Ext/ParentConfigurations.bin` |
+| `content` | Состав: полные имена объектов |
+| `groups` | Состав, сгруппированный по виду объекта |
+| `children` | Имена дочерних подсистем |
+| `commandInterface` | `visibility`, `placement` и `order`, либо `null`, если `CommandInterface.xml` нет |
+| `tree` | Для зарегистрированной подсистемы — цепочка от корня до неё, а потом полное дерево её потомков |
+
+Для каталога `Subsystems`:
+
+| Поле | Что содержит |
+|------|--------------|
+| `tree` | Корневые подсистемы: `name`, `content` со счётчиком состава и вложенные `children` |
+
+Дерево строится только от `Configuration/ChildObjects` и рекурсивных
+`Subsystem/ChildObjects` (ADR-0036, `INV-SOURCE-SUBSYSTEM-TOPOLOGY`). Для
+конкретной зарегистрированной подсистемы оно сохраняет единственную цепочку
+предков от корня, выбранный узел и всех его потомков. Так в одном результате
+видно и положение подсистемы в конфигурации, и вся вложенная в неё структура.
+Незарегистрированный самостоятельный XML сохраняет локальное описание, но не
+выдаёт недоказанное дерево. Если
+зарегистрированный дескриптор отсутствует, повреждён, связан символической
+ссылкой или не содержит единственный канонический `IncludeInCommandInterface`,
+инструмент возвращает `provider_unavailable` вместо частичного дерева; отмена
+после захвата снимка тоже не скрывается, и результат не выдаётся как доказанно
+полный. Отмена и истечение срока сохраняют собственную типизированную семантику
+сбоя и не маркируются как `provider_unavailable`.
 
 ```json
 {
@@ -38,27 +87,37 @@ allowed-tools:
     "name": "unica.subsystem.info",
     "arguments": {
       "cwd": "<workspace>",
-      "SubsystemPath": "src/Subsystems/Продажи",
-      "Mode": "overview",
-      "Limit": 120
+      "SubsystemPath": "src/Subsystems/Продажи.xml"
     }
   }
 }
 ```
 
-## Пять режимов
-
-| Режим | Что показывает |
-|---|---|
-| `overview` *(default)* | Компактная сводка: свойства, состав (сгруппирован по типам), дочерние подсистемы, наличие CI |
-| `content` | Список Content с группировкой по типу объекта. `-Name Catalog` — только каталоги |
-| `ci` | Разбор CommandInterface.xml: видимость, размещение, порядок команд/подсистем/групп |
-| `tree` | Рекурсивное дерево иерархии подсистем с маркерами [CI], [OneCmd], [Скрыт] |
-| `full` | Полная сводка: overview + content + ci в одном вызове |
-
 ## Примеры
 
-### Обзор подсистемы
+### Состав подсистемы
+
+`data.content` даёт полные имена объектов, `data.groups` — те же объекты по
+видам, поэтому отбор «только документы» делается по массиву.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "unica.subsystem.info",
+    "arguments": {
+      "cwd": "<workspace>",
+      "SubsystemPath": "Subsystems/Администрирование.xml"
+    }
+  }
+}
+```
+
+### Командный интерфейс подсистемы
+
+`data.commandInterface` равен `null`, когда файла нет — это не то же самое, что
+интерфейс, который ничего не скрывает.
 
 ```json
 {
@@ -74,7 +133,7 @@ allowed-tools:
 }
 ```
 
-### Состав подсистемы
+### Дерево подсистем
 
 ```json
 {
@@ -84,14 +143,33 @@ allowed-tools:
     "name": "unica.subsystem.info",
     "arguments": {
       "cwd": "<workspace>",
-      "SubsystemPath": "Subsystems/Администрирование.xml",
-      "Mode": "content"
+      "SubsystemPath": "Subsystems"
     }
   }
 }
 ```
 
-### Только документы в составе
+Типизированное `data` для каталога имеет вид:
+
+```json
+{
+  "tree": [
+    {
+      "name": "СтандартныеПодсистемы",
+      "content": 0,
+      "children": [
+        {"name": "Обсуждения", "content": 1, "children": []}
+      ]
+    }
+  ]
+}
+```
+
+### Контекст конкретной подсистемы
+
+Для зарегистрированного файла `Subsystems/Продажи/Subsystems/ОптовыеПродажи.xml`
+поле `tree` показывает цепочку от корня до выбранной подсистемы, а потом всех её
+потомков. Соседние ветки в такой сфокусированный результат не входят:
 
 ```json
 {
@@ -101,15 +179,40 @@ allowed-tools:
     "name": "unica.subsystem.info",
     "arguments": {
       "cwd": "<workspace>",
-      "SubsystemPath": "Subsystems/Продажи.xml",
-      "Mode": "content",
-      "Name": "Document"
+      "SubsystemPath": "Subsystems/Продажи/Subsystems/ОптовыеПродажи.xml"
     }
   }
 }
 ```
 
-### Командный интерфейс подсистемы
+Типизированное `data` для зарегистрированной подсистемы имеет вид:
+
+```json
+{
+  "name": "ОптовыеПродажи",
+  "children": ["Возвраты"],
+  "tree": [
+    {
+      "name": "Продажи",
+      "content": 1,
+      "children": [
+        {
+          "name": "ОптовыеПродажи",
+          "content": 2,
+          "children": [
+            {"name": "Возвраты", "content": 1, "children": []}
+          ]
+        }
+      ]
+    }
+  ]
+}
+```
+
+## Логический адрес вместо пути
+
+`unica.subsystem.info` принимает либо логический селектор, либо файловый путь —
+ровно один из двух. Оба сразу отклоняются кодом `selector_conflict`.
 
 ```json
 {
@@ -119,61 +222,13 @@ allowed-tools:
     "name": "unica.subsystem.info",
     "arguments": {
       "cwd": "<workspace>",
-      "SubsystemPath": "Subsystems/Продажи.xml",
-      "Mode": "ci"
+      "sourceSet": "<имя набора>",
+      "metadataPath": "Subsystem.<Подсистема>"
     }
   }
 }
 ```
 
-### Дерево подсистем от корня
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.subsystem.info",
-    "arguments": {
-      "cwd": "<workspace>",
-      "SubsystemPath": "Subsystems",
-      "Mode": "tree"
-    }
-  }
-}
-```
-
-### Дерево от конкретной подсистемы
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.subsystem.info",
-    "arguments": {
-      "cwd": "<workspace>",
-      "SubsystemPath": "Subsystems/Администрирование.xml",
-      "Mode": "tree"
-    }
-  }
-}
-```
-
-### Дерево только для одной подсистемы
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.subsystem.info",
-    "arguments": {
-      "cwd": "<workspace>",
-      "SubsystemPath": "Subsystems",
-      "Mode": "tree",
-      "Name": "Администрирование"
-    }
-  }
-}
-```
+Имя набора даёт `unica.project.map`, адрес — `unica.source.resolve`, а `unica.source.locate` переводит
+в адрес путь, найденный иначе. Файловый селектор сохраняется до
+отдельного среза его снятия (ADR-0049).

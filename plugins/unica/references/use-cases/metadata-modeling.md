@@ -8,7 +8,13 @@ registers, constants, enums, common modules, subsystems, command interfaces,
 templates, external processors/reports as metadata objects, and related XML.
 
 Do not use this for database build/dump/load or artifact build/export. Those are
-runtime workflows handled by `v8-runner`.
+runtime workflows whose typed arguments can currently only be previewed by
+`v8-runner` through `unica.runtime.execute`.
+
+По INV-MCP-RUNTIME-RECEIPT текущий runtime-контракт: `unica.runtime.execute` — preview-only и вызывается
+только с `dryRun: true`; любой applied-режим возвращает fail-closed до
+workspace discovery и process spawn. Preview не является runtime verification.
+Не обходи этот отказ прямым runner-ом, через `unica.build.*` или fallback через `unica.runtime.job.*`.
 
 ## Primary path
 
@@ -16,8 +22,9 @@ Before selecting XML metadata tools, inspect the project with
 `unica.project.map` and choose the target source-set. Native metadata tools work
 with platform XML source-sets (`sourceFormat=platform_xml`). If the selected
 source-set is EDT (`sourceFormat=edt`), do not apply platform XML edits directly;
-use runtime conversion/build workflows or ask for an explicit platform XML
-target.
+preview the intended runtime conversion/build arguments with `dryRun: true`, or
+ask for an explicit platform XML target. Preview does not convert or build the
+source-set.
 
 The workspace itself does not have a single source format. A project can contain
 an EDT configuration source-set and a platform XML external processor/report
@@ -26,7 +33,7 @@ source-set. The format decision belongs to the selected source-set.
 Use native MCP tools exposed by the public `unica` server:
 
 - `unica.cf.*` for `Configuration.xml`, languages, roles, and child-object registration.
-- `unica.meta.*` for metadata object info/compile/edit/remove/validate.
+- `unica.meta.*` for typed metadata object info/add/edit/remove operations.
 - `unica.subsystem.*` and `unica.interface.*` for sections and command interface.
 - `unica.template.*` for adding or removing metadata templates.
 
@@ -41,5 +48,4 @@ format evidence, and keep it out of Git. A legitimate metadata descriptor
 
 - `../specs/1c-configuration-spec.md`
 - `../specs/1c-config-objects-spec.md`
-- `../specs/meta-dsl-spec.md`
 - `../specs/1c-subsystem-spec.md`

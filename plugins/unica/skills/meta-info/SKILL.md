@@ -1,34 +1,33 @@
 ---
 name: meta-info
-description: Анализ структуры объекта метаданных 1С из XML-выгрузки — реквизиты, табличные части, формы, движения, типы. Используй для изучения структуры объектов (вместо чтения XML-файлов напрямую) и как подготовительный шаг при написании запросов и кода, работающего с объектами
-argument-hint: <ObjectPath> [-Mode overview|brief|full] [-Name <элемент>]
+description: Прочитать типизированную локальную структуру и validation объекта метаданных 1С, при необходимости дополнив её списками использования из дерева исходников.
+argument-hint: <sourceSet> <metadataPath> [sections] [limit]
 allowed-tools:
-  - Bash
   - Read
   - Glob
 ---
 
-# /meta-info — Структура объекта метаданных 1С
+# /meta-info — структура и проверка объекта метаданных
 
 ## MCP routing
 
-- Preferred path: use MCP `unica` tool `unica.meta.info`; `unica` owns XML/JSON DSL work and refreshes related workspace caches after mutations.
-- Do not call internal MCP/CLI adapters directly. They are hidden behind `unica` and synchronized by the orchestrator.
-- Execution path: call MCP `unica` tool `unica.meta.info`; skill-local operation scripts are not part of the workflow.
-- For mutating operations, pass `dryRun: false` only when the user explicitly requested the change; otherwise keep the default dry run.
-
-Читает XML объекта метаданных из выгрузки конфигурации 1С и выводит компактное описание структуры.
-
-В основном выводе показывает `Поддержка` по `Ext/ParentConfigurations.bin`: не на поддержке, на замке, редактируется с сохранением поддержки, снято с поддержки или read-only. Если объект на замке, планируй доработку через CFE/release-support flow, а не через прямую правку raw support metadata.
-
-## MCP параметры
-
-| Параметр | Описание |
-|----------|----------|
-| `ObjectPath` | Путь к XML-файлу объекта или каталогу (авто-резолв `<name>/<name>.xml`) |
-| `Mode` | Режим: `overview` (default), `brief`, `full` |
-| `Name` | Drill-down по имени элемента (реквизит, ТЧ, значение перечисления, шаблон URL, операция) |
-| `Limit` / `Offset` | Пагинация (по умолчанию 150 строк) |
+- Preferred path: use MCP `unica` tool `unica.meta.info`.
+- Выбирайте объект логически через `sourceSet + metadataPath`; расположение XML
+  внутри выгрузки остаётся внутренней деталью `unica`.
+- Читайте локальную структуру и `data.validation` из одного результата. Отдельный
+  публичный вызов проверки не нужен.
+- Инструмент читает только дерево исходников и не обращается к индексу кода ни
+  при каких аргументах. Без `sections` он ограничивается самим объектом; чтобы
+  добавить списки использования, перечислите нужные `sections`, а `limit`
+  (`1..=50`) ограничивает только `predefinedItems`.
+- Успешный и предметно неуспешный `tools/call` возвращает `structuredContent`;
+  `isError == !structuredContent.ok`. Читайте локальную структуру, validation и
+  доступные частичные данные из `structuredContent.data`; `content[0].text` не
+  является вторым контрактом результата.
+- Не вызывайте внутренние MCP/CLI-адаптеры и skill-local scripts.
+- `sourceSet` — это имя набора исходников из `v8project.yaml`, а не
+  константа. Получите его через `unica.project.map`; `"main"` в примерах
+  ниже — иллюстрация, а не значение по умолчанию.
 
 ```json
 {
@@ -37,37 +36,129 @@ allowed-tools:
   "params": {
     "name": "unica.meta.info",
     "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "src/Catalogs/Номенклатура.xml",
-      "Mode": "overview",
-      "Limit": 120
+      "sourceSet": "main",
+      "metadataPath": "Catalog.Валюты"
     }
   }
 }
 ```
 
-## Три режима
+## Ответ
 
-| Режим | Что показывает |
-|---|---|
-| `overview` *(default)* | Заголовок + ключевые свойства + структура без раскрытия деталей |
-| `brief` | Всё одной-двумя строками: имена полей, счётчики |
-| `full` | Всё раскрыто: колонки ТЧ, список источников подписки, движения, формы |
+`data` всегда начинается с локально прочитанной структуры объекта: канонического
+`metadataPath`, вида, имени, синонима, состояния поддержки, свойств именами
+платформы, владельцев, реквизитов, измерений, ресурсов, табличных частей, форм,
+макетов и команд. Поле `validation` (`data.validation`) содержит `status` и
+типизированные `diagnostics`; та же внутренняя проверка выполняется перед каждой
+мутацией.
 
-Для ссылочных объектов (`Справочник`, `Документ`, `Перечисление`, планы, `ПланОбмена`, `БизнесПроцесс`, `Задача`) вывод содержит `Представление типа`. В `full` дополнительно раскрываются `Представление объекта`, расширенные представления и представления списка, если они заданы в XML.
+У структурного типа элемента есть `variants` и `mutationCapability` со
+значением `editable` или `readOnly`. `uuid` — доказанно редактируемый вариант;
+его входная форма — `{"kind": "uuid"}`. Синтаксически корректный, но ещё не
+моделируемый платформенный QName оставляет `type` отсутствующим, отмечает только
+этот элемент как `incomplete` и даёт warning, не превращая весь вызов в ошибку.
+Это не разрешает передавать такой QName в `meta.add` или `meta.edit`.
 
-`-Name` — drill-down: раскрыть конкретный элемент объекта (ТЧ, реквизит, шаблон URL, операцию веб-сервиса).
+Формы и макеты наблюдаются по ссылке владельца и отдельному XML-дескриптору,
+команды — по встроенному дескриптору владельца без выдуманного
+`Commands/<Name>.xml`. Страница HTML-макета проверяется как зарегистрированный
+UTF-8-ресурс и не разбирается как XML; её `DOCTYPE`, HTML-сущности и исходные
+байты не нормализуются.
 
-## Поддерживаемые типы (23)
+`data.kind` всегда связан с обязательным `data.details`: это закрытый вариант
+для каждого из 23 видов метаданных, а не необязательный универсальный словарь.
+Полнотой этой пары владеют ADR-0047 и `INV-MCP-META-INFO-COVERAGE`.
+Для видов без дополнительных фактов `details` равен `{}`. Constant и
+DefinedType возвращают в нём наблюдаемый `type`, включая доказанно
+редактируемый `UUID`;
+ScheduledJob — логический адрес общего модуля и имя метода;
+CalculationRegister — тройку `schedule`; HTTPService — `urlTemplates` с
+методами; WebService — `xdtoPackages`, операции, параметры и XDTO QName в форме
+`{namespace, localName}`. Возможность прочитать иной тип или свойство не
+означает, что `unica.meta.add/edit` разрешит его записать.
 
-**Ссылочные:** Справочник, Документ, Перечисление, Бизнес-процесс, Задача, План обмена, План счетов, ПВХ, ПВР
-**Регистры:** Регистр сведений, Регистр накопления, Регистр бухгалтерии, Регистр расчёта
-**Сервисные:** Отчёт, Обработка, HTTP-сервис, Веб-сервис, Общий модуль, Регламентное задание, Подписка на событие
-**Прочие:** Константа, Журнал документов, Определяемый тип
+Дополнительные владельцы не сваливаются в общий словарь:
+`ChartOfCharacteristicTypes.details.type` хранит тип значения,
+`ChartOfCalculationTypes.details.baseCalculationTypes` — логические адреса
+базовых видов расчёта, `DocumentJournal.details.registeredDocuments` — адреса
+зарегистрированных документов. Корневые декларации сериализуются отдельно как
+`standardAttributes`, `standardTabularSections` и `characteristics`; их
+прикладные свойства имеют закрытые значения `text`, `boolean`, `localizedString`,
+`typed`, `nil` или `empty`. `localizedString.values` сохраняет пары
+`{language, content}`. Только ранее опубликованный `properties.Synonym` остаётся
+плоской строкой ради wire-совместимости; новые локализованные свойства языки не
+теряют.
+
+Для применимой вложенной коллекции доказанно пустое значение равно `[]`.
+Доказанно отсутствующее применимое значение равно `null` без ошибки.
+Недоказанное или повреждённое значение равно `null` и сопровождается диагностикой
+с путём публичного поля, например `details.urlTemplates[0].methods[0].handler`;
+частичный массив за полный не выдаётся.
+
+Новые коллекции `recalculations`, `accountingFlags`,
+`extDimensionAccountingFlags` и `addressingAttributes` находятся в
+`data.collections`. Неприменимая к виду коллекция отсутствует; применимая без
+контейнера равна `null`; полностью прочитанный пустой контейнер равен `[]`.
+Элементы accounting/addressing дополнительно сохраняют известные стандартные
+свойства в `properties`; неизвестный или повреждённый вложенный узел обнуляет
+всю коллекцию с диагностикой, но неизвестный корректный QName оставляет один
+`incomplete`-элемент и warning. `relations.dataLockFields` использует ту же
+all-or-none семантику и возвращает типизированные field-цели.
+
+У `EventSubscription` поле `data.relations.source` содержит массив того же
+закрытого размеченного объединения, которое принимают `unica.meta.add` и
+`unica.meta.edit`: `object`, `manager`, `recordSet` и `definedType` возвращаются с
+логическим `metadataPath`, `family` — с `sourceClass`. Для менеджера константы
+`sourceClass` различает `constantManager` и `constantValueManager`. Это обратное
+чтение логически допустимого `Properties/Source`, а не строка XML-типа. Примитив,
+ссылка или другой форматный тип не выдаётся как допустимая цель: чтение содержит
+диагностику. Позиция элемента массива не входит в идентичность источника.
+
+`data.functionalSubsystems` и `data.interfaceSubsystems` — только членства
+текущего объекта соответственно в функциональных и интерфейсных подсистемах.
+Запись `Content` может ссылаться на объект логическим адресом метаданных или
+UUID его корневого дескриптора. После полного доказательства топологии отсутствие
+членств сериализуется как `[]`. Если зарегистрированная топология повреждена,
+недоступна или её обработка отменена, оба поля отсутствуют, а диагностика
+содержит `provider_unavailable`; это состояние не подменяется пустыми массивами.
+
+Явно запрошенные секции читаются из дерева исходников, а не из индекса.
+`data.usage` содержит `roles`, `subscriptions` и `functionalOptions` обычными
+полными массивами: они прочитаны из того же снимка, что и сам объект, и
+разойтись с ним не могут, поэтому никаких признаков давности у них нет.
+Предопределённые элементы лежат отдельно в `data.predefinedItems` вместе с
+`total`, `returned` и `truncated`, потому что это содержимое самого объекта.
+`items` возвращается плоско в документном порядке: каждый элемент содержит
+UUID в `id`, поддержанные typed-поля своего владельца и `parentId` для
+вложенного элемента. `Catalog`, `ChartOfAccounts`,
+`ChartOfCharacteristicTypes` и `ChartOfCalculationTypes` имеют разные закрытые
+наборы полей; структурные `type`, `accountingFlags` и `extDimensionTypes`
+читайте как объекты из ответа, не восстанавливайте из них строковый DSL.
+Подписка может достигать объекта через `DefinedType`; такое совпадение входит в
+ответ и помечено полем `via`. Без `sections` или с `sections: []` не читается
+ничего сверх самого объекта.
+
+Адрес принимает русские и английские псевдонимы вида, а в
+`data.metadataPath` возвращает каноническую английскую форму. Если известен
+только путь файла, сначала используйте `unica.source.locate`; если известно имя
+— `unica.source.resolve`. Адрес модуля (`Catalog.X.ObjectModule`) здесь не
+поддерживается: код читают `unica.code.*`.
+
+«Представление типа», «Представление объекта» и представления списка ссылочного
+объекта находятся в `properties` под платформенными именами
+`ObjectPresentation`, `ExtendedObjectPresentation`, `ListPresentation` и
+`ExtendedListPresentation`.
+
+Раздел «Поддержка» читается из `Ext/ParentConfigurations.bin`. Объект на замке
+изменяйте через CFE/release-support flow, не через raw support metadata.
+
+Соглашения по именам, синонимам и представлениям находятся в
+[общей ссылке](../../references/platform/metadata-conventions.md); перечни видов
+и свойств не дублируются здесь, потому что их публикует схема операции.
 
 ## Примеры
 
-### Справочник: overview
+### Документ: локальная структура и validation
 
 ```json
 {
@@ -76,14 +167,14 @@ allowed-tools:
   "params": {
     "name": "unica.meta.info",
     "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "Catalogs/Валюты/Валюты.xml"
+      "sourceSet": "main",
+      "metadataPath": "Document.АвансовыйОтчет"
     }
   }
 }
 ```
 
-### Документ: полная сводка
+### Документ и явно запрошенные списки использования
 
 ```json
 {
@@ -92,15 +183,16 @@ allowed-tools:
   "params": {
     "name": "unica.meta.info",
     "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "Documents/АвансовыйОтчет/АвансовыйОтчет.xml",
-      "Mode": "full"
+      "sourceSet": "main",
+      "metadataPath": "Document.АвансовыйОтчет",
+      "sections": ["roles", "subscriptions", "functionalOptions"],
+      "limit": 20
     }
   }
 }
 ```
 
-### Регистр сведений: краткая сводка
+### Предопределённые элементы в документном порядке
 
 ```json
 {
@@ -109,15 +201,20 @@ allowed-tools:
   "params": {
     "name": "unica.meta.info",
     "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "InformationRegisters/КурсыВалют/КурсыВалют.xml",
-      "Mode": "brief"
+      "sourceSet": "main",
+      "metadataPath": "Catalog.Валюты",
+      "sections": ["predefinedItems"],
+      "limit": 20
     }
   }
 }
 ```
 
-### Drill-down в табличную часть документа
+Сначала проверяйте `total`, `returned` и `truncated`, затем обходите `items`.
+`parentId: null` означает корневой элемент; UUID родителя связывает вложенный
+элемент без раскрытия физической структуры `Predefined.xml`.
+
+### HTTP-сервис
 
 ```json
 {
@@ -126,15 +223,14 @@ allowed-tools:
   "params": {
     "name": "unica.meta.info",
     "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "Documents/АвансовыйОтчет/АвансовыйОтчет.xml",
-      "Name": "Товары"
+      "sourceSet": "main",
+      "metadataPath": "HTTPService.ExternalAPI"
     }
   }
 }
 ```
 
-### Drill-down в реквизит
+### Веб-сервис
 
 ```json
 {
@@ -143,124 +239,8 @@ allowed-tools:
   "params": {
     "name": "unica.meta.info",
     "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "Catalogs/Валюты/Валюты.xml",
-      "Name": "ОсновнаяВалюта"
-    }
-  }
-}
-```
-
-### Общий модуль
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.meta.info",
-    "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "CommonModules/ОбщегоНазначения/ОбщегоНазначения.xml"
-    }
-  }
-}
-```
-
-### HTTP-сервис: шаблоны URL и методы
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.meta.info",
-    "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "HTTPServices/ExternalAPI/ExternalAPI.xml"
-    }
-  }
-}
-```
-
-### HTTP-сервис: drill-down в шаблон URL
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.meta.info",
-    "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "HTTPServices/ExternalAPI/ExternalAPI.xml",
-      "Name": "АктуальныеЗадачи"
-    }
-  }
-}
-```
-
-### Веб-сервис: операции с параметрами
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.meta.info",
-    "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "WebServices/EnterpriseDataUpload_1_0_1_1/EnterpriseDataUpload_1_0_1_1.xml"
-    }
-  }
-}
-```
-
-### Веб-сервис: drill-down в операцию
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.meta.info",
-    "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "WebServices/EnterpriseDataUpload_1_0_1_1/EnterpriseDataUpload_1_0_1_1.xml",
-      "Name": "TestConnection"
-    }
-  }
-}
-```
-
-### Подписка на событие
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.meta.info",
-    "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "EventSubscriptions/ПолныйРегистрацияУдаления/ПолныйРегистрацияУдаления.xml",
-      "Mode": "full"
-    }
-  }
-}
-```
-
-### Регламентное задание
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.meta.info",
-    "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "ScheduledJobs/АвтоматическоеЗакрытиеМесяца/АвтоматическоеЗакрытиеМесяца.xml"
+      "sourceSet": "main",
+      "metadataPath": "WebService.EnterpriseDataUpload_1_0_1_1"
     }
   }
 }
@@ -275,8 +255,24 @@ allowed-tools:
   "params": {
     "name": "unica.meta.info",
     "arguments": {
-      "cwd": "<workspace>",
-      "ObjectPath": "DefinedTypes/GLN/GLN.xml"
+      "sourceSet": "main",
+      "metadataPath": "DefinedType.GLN"
+    }
+  }
+}
+```
+
+### Подписка на событие: типизированные источники
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "unica.meta.info",
+    "arguments": {
+      "sourceSet": "main",
+      "metadataPath": "EventSubscription.ОбработкаИзменений"
     }
   }
 }

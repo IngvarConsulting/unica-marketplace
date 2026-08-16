@@ -1,7 +1,7 @@
 ---
 name: dcs-info
 description: Анализ структуры схемы компоновки данных 1С (СКД) — наборы, поля, параметры, варианты. Используй для понимания отчёта — источник данных (запрос), доступные поля, параметры
-argument-hint: <TemplatePath> [-Mode overview|query|fields|links|calculated|resources|params|variant|templates|trace|full] [-Name <dataset|variant|field|group>] [-Raw]
+argument-hint: <TemplatePath>
 allowed-tools:
   - Bash
   - Read
@@ -21,16 +21,37 @@ allowed-tools:
 
 В `overview` и `full` показывает `Поддержка` для объекта-владельца макета по `Ext/ParentConfigurations.bin`. Режим `query` остаётся пригодным для round-trip текста запроса; support-state используй как риск перед `unica.dcs.edit`.
 
+## Ответ
+
+Инструмент отвечает типизированным `data` и отдаёт схему целиком; режимы,
+`Raw`, `Name`, `Limit` и `Offset` больше не нужны:
+
+| Секция | Что в ней |
+|---|---|
+| `dataSets` | наборы данных, их поля и сырой текст запроса целиком, с отступами строк продолжения |
+| `links` | связи наборов данных с выражениями источника и приёмника |
+| `calculatedFields` | вычисляемые поля с выражением и заголовком |
+| `totalFields` | ресурсы (итоги) с выражением |
+| `parameters` | параметры с типом, значением, выражением и признаком ограничения |
+| `variants` | варианты настроек: отбор, порядок, структура |
+| `templates` | макеты схемы |
+
 ## MCP параметры
 
 | Параметр | Описание |
 |----------|----------|
 | `TemplatePath` | Путь к Template.xml или каталогу макета (авто-резолв в `Ext/Template.xml`) |
-| `Mode` | Режим анализа (по умолчанию `overview`) |
-| `Name` | Имя набора (query), поля (fields/calculated/resources/trace), варианта (variant) или группировки/поля (templates) |
-| `Batch` | Номер пакета запроса, 0 = все (только query) |
-| `Raw` | Только для `Mode=query`: сырой текст запроса целиком, без заголовков/оглавления/разделителей пакетов. Для round-trip передай возвращённый текст в `unica.dcs.edit` / `set-query` как `Value` |
-| `Limit` / `Offset` | Пагинация (по умолчанию 150 строк; `Raw` не усекается) |
+| `sourceSet`    | Имя набора исходников из `v8project.yaml`                                  |
+| `metadataPath` | Логический адрес, например `Report.<Отчёт>.Template.<Макет>`               |
+
+Кроме селектора цели предметных аргументов нет — только общие `cwd` и `confirm`.
+
+Селектор цели ровно один: либо `sourceSet` + `metadataPath`, либо
+`TemplatePath`. Оба сразу отклоняются кодом `selector_conflict` (ADR-0049).
+ `Mode`,
+`Name`, `Batch`, `Raw`, `Limit` и `Offset` сняты
+(ADR-0048): схема приходит целиком, сырой текст запроса лежит в
+`dataSets[].query`, а отбор набора, поля или варианта выполняется над `data`.
 
 ### Overview: точка входа
 
@@ -58,9 +79,7 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<путь>",
-      "Mode": "query",
-      "Name": "НоменклатураСЦенами"
+      "TemplatePath": "<путь>"
     }
   }
 }
@@ -76,10 +95,7 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<путь>",
-      "Mode": "query",
-      "Name": "ДанныеТ13",
-      "Batch": 3
+      "TemplatePath": "<путь>"
     }
   }
 }
@@ -95,10 +111,7 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<путь>",
-      "Mode": "query",
-      "Name": "ДанныеТ13",
-      "Raw": true
+      "TemplatePath": "<путь>"
     }
   }
 }
@@ -114,9 +127,7 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<путь>",
-      "Mode": "fields",
-      "Name": "КадастроваяСтоимость"
+      "TemplatePath": "<путь>"
     }
   }
 }
@@ -132,9 +143,7 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<путь>",
-      "Mode": "calculated",
-      "Name": "КоэффициентКи"
+      "TemplatePath": "<путь>"
     }
   }
 }
@@ -150,9 +159,7 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<путь>",
-      "Mode": "resources",
-      "Name": "СуммаНалога"
+      "TemplatePath": "<путь>"
     }
   }
 }
@@ -168,9 +175,7 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<путь>",
-      "Mode": "trace",
-      "Name": "Коэффициент Ки"
+      "TemplatePath": "<путь>"
     }
   }
 }
@@ -186,9 +191,7 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<путь>",
-      "Mode": "variant",
-      "Name": 1
+      "TemplatePath": "<путь>"
     }
   }
 }
@@ -204,8 +207,7 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<путь>",
-      "Mode": "templates"
+      "TemplatePath": "<путь>"
     }
   }
 }
@@ -221,44 +223,50 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<путь>",
-      "Mode": "templates",
-      "Name": "ВидНалоговойБазы"
+      "TemplatePath": "<путь>"
     }
   }
 }
 ```
 
-## Режимы
+## Что где лежит в `data`
 
-| Режим | Без `-Name` | С `-Name` |
-|-------|-------------|-----------|
-| `overview` | Навигационная карта схемы + подсказки Next | — |
-| `query` | — | Текст запроса набора (с оглавлением батчей) |
-| `fields` | Карта: имена полей по наборам | Деталь поля: набор, тип, роль, формат |
-| `links` | Все связи наборов | — |
-| `calculated` | Карта: имена вычисляемых полей | Выражение + заголовок + ограничения |
-| `resources` | Карта: имена ресурсов (`*` = групповые формулы) | Формулы агрегации по группировкам |
-| `params` | Таблица параметров: тип, значение, видимость | — |
-| `variant` | Список вариантов | Структура группировок + фильтры + вывод |
-| `templates` | Карта привязок шаблонов (field/group) | Содержимое шаблона: строки, ячейки, выражения |
-| `trace` | — | Полная цепочка: набор → вычисление → ресурс |
-| `full` | Полная сводка: overview + query + fields + resources + params + variant | — |
+Прежние одиннадцать режимов были одиннадцатью отчётами по одной схеме. Теперь
+ответ приходит целиком, и «режим» — это выбор секции в `data` у себя:
 
-Паттерн: без `-Name` — карта/индекс, с `-Name` — деталь конкретного элемента. Режим `full` объединяет 6 ключевых режимов в один вызов.
+| Прежний режим | Где эти факты теперь |
+|---------------|----------------------|
+| `overview` | `support`, `dataSources`, `dataSets[].name`/`kind`, `links` |
+| `query` | `dataSets[].query` — текст целиком, включая многопакетные запросы |
+| `fields` | `dataSets[].fields[]`: `dataPath`, `field`, `title` |
+| `links` | `links[]` с выражениями источника и приёмника |
+| `calculated` | `calculatedFields[]`: выражение, заголовок, `restricted` |
+| `resources` | `totalFields[]`: выражение и `group` (`null` — итог в целом) |
+| `params` | `parameters[]`: тип, значение, выражение, `restricted`, `availableAsField` |
+| `variant` | `variants[]`: `selection`, `order`, `filters`, `structure[].groupBy` |
+| `templates` | `templates[]` |
+| `trace` | Собирается у потребителя: поле ищется в `dataSets[].fields`, затем в `calculatedFields` и `totalFields` |
+| `full` | Весь ответ и есть `full` |
+
+`-Name` больше не аргумент инструмента. Отбор по имени делается над нужной
+коллекцией внутри `data`: набор — фильтром `data.dataSets` по `name`, поле —
+обходом `data.dataSets[].fields` по `dataPath`, вычисляемое поле и ресурс — по
+`dataPath` в `data.calculatedFields` и `data.totalFields`, вариант — по `name` в
+`data.variants`. Второй вызов инструмента для этого не нужен.
 
 ## Типичный workflow
 
-1. `overview` — понять структуру, увидеть подсказки
-2. `trace -Name <поле>` — узнать как считается колонка отчёта (от заголовка до запроса за один вызов)
-3. `query -Name <набор>` — посмотреть текст SQL-запроса
-4. `variant -Name <N>` — посмотреть группировки и фильтры варианта
+1. Один вызов — вся схема в `data`.
+2. Колонка отчёта: найди `dataPath` в `calculatedFields` или `totalFields`,
+   затем сопоставь операнды выражения с `dataSets[].fields[].dataPath`.
+3. Текст запроса: `dataSets[].query`.
+4. Группировки и фильтры варианта: `variants[].structure[].groupBy` и
+   `variants[].filters`.
 
-Переработка запроса (round-trip): `Mode=query`, `Name=<набор>`, `"Raw": true` ->
+Переработка запроса (round-trip): возьми `data.dataSets[].query` ->
 правка текста из ответа -> `unica.dcs.edit` с `Operation=set-query` и `Value=<исправленный текст>`.
-`Raw` отдаёт запрос целиком без декораций, поэтому передача текста точна, включая многопакетные запросы с временными таблицами.
-
-Подробные примеры вывода каждого режима — в `modes-reference.md`.
+Текст приходит без декораций и без обрезки, поэтому передача точна, включая
+многопакетные запросы с временными таблицами.
 
 ## Верификация
 
@@ -288,10 +296,32 @@ allowed-tools:
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "<path>",
-      "Mode": "trace",
-      "Name": "<field>"
+      "TemplatePath": "<path>"
     }
   }
 }
 ```
+
+## Логический адрес вместо пути
+
+`unica.dcs.info` принимает либо логический селектор, либо файловый путь —
+ровно один из двух. Оба сразу отклоняются кодом `selector_conflict`.
+
+```json
+{
+  "jsonrpc": "2.0",
+  "method": "tools/call",
+  "params": {
+    "name": "unica.dcs.info",
+    "arguments": {
+      "cwd": "<workspace>",
+      "sourceSet": "<имя набора>",
+      "metadataPath": "Report.<Отчёт>.Template.<Макет>"
+    }
+  }
+}
+```
+
+Имя набора даёт `unica.project.map`, адрес — `unica.source.resolve`, а
+`unica.source.locate` переводит в адрес путь, найденный иначе. Файловый
+селектор сохраняется до отдельного среза его снятия (ADR-0049).

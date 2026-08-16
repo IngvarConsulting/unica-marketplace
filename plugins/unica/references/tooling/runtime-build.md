@@ -2,7 +2,16 @@
 
 ## Общие сведения
 
-Конфигуратор 1С:Предприятия 8.3 поддерживает пакетный (безоконный) режим для автоматизации операций с конфигурациями, информационными базами и внешними обработками. Все операции выполняются через командную строку `1cv8.exe`.
+Конфигуратор 1С:Предприятия 8.3 поддерживает пакетный (безоконный) режим для
+автоматизации операций с конфигурациями, информационными базами и внешними
+обработками. Команды `1cv8.exe` ниже документируют синтаксис платформы, но не
+являются разрешённым пользовательским workflow Unica и не должны запускаться
+напрямую как обход публичной границы.
+
+По INV-MCP-RUNTIME-RECEIPT текущий runtime-контракт: `unica.runtime.execute` — preview-only и вызывается
+только с `dryRun: true`; любой applied-режим возвращает fail-closed до
+workspace discovery и process spawn. Preview не является runtime verification.
+Не обходи этот отказ прямым runner-ом, через `unica.build.*` или fallback через `unica.runtime.job.*`.
 
 **Два режима запуска:**
 
@@ -126,20 +135,26 @@
 > Ниже приведён низкоуровневый синтаксис платформы, а не рекомендуемый путь
 > Unica. Не направляй incremental/partial/CDFI-only команды прямо в
 > Git-visible source root: они допустимы только во временный private staging,
-> принадлежащий runtime-слою. Синхронный applied `mode=full` для DESIGNER
-> configuration/extension проходит через внешний private stage Unica:
+> принадлежащий runtime-слою. Синхронный full dump (`mode=full`) для DESIGNER
+> `CONFIGURATION`/`EXTENSION` пока preview-only: его будущий applied path проходит через внешний private stage Unica,
 > платформа независимо фиксируется на exact 8.3.27.x, XML проверяется на raw
-> `version="2.20"` до целой публикации. Async full и external source-set пока
-> preview-only. Неполные режимы дополнительно не имеют безопасного merge receipt.
-> На Windows applied full dump пока fail-closed: owner-only ACL и handle-safe
-> no-clobber публикация каталогов ещё не реализованы; preview остаётся
-> read-only. Поддерживаемый POSIX-маршрут проверяет физические DESIGNER-маркеры,
-> exact sibling `ibcmd --version` и отделяет secret-bearing effective config от
-> сохраняемого recovery. Установка платформы должна целиком принадлежать root,
-> не иметь group/world write, ACL и ссылок и быть неизменяемой для запускающего
-> non-root пользователя. Пользовательская установка отклоняется до `ibcmd` и
-> `v8-runner`; ACL-доказательство поддержано на macOS/Linux, прочие Unix
-> fail-closed.
+> `version="2.20"` до целой публикации. На Windows, macOS и Linux verified
+> transactional publication определяет этот synchronous full dump, но
+> постпроцессинг не имеет доказанного terminal-receipt bound. Владельцем контракта публикации остаётся ADR-0016;
+> `INV-SOURCE-BOUND-PREIMAGES` и `INV-SOURCE-ROLLBACK-VISIBLE` описывают
+> проверяемую транзакцию, а OS-зависимая реализация остаётся за
+> `INV-PLATFORM-OS-BEHIND-FACADE`.
+>
+> Async full и applied external source-set пока preview-only. Неполные режимы
+> дополнительно не имеют безопасного merge receipt. На Windows Unica через
+> no-follow handles проверяет локальную системную установку: trusted owner и DACL
+> защищают install tree от изменения запускающим non-elevated пользователем, а
+> ancestry — от удаления, замены и перенаправления компонентов пути. На macOS и
+> Linux проверяются физические DESIGNER-маркеры, exact sibling
+> `ibcmd --version` и root-owned, link-free install tree без group/world write и
+> ACL. Secret-bearing effective config отделён от сохраняемого recovery.
+> Пользовательская или изменяемая установка отклоняется до `ibcmd` и
+> `v8-runner`; прочие Unix fail-closed.
 
 **Полная выгрузка** — все объекты конфигурации:
 ```
@@ -287,9 +302,12 @@ Documents/РеализацияТоваровУслуг/Forms/ФормаДоку�
 
 ## Сборка и разборка внешних обработок (EPF/ERF)
 
-EPF/ERF workflows в packaged Unica plugin идут через `v8-runner` и MCP `unica.runtime.execute`. Отдельные EPF/ERF build/dump skills больше не являются пользовательским workflow.
+EPF/ERF runtime-аргументы в packaged Unica plugin предпросматриваются через
+`v8-runner` и MCP `unica.runtime.execute`. Отдельные EPF/ERF build/dump skills
+не являются пользовательским workflow, а текущий preview не собирает и не
+выгружает артефакты.
 
-### Публикация внешних обработок и отчетов
+### Preview публикации внешних обработок и отчетов
 
 ```json
 {
@@ -301,13 +319,16 @@ EPF/ERF workflows в packaged Unica plugin идут через `v8-runner` и MC
       "operation": "make",
       "cwd": "<workspace>",
       "sourceSet": "external-processors",
-      "output": "build/external"
+      "output": "build/external",
+      "dryRun": true
     }
   }
 }
 ```
 
-Для внешних отчетов используй `sourceSet: "external-reports"`. Для external source-set `output` задает каталог с опубликованными `.epf` или `.erf` артефактами.
+Для preview внешних отчетов используй `sourceSet: "external-reports"`.
+`output` задаёт предполагаемый каталог будущей публикации; текущий вызов не
+создаёт `.epf` или `.erf`.
 
 ### Выгрузка внешних исходников
 
@@ -332,7 +353,7 @@ EPF/ERF workflows в packaged Unica plugin идут через `v8-runner` и MC
 Сейчас это только preview: applied external dump блокируется до появления
 такой же проверяемой private-stage публикации, как для configuration/extension.
 
-### Загрузка XML-исходников в базу
+### Preview загрузки XML-исходников в базу
 
 ```json
 {
@@ -344,7 +365,8 @@ EPF/ERF workflows в packaged Unica plugin идут через `v8-runner` и MC
       "operation": "build",
       "cwd": "<workspace>",
       "sourceSet": "external-processors",
-      "mode": "full"
+      "mode": "full",
+      "dryRun": true
     }
   }
 }
@@ -352,7 +374,9 @@ EPF/ERF workflows в packaged Unica plugin идут через `v8-runner` и MC
 
 ### Примечания
 
-- `operation=load` предназначен для `.cf` и `.cfe`; `.epf` и `.erf` проходят через `build` и `make` external source-set, а `dump` external source-set пока доступен только с `dryRun=true`.
+- `operation=load` моделирует `.cf` и `.cfe`; `.epf` и `.erf` моделируются
+  через preview `build` и `make` external source-set. Все эти текущие операции,
+  включая `dump`, вызываются только с `dryRun=true`.
 - Внешние source-set должны быть объявлены в `v8project.yaml` с типами `EXTERNAL_DATA_PROCESSORS` или `EXTERNAL_REPORTS`.
 - Dump требует базу с конфигурацией, содержащей используемые типы. Dump в пустой базе может потерять ссылочные типы (`CatalogRef.XXX` превращается в `xs:string`).
 - Категории колонок регистров (Dimension/Resource/Attribute) зависят от Form.xml и конфигурации базы; при round-trip через неподходящую базу привязки полей формы могут не сохраниться.
@@ -413,21 +437,40 @@ Legitimate metadata descriptor (включая external EPF/ERF) объекта 
 
 Платформа предоставляет параметры для использования вспомогательного CDFI при
 сравнении, но управление приватным CDFI для пары `source-set + ИБ` относится к
-runtime-слою. Синхронный applied `mode=full` для DESIGNER
-configuration/extension безопасно оборачивается Unica: выбранный source-set
-перенаправляется во внешний private stage, платформа проверяется как exact
-8.3.27.x, а version-bearing XML roots — как raw `2.20`; только затем целое
-дерево публикуется с проверкой preimage и rollback. До реализации private state
-и shadow publication в `alkoleft/v8-runner-rust#30`
+ runtime-слою. На Windows, macOS и Linux синхронный full dump (`mode=full`) для
+DESIGNER `CONFIGURATION`/`EXTENSION` пока preview-only; его verified transactional
+publication Unica перенаправляет выбранный source-set во внешний private
+stage, платформа проверяется как exact 8.3.27.x, а version-bearing XML roots —
+как raw `2.20`; только затем целое дерево публикуется с проверкой preimage и
+rollback (ADR-0016, `INV-PLATFORM-OS-BEHIND-FACADE`). До реализации private
+state и shadow publication в `alkoleft/v8-runner-rust#30`
 `mode=incremental|partial` остаётся preview-only: закреплённый runner не
 возвращает точные processed paths/hashes и не выполняет divergence-safe merge.
-Applied-маршрут принимает только системную root-owned установку платформы,
-неизменяемую для вызывающего non-root пользователя; user-owned install не
-исполняется.
+Будущий applied-маршрут сможет принять только системную установку платформы,
+неизменяемую для вызывающего пользователя; сейчас любой applied-вызов
+останавливается ещё до проверки или исполнения установки.
 
-## Переменные окружения
+## Выбор платформы 1С
 
-| Переменная | Описание |
-|-----------|----------|
-| `V8_PATH` | Каталог `bin` платформы 1С (например, `C:\Program Files\1cv8\8.3.27.1859\bin`) |
-| `V8_BASE` | Путь к пустой ИБ для EPF-сборки (создаётся автоматически при первом запуске) |
+Закреплённый `v8-runner` выбирает платформу по `tools.platform.version` и
+`tools.platform.path` в `v8project.yaml` или локальном
+`v8project.local.yaml`. Без явного ограничения он использует максимальную
+найденную версию. Например, проект может ограничить семейство платформы:
+
+```yaml
+tools:
+  platform:
+    version: "8.3.27"
+```
+
+Четырёхкомпонентная версия требует точного совпадения сборки. Путь к установке
+зависит от машины, поэтому его следует хранить в `v8project.local.yaml`:
+
+```yaml
+tools:
+  platform:
+    version: "8.3.27.1859"
+    path: "C:\\Program Files\\1cv8\\8.3.27.1859\\bin"
+```
+
+Полный контракт и правила выбора описаны в `v8project.md`.

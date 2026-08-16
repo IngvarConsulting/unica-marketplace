@@ -104,8 +104,17 @@ Platform-generated CDFI sidecar `ConfigDumpInfo.xml` с корнем
 │   │   └── Ext/
 │   │       └── Template.xml  # Тело макета (MXL, СКД и др.)
 │   └── ...
-└── Commands/                  # Команды (если определены отдельными файлами)
+└── Commands/                  # Полезная нагрузка команд (опционально)
+    └── <ИмяКоманды>/
+        └── Ext/
+            └── CommandModule.bsl  # Модуль команды
 ```
+
+В `ChildObjects` форма хранится как ссылка по имени, а её полный дескриптор — в
+`Forms/<ИмяФормы>/<ИмяФормы>.xml`. Команда устроена иначе: полный дескриптор
+`<Command>` хранится внутри `ChildObjects` владельца. Отдельного XML-дескриптора
+команды на диске нет; каталог `Commands/<ИмяКоманды>/` содержит только полезную
+нагрузку и может отсутствовать у команды без модуля.
 
 **Модули по типам объектов:**
 
@@ -165,6 +174,11 @@ Platform-generated CDFI sidecar `ConfigDumpInfo.xml` с корнем
 
 </MetaDataObject>
 ```
+
+При добавлении или позиционной вставке элемента в `ChildObjects` операция
+`unica.meta.edit` использует настоящий перевод строки для вновь синтезированного
+разделителя и не сериализует этот разделитель как `&#13;`. Символьная ссылка
+`&#13;` допустима в значении текстового узла как предметный символ CR.
 
 ### 2.2. Пространства имён
 
@@ -400,6 +414,13 @@ Platform-generated CDFI sidecar `ConfigDumpInfo.xml` с корнем
 <!-- Уникальный идентификатор -->
 <Type><v8:Type>v8:UUID</v8:Type></Type>
 ```
+
+В публичном writer UUID задаётся вариантом `{"kind":"uuid"}` и эмитируется
+точно как `v8:UUID`. Результат `unica.meta.info` отделён от входа writer:
+структурный тип содержит `mutationCapability` (`editable` или `readOnly`).
+Синтаксически корректный, но ещё не моделируемый QName отмечает только свой
+элемент как `incomplete` с предупреждением и не становится разрешённым входом
+мутации.
 
 **Составной тип (несколько типов):**
 ```xml
@@ -772,6 +793,14 @@ Platform-generated CDFI sidecar `ConfigDumpInfo.xml` с корнем
 
 ### 6.3. Форма (Form)
 
+В `ChildObjects` владельца форма представлена ссылкой:
+
+```xml
+<Form>ФормаЭлемента</Form>
+```
+
+Полный дескриптор находится в `Forms/<Имя>.xml` и содержит:
+
 ```xml
 <Form uuid="...">
     <Properties>
@@ -783,24 +812,32 @@ Platform-generated CDFI sidecar `ConfigDumpInfo.xml` с корнем
 </Form>
 ```
 
-Содержимое формы хранится в отдельных файлах: `Forms/<Имя>/<Имя>.xml` и `Forms/<Имя>/Ext/Form.xml`.
+Содержимое формы хранится в отдельных файлах: `Forms/<Имя>.xml` и `Forms/<Имя>/Ext/Form.xml`.
 
 ### 6.4. Макет (Template)
 
+В `ChildObjects` владельца макет представлен ссылкой:
+
 ```xml
-<Template uuid="...">
-    <Properties>
-        <Name>ОсновнаяСхемаКомпоновкиДанных</Name>
-        <Synonym>...</Synonym>
-        <Comment/>
-        <TemplateType>DataCompositionSchema</TemplateType>  <!-- DataCompositionSchema | SpreadsheetDocument | HTMLDocument | TextDocument | BinaryData | ActiveDocument -->
-    </Properties>
-</Template>
+<Template>ОсновнаяСхемаКомпоновкиДанных</Template>
 ```
 
-Тело макета: `Templates/<Имя>/Ext/Template.xml` (или другое расширение в зависимости от типа).
+Полный дескриптор с `Properties`, включая `TemplateType`, находится в
+`Templates/<Имя>.xml`. Тело макета хранится в
+`Templates/<Имя>/Ext/Template.xml` (или имеет другое расширение в зависимости
+от типа).
+
+Для `HTMLDocument` файл `Ext/Template.xml` является XML-дескриптором с
+элементами `<Page>`, а страницы находятся в `Ext/Template/<Page>.html`.
+HTML-страница не разбирается как XML: допустимый `DOCTYPE`, правила закрытия
+элементов и сущности подчиняются HTML. Страница имеет кодировку UTF-8 и при
+чтении или публикации сохраняется побайтово; строгая XML-проверка применяется
+только к дескриптору.
 
 ### 6.5. Команда (Command)
+
+В отличие от формы, полный дескриптор команды находится непосредственно в
+`ChildObjects` владельца:
 
 ```xml
 <Command uuid="...">
@@ -827,6 +864,9 @@ Platform-generated CDFI sidecar `ConfigDumpInfo.xml` с корнем
     </Properties>
 </Command>
 ```
+
+Отдельного файла `Commands/<Имя>.xml` платформа не создаёт. Если у команды
+есть модуль, он находится в `Commands/<Имя>/Ext/CommandModule.bsl`.
 
 ---
 
@@ -901,9 +941,55 @@ XML-элемент: `<Catalog>`. Категория InternalInfo: CatalogObject,
 
 Корень — `PredefinedData` в пространстве имён `http://v8.1c.ru/8.3/xcf/predef`
 (не `MDClasses`), с обязательным `version="2.20"`. `xsi:type` зависит от вида
-владельца: на выгрузках 8.3.27.2074 подтверждены `CatalogPredefinedItems` и
-`PlanOfCharacteristicKindPredefinedItems`. Расширения используют тот же корень —
-см. [1c-extension-spec.md § 8](1c-extension-spec.md).
+владельца. Для поддержанного профиля 8.3.27/2.20 закрыто сопоставлены:
+
+| Владелец | `xsi:type` |
+| --- | --- |
+| `Catalog` | `CatalogPredefinedItems` |
+| `ChartOfAccounts` | `ChartOfAccountsPredefinedItems` |
+| `ChartOfCharacteristicTypes` | `PlanOfCharacteristicKindPredefinedItems` |
+| `ChartOfCalculationTypes` | `CalculationTypePredefinedItems` |
+
+Расширения используют тот же корень — см.
+[1c-extension-spec.md § 8](1c-extension-spec.md).
+
+Каждый `<Item>` адресуется UUID в атрибуте `id`. Общие прямые дети — `Name`,
+`Code`, `Description`. Видоспецифичные прямые дети имеют следующую форму:
+
+- `Catalog`: `IsFolder`;
+- `ChartOfCharacteristicTypes`: структурный `Type` с вариантами платформенных
+  типов и `IsFolder`;
+- `ChartOfAccounts`: `AccountType`, `OffBalance`, `Order`,
+  `AccountingFlags`, `ExtDimensionTypes`;
+- `ChartOfCalculationTypes`: `ActionPeriodIsBase`.
+
+Форма `Code` определяется итоговым `CodeType` описателя владельца. Для
+`String` непустое значение записывается как обычный `<Code>...</Code>`, без
+`xsi:type`. Для `Number` непустое значение обязано быть лексическим
+XML Schema `decimal` и записывается с `xsi:type`, QName которого разрешается в
+`{http://www.w3.org/2001/XMLSchema}decimal` (обычно `xs:decimal`). Пустой код
+остаётся `<Code/>`. Оба значения `CodeType` writer учитывает у `Catalog` и
+`ChartOfCalculationTypes`; у остальных поддержанных владельцев применяется
+строковая форма. Namespace-префиксы не являются частью семантики и при точечной
+правке сохраняются из исходного документа.
+
+У элемента плана счетов `AccountingFlags/Flag` хранит булево значение и полный
+идентификатор флага в атрибуте `ref`. Подконто имеет форму
+`ExtDimensionTypes/ExtDimensionType[@name]/Turnover/AccountingFlags`.
+У элемента плана видов характеристик `Type` содержит один или несколько
+структурных вариантов, например `v8:Type`; namespace-префикс QName является
+деталью XML, а не частью публичного typed-значения.
+
+Вложенность задаётся `ChildItems`, внутри которого снова находятся `Item`.
+Адресная мутация ищет поддержанные поля только среди прямых детей выбранного
+`Item`; удаление родителя удаляет весь его `ChildItems`. Непереданные
+поддержанные поля, неизвестные XML-узлы и порядок соседей сохраняются. Для
+self-closing `Item` добавление первого ребёнка раскрывает элемент, не меняя
+прочие узлы документа.
+
+Физически документ находится в
+`<Группа>/<ИмяОбъекта>/Ext/Predefined.xml`, но публичные инструменты выбирают
+его только через `sourceSet + metadataPath`; путь не является аргументом DSL.
 
 ---
 
@@ -1404,6 +1490,7 @@ XML-элемент: `<Report>`. Категория InternalInfo: только Ob
     <DefaultSettingsForm>CommonForm.ФормаНастроекОтчета</DefaultSettingsForm>
     <AuxiliarySettingsForm/>
     <DefaultVariantForm>CommonForm.ФормаВариантаОтчета</DefaultVariantForm>
+    <AuxiliaryVariantForm/>
     <VariantsStorage/>
     <SettingsStorage/>
     <IncludeHelpInContents>false</IncludeHelpInContents>
@@ -1435,7 +1522,7 @@ XML-элемент: `<DataProcessor>`. Категория InternalInfo: толь
 **Дочерние объекты:** `<Attribute>`, `<TabularSection>`, `<Form>`, `<Template>`, `<Command>`.
 
 **Различия Отчёт vs Обработка:**
-- Отчёт имеет `MainDataCompositionSchema`, `DefaultSettingsForm`, `DefaultVariantForm`, `VariantsStorage`, `SettingsStorage`
+- Отчёт имеет `MainDataCompositionSchema`, `DefaultSettingsForm`, `AuxiliarySettingsForm`, `DefaultVariantForm`, `AuxiliaryVariantForm`, `VariantsStorage`, `SettingsStorage`
 - Обработка не имеет этих свойств
 
 ---
@@ -1607,11 +1694,61 @@ XML-элемент: `<EventSubscription>`.
 
 | Свойство | Тип | Описание |
 |---|---|---|
-| `Source` | `v8:Type[]` | Типы объектов-источников (в формате `cfg:{Тип}.{Имя}`) |
+| `Source` | `v8:Type[]` / `v8:TypeSet[]` | Wire-описание типов платформы; логический контракт Unica принимает только классы, у которых можно доказать событие |
 | `Event` | enum | `BeforeWrite` \| `OnWrite` \| `AfterWrite` \| `BeforeDelete` \| `Posting` \| `UndoPosting` \| `FillCheckProcessing` и др. |
 | `Handler` | string | Обработчик вида `CommonModule.ИмяМодуля.ИмяПроцедуры` |
 
-Типы источников: `cfg:CatalogObject.Xxx`, `cfg:DocumentObject.Xxx`, `cfg:InformationRegisterRecordSet.Xxx`, `cfg:AccumulationRegisterRecordSet.Xxx` и др.
+Типы источников включают `cfg:CatalogObject.Xxx`,
+`cfg:DocumentObject.Xxx`, `cfg:InformationRegisterRecordSet.Xxx`,
+`cfg:AccumulationRegisterRecordSet.Xxx`, `cfg:AccountingRegisterRecordSet.Xxx`
+и `cfg:CalculationRegisterRecordSet.Xxx`.
+
+Публичный типизированный маршрут создания и редактирования подписки проверяет
+одну итоговую связку `Source` → `Event` → `Handler`. `Source` меняется операцией
+`editRelations` с `relation: "source"`, `mode: "replace"`; `Event` и `Handler` —
+операцией `setProperties` в том же атомарном вызове. Это два из пяти существующих
+тегов `op`, а не отдельная операция подписки. Частичные режимы и пустой итоговый
+`Source` не поддерживаются. Порядок целей не участвует в семантическом сравнении.
+
+Каждый элемент `targets` принадлежит закрытому размеченному объединению:
+
+| `kind` | Поля | XML-представление |
+| --- | --- | --- |
+| `object` | `metadataPath` | `cfg:<ObjectGeneratedType>.<Имя>` |
+| `manager` | `metadataPath`; только для `Constant` также `sourceClass` | `cfg:<ManagerGeneratedType>.<Имя>` |
+| `recordSet` | `metadataPath` | `cfg:<RecordSetGeneratedType>.<Имя>` |
+| `definedType` | `metadataPath` | `<v8:TypeSet>cfg:DefinedType.<Имя></v8:TypeSet>` |
+| `family` | `sourceClass` | `<v8:TypeSet>cfg:<EventSourceClass></v8:TypeSet>` |
+
+`sourceClass` — закрытое lower-camel-case перечисление каталога событий 8.3.27.
+У `manager` оно обязательно только для `Constant.<Name>`, где различает
+`constantManager` и `constantValueManager`; у остальных конкретных менеджеров
+поле запрещено. Набор записей перерасчёта адресуется как
+`CalculationRegister.<Register>.Recalculation.<Name>`, последовательности — как
+`Sequence.<Name>`. Конкретные цели `ExternalDataSource` пока не адресуются;
+соответствующие общие `family` остаются допустимы.
+
+Примитивы, `ValueStorage` и ссылочные типы синтаксически возможны в платформенном
+`TypeDescription`, но не входят в логическое объединение Unica: из них нельзя
+доказать класс и выбрать событие. Существующий такой wire-источник читается с
+диагностикой и должен быть заменён полной корректной связкой.
+
+Для каждого конфигурационного варианта регистрация в `ChildObjects`, дескриптор
+и совпадающий `xr:GeneratedType` разрешаются под тем же точным владельцем
+`Configuration.xml`, что и подписка. Владелец, дескрипторы зависимостей и
+целевой XML связываются одной транзакцией: отсутствующая, неоднозначная,
+несовместимая или конкурентно изменённая зависимость отклоняется до публикации.
+`DefinedType` рекурсивно разворачивается до всех членов; пустой тип, цикл,
+примитив, ссылка или иной член без событий отклоняет всю цель. Для каждого
+полученного класса `Event` обязан существовать с одной и той же упорядоченной
+сигнатурой. `Handler` обязан иметь вид
+`CommonModule.<Module>.<Procedure>`; общий модуль явно содержит `Global=false`,
+`Server=true`, а BSL AST доказывает экспортную процедуру с числом параметров
+события плюс один параметр `Source`.
+
+`unica.meta.info` читает `Source`, `Event` и `Handler` обратно в то же логическое
+представление. Позиция элемента readback-массива не является частью его
+идентичности.
 
 **ChildObjects** отсутствует.
 
@@ -1767,7 +1904,7 @@ XML-элемент: `<WebService>`. Трёхуровневая вложенно�
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | Name, Synonym, Comment | + | + | + | + | + | + | + | + | + | + | + | + | + | + | + | + | + |
 | Code, Description | + | - | - | - | - | - | - | - | + | + | + | - | +* | + | - | - | - |
-| Hierarchical | + | - | - | - | - | - | - | - | + | + | - | - | - | - | - | - | - |
+| Hierarchical | + | - | - | - | - | - | - | - | - | + | - | - | - | - | - | - | - |
 | Owners | + | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | NumberType/Length | - | + | - | - | - | - | - | - | - | - | - | + | + | - | - | - | - |
 | Posting | - | + | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |

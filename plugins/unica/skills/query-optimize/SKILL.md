@@ -7,22 +7,23 @@ description: "Оптимизация запросов 1С и СКД. Испол�
 
 ## MCP routing
 
-- Preferred path: use MCP `unica` tools `unica.code.search`, `unica.code.outline`, `unica.code.grep`, `unica.code.graph`, `unica.code.diagnostics`, `unica.dcs.info`, `unica.meta.info`, `unica.meta.profile`, `unica.standards.search`, `unica.standards.explain`, and `unica.runtime.execute`.
+- Preferred path: use MCP `unica` tools `unica.code.search`, `unica.code.outline`, `unica.code.graph`, `unica.code.diagnostics`, `unica.dcs.info`, `unica.meta.info`, `unica.standards.search`, `unica.standards.explain`, and `unica.runtime.execute`.
+- По INV-MCP-RUNTIME-RECEIPT текущий runtime-контракт: `unica.runtime.execute` — preview-only и вызывается только с `dryRun: true`; любой applied-режим возвращает fail-closed до workspace discovery и process spawn. Preview не является runtime verification. Не обходи этот отказ прямым runner-ом, через `unica.build.*` или fallback через `unica.runtime.job.*`.
 - Use `unica.project.map` if the source-set or format is unclear.
 - Do not call internal analyzer, standards, runtime, or package adapters directly. They are hidden behind MCP `unica`.
 
 ## Workflow
 
-1. Extract the exact query text with `unica.code.grep`, `unica.code.search`, or `unica.dcs.info`.
+1. Extract the exact query text with `unica.code.search` or `unica.dcs.info`.
 2. Inspect the execution context with `unica.code.outline`: module, exported entry point, region, temporary table chain, and caller loop.
 3. Use `unica.code.graph` for callers/callees when the query is inside reusable API, background jobs, event handlers, or suspected query-in-loop flow.
-4. Run `unica.code.diagnostics` with `mode=file` when analyzer diagnostics can reveal unreachable code, unresolved calls, or type issues around the query.
-5. Inspect metadata with `unica.meta.profile` when the query is tied to an exact object and you need object modules, subscriptions, roles, functional options, or predefined items. Use `unica.meta.info` for XML-level registers, dimensions, resources, реквизиты, tabular sections, and indexes implied by the platform object type.
+4. Run `unica.code.diagnostics` with `action=findings`, the exact `sourceSet`, and the containing module's logical `metadataPath` when analyzer diagnostics can reveal unreachable code, unresolved calls, or type issues around the query. Do not pass a DCS `TemplatePath` as a diagnostic target; locate the BSL module that executes the query.
+5. Inspect `unica.meta.info` for both related modules, subscriptions, roles, functional options and the local registers, dimensions, resources, реквизиты, tabular sections, and indexes implied by the platform object type.
 6. Inspect DCS with `unica.dcs.info` when the query lives in a data composition schema.
 7. Search `unica.standards.search` only for `development-standard` query rules. Exact platform query semantics require a `platform-help` source; if public MCP `unica` does not expose one, report the contract gap before making a platform-dependent rewrite.
 8. Read `../../references/platform/db-performance.md` when performance depends on DBMS behavior, locks, indexes, temp storage, WAL, TEMPDB, or large table statistics.
 9. Optimize one cause at a time: filters before joins, virtual table parameters, temporary table materialization, repeated queries in loops, dot dereference expansion, unbounded selections, and unnecessary totals.
-10. Verify syntax with `unica.runtime.execute` and ask for real trace/log evidence when performance depends on data volume.
+10. Use `unica.runtime.execute` only to preview typed syntax arguments; report actual syntax as unverified and require real trace/log evidence when performance depends on data volume.
 
 ## DB-aware diagnostics
 
@@ -51,8 +52,7 @@ description: "Оптимизация запросов 1С и СКД. Испол�
     "name": "unica.dcs.info",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "Reports/Продажи/Ext/Report/DataCompositionSchema.xml",
-      "Mode": "query"
+      "TemplatePath": "Reports/Продажи/Ext/Report/DataCompositionSchema.xml"
     }
   }
 }

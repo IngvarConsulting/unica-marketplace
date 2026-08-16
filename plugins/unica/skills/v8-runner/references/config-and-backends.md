@@ -1,5 +1,7 @@
 # Config And Backends
 
+- По INV-MCP-RUNTIME-RECEIPT текущий runtime-контракт: `unica.runtime.execute` — preview-only и вызывается только с `dryRun: true`; любой applied-режим возвращает fail-closed до workspace discovery и process spawn. Preview не является runtime verification. Не обходи этот отказ прямым runner-ом, через `unica.build.*` или fallback через `unica.runtime.job.*`.
+
 Important `v8project.yaml` concepts:
 
 - `format`: `designer` or `edt`.
@@ -14,13 +16,39 @@ Important `v8project.yaml` concepts:
 
 Use `v8project.local.yaml` for local `workPath`, `infobase`, `tools`, `tests`, and `mcp` values. Do not pass it as the MCP `config` argument. Do not put shared `source-set`, `format`, `builder`, or `execution_timeout` there.
 
+For a fallback-capable runtime build, Unica binds the presence and exact bytes
+of this sibling overlay together with the primary config. Do not create, remove,
+or rewrite it between the normal attempt and the possible full retry: changing
+it can select a different work directory, infobase, or executable.
+
 Do not use legacy top-level `connection`; the current schema stores the connection under `infobase.connection`.
 
-Backend guidance:
+For an opt-in fail-closed platform binding, put the machine-specific path in
+`v8project.local.yaml` when appropriate:
 
-- Designer format with Designer builder covers init/build/extensions/dump/syntax/tests/make/load.
-- Designer format with IBCMD supports file infobases and server infobases when `infobase.dbms.kind/server/name` are configured.
-- EDT format can build, run EDT syntax checks, synchronize extensions, and run configured tests, but `syntax edt` uses `projects` rather than Designer module flags.
+```yaml
+tools:
+  platform:
+    version: "8.3.27.1859"
+    path: "C:\\Program Files\\1cv8\\8.3.27.1859\\bin"
+    strict: true
+```
+
+The key is `tools.platform.strict`. A configured `path` is always an
+explicit-only boundary. With `strict: true`, the runner enforces the configured
+version, rejects missing utilities and unknown/incompatible versions, and pins
+`1cv8`, `1cv8c`, and `ibcmd` to one canonical installation root. With
+`strict: false` or no `strict`, a configured `path` remains the boundary but
+its `version` is ignored. When `path` is absent, omitted/false `strict`
+preserves normal root/`PATH` discovery; `strict: true` alone adds no boundary.
+This is project configuration, not a new `unica.runtime.execute` argument.
+
+Backend argument guidance for previews; these capabilities do not make the
+current public applied modes executable:
+
+- Designer format with Designer builder defines arguments for init/build/extensions/dump/syntax/tests/make/load previews.
+- Designer format with IBCMD models file infobases and server infobases when `infobase.dbms.kind/server/name` are configured.
+- EDT format models build, EDT syntax, extension, and configured-test previews; `syntax edt` uses `projects` rather than Designer module flags.
 - `convert` is a file workflow and accepts only `sourceSet` and `output` from the Unica wrapper.
-- `make` requires a backend that can publish the requested artifact. For external processors/reports, `output` is a publish directory.
+- A future applied `make` requires a backend that can publish the requested artifact. In its preview for external processors/reports, `output` is a publish directory.
 - `load` accepts `mode=load` or `mode=merge`; `mode=merge` requires `settings`. `mode=update` is rejected by v8-runner.
