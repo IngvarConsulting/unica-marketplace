@@ -24,7 +24,10 @@ runs:
         GH_TOKEN: ${{ github.token }}
       run: |
         $ErrorActionPreference = 'Stop'
-        $lockPath = Join-Path $env:GITHUB_WORKSPACE '.github/contracts/codex-cli-lock.json'
+        # The lock belongs to this action's repository. A workflow in another
+        # repository checks the action out separately, so its workspace holds no
+        # contract; the action directory is the only stable anchor.
+        $lockPath = Join-Path $env:GITHUB_ACTION_PATH '../../contracts/codex-cli-lock.json'
         $lock = Get-Content -LiteralPath $lockPath -Raw -Encoding UTF8 | ConvertFrom-Json
         if ($lock.schemaVersion -ne 1) { throw 'Unsupported Codex CLI lock schema' }
         $profile = $lock.profiles.PSObject.Properties[$env:LOCKED_CODEX_PROFILE].Value
