@@ -11,7 +11,8 @@
       "cwd": ".",
       "env": {
         "UNICA_RUNTIME_CACHE_DIR": "${CLAUDE_PLUGIN_DATA}/runtimes"
-      }
+      },
+      "startup_timeout_sec": 900
     }
   }
 }
