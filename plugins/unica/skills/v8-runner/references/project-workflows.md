@@ -2,8 +2,10 @@
 
 - По INV-MCP-RUNTIME-RECEIPT и ADR-0074: `unica.runtime.execute` с `dryRun: true`
 показывает запланированную команду без побочных эффектов, а с `dryRun: false`
-исполняет операцию и отвечает её терминальным результатом в том же вызове,
-приложив названную причину риска (`runtime_risk_*`) предупреждением. Preview
+исполняет классифицированную операцию и отвечает её терминальным результатом в
+том же вызове, приложив названную причину риска (`runtime_risk_*`)
+предупреждением; неклассифицированная операция по-прежнему отказывает
+`runtime_operation_unbounded` до обнаружения рабочего пространства. Preview
 исполнением не является. Работу, которую вызов ждать не должен, запускай через
 `unica.runtime.job.start`. Не обходи контракт прямым runner-ом или через
 `unica.build.*`.
@@ -18,7 +20,7 @@ Typical empty workspace order:
 4. If the database is the source of truth, preview synchronous `operation=dump` with `mode=full`; applied dump remains fail-closed because its post-run validation/publication has no proved receipt bound.
 5. If Git sources are the source of truth, ask before previewing `operation=build` with `dryRun=true`; applied build is not currently admitted.
 
-All dump modes and applied `convert` remain preview-only. Designer `rawKeys` containing `DumpConfigToFiles` or
+All dump modes and applied `convert` write persistent state without a bounded recovery contract, and the result names that risk. Designer `rawKeys` containing `DumpConfigToFiles` or
 `LoadConfigFromFiles` are fail-closed until they share the verified publication
 boundary.
 

@@ -18,8 +18,10 @@ returns its terminal result in the same call.
 
 По INV-MCP-RUNTIME-RECEIPT и ADR-0074: `unica.runtime.execute` с `dryRun: true`
 показывает запланированную команду без побочных эффектов, а с `dryRun: false`
-исполняет операцию и отвечает её терминальным результатом в том же вызове,
-приложив названную причину риска (`runtime_risk_*`) предупреждением. Preview
+исполняет классифицированную операцию и отвечает её терминальным результатом в
+том же вызове, приложив названную причину риска (`runtime_risk_*`)
+предупреждением; неклассифицированная операция по-прежнему отказывает
+`runtime_operation_unbounded` до обнаружения рабочего пространства. Preview
 исполнением не является. Долговременное задание запускай через
 `unica.runtime.job.start` для явно выбранной длинной работы; не используй
 `unica.runtime.job.start` как запасной путь. Не обходи контракт прямым
@@ -32,6 +34,17 @@ call `unica.project.status`. It returns `ready`, `repositoryReady`, `checks[]`,
 until its source-set problem is fixed. In particular, `sourceSet.path: .` is an
 error: explain how to move the export into a strict child such as `src/` and
 update `v8project.yaml` safely.
+
+### Work the call must not wait for
+
+A long applied operation belongs in a durable job: `unica.runtime.job.start` runs
+it in a detached process that outlives the call, so a host deadline cannot lose
+the result. Keep the returned `jobId`, read progress with
+`unica.runtime.job.status`, wait for a bounded interval with
+`unica.runtime.job.wait`, and fetch diagnostic tails with
+`unica.runtime.job.logs`. A normal build can keep both logs empty until its
+terminal envelope; phase and heartbeat are what distinguish that from a stalled
+job.
 
 Each `sourceSets[].sourceFormat` describes working-tree discovery. Repository
 checks may additionally become applicable from staged index markers; do not

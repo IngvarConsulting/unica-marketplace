@@ -14,8 +14,10 @@ with object-specific info tools, source search, syntax checks, and focused tests
 
 По INV-MCP-RUNTIME-RECEIPT и ADR-0074: `unica.runtime.execute` с `dryRun: true`
 показывает запланированную команду без побочных эффектов, а с `dryRun: false`
-исполняет операцию и отвечает её терминальным результатом в том же вызове,
-приложив названную причину риска (`runtime_risk_*`) предупреждением. Preview
+исполняет классифицированную операцию и отвечает её терминальным результатом в
+том же вызове, приложив названную причину риска (`runtime_risk_*`)
+предупреждением; неклассифицированная операция по-прежнему отказывает
+`runtime_operation_unbounded` до обнаружения рабочего пространства. Preview
 исполнением не является. Работу, которую вызов ждать не должен, запускай через
 `unica.runtime.job.start`. Не обходи контракт прямым runner-ом или через
 `unica.build.*`.
@@ -23,9 +25,10 @@ with object-specific info tools, source search, syntax checks, and focused tests
 - Inspect metadata shape with `unica.*.info` tools before changing code that
   depends on objects, forms, roles, or reports.
 - Use code search/analysis tools through MCP `unica` where available.
-- Use `v8-runner` to preview or run `unica.runtime.execute`
-  `operation=syntax`/`operation=test` arguments with `dryRun: true`; do not
-  claim YaXUnit, Vanessa Automation, or syntax validation from preview.
+- Use `v8-runner` with `dryRun: true` to preview `unica.runtime.execute`
+  `operation=syntax`/`operation=test` arguments and with `dryRun: false` to run
+  them; never claim YaXUnit, Vanessa Automation, or syntax validation from a
+  preview alone.
 - Report findings first for reviews, ordered by severity and grounded in file
   references.
 

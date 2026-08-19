@@ -13,8 +13,10 @@ integration belongs in the 1C architecture.
 
 По INV-MCP-RUNTIME-RECEIPT и ADR-0074: `unica.runtime.execute` с `dryRun: true`
 показывает запланированную команду без побочных эффектов, а с `dryRun: false`
-исполняет операцию и отвечает её терминальным результатом в том же вызове,
-приложив названную причину риска (`runtime_risk_*`) предупреждением. Preview
+исполняет классифицированную операцию и отвечает её терминальным результатом в
+том же вызове, приложив названную причину риска (`runtime_risk_*`)
+предупреждением; неклассифицированная операция по-прежнему отказывает
+`runtime_operation_unbounded` до обнаружения рабочего пространства. Preview
 исполнением не является. Работу, которую вызов ждать не должен, запускай через
 `unica.runtime.job.start`. Не обходи контракт прямым runner-ом или через
 `unica.build.*`.
@@ -22,10 +24,10 @@ integration belongs in the 1C architecture.
 - Use metadata tools to inspect or create HTTP services, common modules,
   constants, catalogs, documents, and registers needed by the integration.
 - Use BSL source edits for modules and handlers.
-- Use `v8-runner` to preview or run `unica.runtime.execute`
-  `operation=syntax`/`operation=test` arguments with `dryRun: true`; report
-  syntax, tests, and integration runtime behavior as unverified without
-  separate execution evidence.
+- Use `v8-runner` with `dryRun: true` to preview `unica.runtime.execute`
+  `operation=syntax`/`operation=test` arguments and with `dryRun: false` to run
+  them; after a preview alone, report syntax, tests, and integration runtime
+  behavior as unverified without separate execution evidence.
 - For OpenSpec work, keep proposal/spec artifacts in the project’s chosen spec
   workspace and link implementation tasks to those artifacts.
 
