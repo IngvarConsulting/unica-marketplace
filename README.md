@@ -65,6 +65,32 @@ claude plugin update unica@unica
 
 Then run `/reload-plugins`.
 
+## Release candidates
+
+Release candidates (`X.Y.Z-rc.N`) are served only by the `next` branch, as a
+separate marketplace named `unica-next`; the `main` catalogs never name a
+candidate. The channel holds the newest published version, so its subscribers
+receive the full release through the same update that brought the candidate.
+Keep only one of `unica@unica` and `unica@unica-next` installed: both start an
+MCP server named `unica`. Skip the `remove` or `uninstall` line when the stable
+plugin is not installed.
+
+```sh
+codex plugin marketplace add IngvarConsulting/unica-marketplace --ref next
+codex plugin remove unica@unica
+codex plugin add unica@unica-next
+```
+
+```sh
+claude plugin marketplace add IngvarConsulting/unica-marketplace#next
+claude plugin uninstall unica@unica
+claude plugin install unica@unica-next
+```
+
+Update as in [Update](#update), with `unica-next` for the marketplace and
+`unica@unica-next` for the plugin. To return to stable releases, remove
+`unica@unica-next` and add `unica@unica` again.
+
 ## Uninstall
 
 ```sh
@@ -85,3 +111,12 @@ Stable catalog entries point at immutable version tags. A release is staged in
 for Claude Code; the signed version tag is created on that exact commit, and the
 promotion is merged only after its checks pass. See [MIGRATION.md](MIGRATION.md)
 for transition details.
+
+The `next` branch carries the candidate channel. Its catalogs, named
+`unica-next`, point at the immutable tag of the newest candidate or stable
+release and are never older than the `main` catalogs. Everything else on `next`
+follows `main`: each publication to it brings over the scripts and workflows,
+so edit them on `main` only. The consumer install, seed and legacy migration
+checks of this repository cover the stable catalog; the publishing pipeline
+installs every candidate fresh and upgrades to it with Codex on macOS, Linux
+and Windows before `next` moves.

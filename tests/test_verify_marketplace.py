@@ -6,33 +6,44 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.verify_marketplace import ContractError, verify, verify_catalog
+from scripts.verify_marketplace import ContractError, is_channel_version, verify, verify_catalog
 
 
 class MarketplaceContractTests(unittest.TestCase):
-    def write_catalog(self, root: Path, version: str, *, path: str = "plugins/unica") -> None:
-        catalog = root / ".agents" / "plugins" / "marketplace.json"
-        catalog.parent.mkdir(parents=True)
-        catalog.write_text(
-            json.dumps(
-                {
-                    "name": "unica",
-                    "plugins": [
-                        {
-                            "name": "unica",
-                            "source": {
-                                "source": "git-subdir",
-                                "url": "https://github.com/IngvarConsulting/unica-marketplace.git",
-                                "path": path,
-                                "ref": f"v{version}",
-                            },
-                            "policy": {"installation": "AVAILABLE"},
-                        }
-                    ],
-                }
+    def write_catalog(
+        self,
+        root: Path,
+        version: str,
+        *,
+        path: str = "plugins/unica",
+        channel: str = "stable",
+        claude_version: str | None = None,
+    ) -> None:
+        """Both host catalogs of a channel, serving `version` (Claude may diverge)."""
+        name = {"stable": "unica", "next": "unica-next"}[channel]
+
+        def source(served: str) -> dict:
+            return {
+                "source": "git-subdir",
+                "url": "https://github.com/IngvarConsulting/unica-marketplace.git",
+                "path": path,
+                "ref": f"v{served}",
+            }
+
+        claude_served = claude_version or version
+        for relative, document in (
+            (
+                ".agents/plugins/marketplace.json",
+                {"name": name, "plugins": [{"name": "unica", "source": source(version), "policy": {"installation": "AVAILABLE"}}]},
             ),
-            encoding="utf-8",
-        )
+            (
+                ".claude-plugin/marketplace.json",
+                {"name": name, "plugins": [{"name": "unica", "source": source(claude_served), "version": claude_served}]},
+            ),
+        ):
+            catalog = root / relative
+            catalog.parent.mkdir(parents=True, exist_ok=True)
+            catalog.write_text(json.dumps(document), encoding="utf-8")
 
     def test_empty_repository_is_allowed_only_before_first_staging(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -506,6 +517,48 @@ class MarketplaceContractTests(unittest.TestCase):
         self.assertNotIn("releases/download/v0.7.6", migration_guide)
         self.assertNotIn("weekly", migration_guide.lower())
         self.assertNotIn("0.9.x", migration_guide)
+class ReleaseChannelContractTests(unittest.TestCase):
+    """main serves releases only; next serves candidates and the releases after them."""
+
+    write_catalog = MarketplaceContractTests.write_catalog
+
+    def verify_catalog(self, served: str, staged: str, channel: str, **kwargs: object) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_catalog(root, served, channel=channel, **kwargs)
+            verify_catalog(root, staged, channel)
+
+    def test_main_never_serves_a_candidate(self) -> None:
+        with self.assertRaisesRegex(ContractError, "stable source ref is not a semantic version tag"):
+            self.verify_catalog("0.13.0-rc.3", "0.13.0-rc.3", "stable")
+
+    def test_next_serves_candidates_under_its_own_name(self) -> None:
+        self.verify_catalog("0.13.0-rc.3", "0.13.0-rc.3", "next")
+
+    def test_a_catalog_must_carry_the_name_of_its_channel(self) -> None:
+        # Claude Code identifies a marketplace by its name: a next catalog named
+        # unica would replace the stable one instead of standing beside it.
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.write_catalog(root, "0.13.0-rc.3", channel="next")
+            with self.assertRaisesRegex(ContractError, "marketplace name mismatch"):
+                verify_catalog(root, "0.13.0-rc.3", "stable")
+
+    def test_both_hosts_serve_the_same_release(self) -> None:
+        with self.assertRaisesRegex(ContractError, "host catalogs serve different releases"):
+            self.verify_catalog("0.12.3", "0.12.3", "stable", claude_version="0.12.2")
+
+    def test_a_release_follows_its_own_candidate(self) -> None:
+        self.verify_catalog("0.13.0-rc.3", "0.13.0", "next")
+        with self.assertRaisesRegex(ContractError, "older than the next catalog"):
+            self.verify_catalog("0.13.0", "0.13.0-rc.3", "next")
+
+    def test_only_next_accepts_a_candidate_plugin(self) -> None:
+        self.assertTrue(is_channel_version("0.13.0-rc.3", "next"))
+        self.assertFalse(is_channel_version("0.13.0-rc.3", "stable"))
+        for version in ("0.13.0-alpha", "0.13.0-rc", "0.13.0-rc.01", "v0.13.0"):
+            with self.subTest(version=version):
+                self.assertFalse(is_channel_version(version, "next"))
 
 
 if __name__ == "__main__":

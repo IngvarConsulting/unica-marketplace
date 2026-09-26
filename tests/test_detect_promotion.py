@@ -376,6 +376,93 @@ class PromotionDetectionTests(unittest.TestCase):
             self.assertEqual(outputs["plugin_version"], "")
             self.assertEqual(outputs["catalog_version"], "")
             self.assertEqual(outputs["catalog_promoted"], "false")
+class ReleaseChannelDetectionTests(unittest.TestCase):
+    """The event decides the channel; the tree must serve that channel."""
+
+    git = PromotionDetectionTests.git
+    initialize = PromotionDetectionTests.initialize
+    write_plugin = PromotionDetectionTests.write_plugin
+    write_catalog = PromotionDetectionTests.write_catalog
+    commit = PromotionDetectionTests.commit
+
+    def candidate_tree(self, root: Path) -> str:
+        self.initialize(root)
+        self.write_plugin(root, "0.13.0-rc.3")
+        self.write_catalog(root, "0.13.0-rc.3", name="unica-next")
+        return self.commit(root, "promote: Unica v0.13.0-rc.3")
+
+    def detect_push(self, root: Path, ref: str, sha: str) -> dict[str, str]:
+        return detect(
+            root=root,
+            event_name="push",
+            event_ref=ref,
+            event_sha=sha,
+            before_sha="",
+            pr_base_sha="",
+            pr_head_sha="",
+        )
+
+    def test_a_next_push_is_verified_as_the_candidate_channel(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            head = self.candidate_tree(root)
+
+            outputs = self.detect_push(root, "refs/heads/next", head)
+
+            self.assertEqual(outputs["channel"], "next")
+            self.assertEqual(outputs["plugin_version"], "0.13.0-rc.3")
+            self.assertEqual(outputs["catalog_matches_plugin"], "true")
+            # The publishing pipeline installed and upgraded the candidate with
+            # Codex on every target before next moved; stable-only checks stay off.
+            self.assertEqual(outputs["fresh_install_required"], "false")
+            self.assertEqual(outputs["promotion_required"], "false")
+            self.assertEqual(outputs["seed_required"], "false")
+
+    def test_a_candidate_anchor_tag_is_verified_as_next(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            head = self.candidate_tree(root)
+
+            self.assertEqual(self.detect_push(root, "refs/tags/v0.13.0-rc.3", head)["channel"], "next")
+
+    def test_a_pull_request_into_next_is_verified_as_next(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            head = self.candidate_tree(root)
+            outputs = detect(
+                root=root,
+                event_name="pull_request",
+                event_ref="refs/pull/1/merge",
+                event_sha="f" * 40,
+                before_sha="",
+                pr_base_sha=head,
+                pr_head_sha=head,
+                base_ref="next",
+            )
+
+            self.assertEqual(outputs["channel"], "next")
+
+    def test_main_serving_a_candidate_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            head = self.candidate_tree(root)
+
+            # Either the candidate plugin or the next-named catalog stops it.
+            with self.assertRaisesRegex(RuntimeError, "must be (semantic|named unica)"):
+                self.detect_push(root, "refs/heads/main", head)
+
+    def test_the_stable_catalog_still_requires_a_fresh_install(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.initialize(root)
+            self.write_plugin(root, "0.13.0")
+            self.write_catalog(root, "0.13.0")
+            head = self.commit(root, "promote: Unica v0.13.0")
+
+            outputs = self.detect_push(root, "refs/tags/v0.13.0", head)
+
+            self.assertEqual(outputs["channel"], "stable")
+            self.assertEqual(outputs["fresh_install_required"], "true")
 
 
 if __name__ == "__main__":

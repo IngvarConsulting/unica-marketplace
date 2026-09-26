@@ -14,6 +14,28 @@ PLUGIN_PATH = "plugins/unica/.codex-plugin/plugin.json"
 CATALOG_PATH = ".agents/plugins/marketplace.json"
 MARKETPLACE = "https://github.com/IngvarConsulting/unica-marketplace.git"
 SEMANTIC_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+")
+CANDIDATE_VERSION = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+")
+CATALOG_NAMES = {"stable": "unica", "next": "unica-next"}
+
+
+def event_channel(event_name: str, event_ref: str, base_ref: str) -> str:
+    """The channel an event's tree must serve: next for its branch, its pull
+    requests and candidate anchor tags; the stable catalog for everything else."""
+    if event_ref == "refs/heads/next":
+        return "next"
+    if event_name == "pull_request" and base_ref == "next":
+        return "next"
+    if event_ref.startswith("refs/tags/") and CANDIDATE_VERSION.fullmatch(event_ref.removeprefix("refs/tags/v")):
+        return "next"
+    return "stable"
+
+
+def channel_version(version: object, channel: str) -> bool:
+    if not isinstance(version, str):
+        return False
+    if SEMANTIC_VERSION.fullmatch(version):
+        return True
+    return channel == "next" and CANDIDATE_VERSION.fullmatch(version) is not None
 
 
 def require_commit(root: Path, commit: str, label: str) -> None:
@@ -59,22 +81,22 @@ def read_json_at(root: Path, commit: str, path: str) -> dict | None:
     return value
 
 
-def plugin_version_at(root: Path, commit: str) -> str:
+def plugin_version_at(root: Path, commit: str, channel: str = "stable") -> str:
     descriptor = read_json_at(root, commit, PLUGIN_PATH)
     if descriptor is None:
         return ""
     version = descriptor.get("version")
-    if not isinstance(version, str) or SEMANTIC_VERSION.fullmatch(version) is None:
+    if not channel_version(version, channel):
         raise RuntimeError(f"plugin version in {PLUGIN_PATH} at {commit} must be semantic")
     return version
 
 
-def catalog_ref_at(root: Path, commit: str) -> str:
+def catalog_ref_at(root: Path, commit: str, channel: str = "stable") -> str:
     catalog = read_json_at(root, commit, CATALOG_PATH)
     if catalog is None:
         return ""
-    if catalog.get("name") != "unica":
-        raise RuntimeError(f"catalog at {commit} must be named unica")
+    if catalog.get("name") != CATALOG_NAMES[channel]:
+        raise RuntimeError(f"catalog at {commit} must be named {CATALOG_NAMES[channel]}")
     plugins = catalog.get("plugins")
     if (
         not isinstance(plugins, list)
@@ -94,10 +116,7 @@ def catalog_ref_at(root: Path, commit: str) -> str:
     ):
         raise RuntimeError(f"catalog source at {commit} must use the expected Unica git-subdir")
     ref = source.get("ref")
-    if (
-        not isinstance(ref, str)
-        or re.fullmatch(r"v[0-9]+\.[0-9]+\.[0-9]+", ref) is None
-    ):
+    if not isinstance(ref, str) or not ref.startswith("v") or not channel_version(ref[1:], channel):
         raise RuntimeError(f"catalog source ref at {commit} must be a semantic version tag")
     return ref
 
@@ -111,7 +130,9 @@ def detect(
     before_sha: str,
     pr_base_sha: str,
     pr_head_sha: str,
+    base_ref: str = "",
 ) -> dict[str, str]:
+    channel = event_channel(event_name, event_ref, base_ref)
     if event_name == "pull_request":
         event_tree = pr_head_sha
         previous_tree = pr_base_sha
@@ -130,16 +151,21 @@ def detect(
             previous_tree = before_sha
             require_commit(root, previous_tree, "push before")
 
-    plugin_version = plugin_version_at(root, event_tree)
-    catalog_ref = catalog_ref_at(root, event_tree)
-    previous_catalog_ref = catalog_ref_at(root, previous_tree) if previous_tree else ""
+    plugin_version = plugin_version_at(root, event_tree, channel)
+    catalog_ref = catalog_ref_at(root, event_tree, channel)
+    previous_catalog_ref = catalog_ref_at(root, previous_tree, channel) if previous_tree else ""
     catalog_version = catalog_ref.removeprefix("v")
     previous_catalog_version = previous_catalog_ref.removeprefix("v")
     has_plugin = bool(plugin_version)
     catalog_promoted = bool(catalog_ref) and catalog_ref != previous_catalog_ref
     catalog_matches_plugin = has_plugin and plugin_version == catalog_version
+    # The consumer install, seed and legacy migration checks serve the stable
+    # catalog. The publishing pipeline installed a next candidate fresh and
+    # upgraded to it with Codex on every target before its catalog moved.
+    stable = channel == "stable"
     promotion_required = (
-        catalog_promoted
+        stable
+        and catalog_promoted
         and catalog_matches_plugin
         and bool(previous_catalog_version)
         and previous_catalog_version != catalog_version
@@ -155,6 +181,8 @@ def detect(
     seed_version = previous_catalog_version if promotion_required else catalog_version
     seed_commit = previous_tree if promotion_required else event_tree
     return {
+        "channel": channel,
+        "fresh_install_required": str(stable and catalog_matches_plugin).lower(),
         "has_plugin": str(has_plugin).lower(),
         "catalog_promoted": str(catalog_promoted).lower(),
         "catalog_matches_plugin": str(catalog_matches_plugin).lower(),
@@ -177,6 +205,7 @@ def main() -> None:
         before_sha=os.environ.get("BEFORE_SHA", ""),
         pr_base_sha=os.environ.get("PR_BASE_SHA", ""),
         pr_head_sha=os.environ.get("PR_HEAD_SHA", ""),
+        base_ref=os.environ.get("BASE_REF", ""),
     )
     with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as output:
         for key, value in outputs.items():

@@ -17,6 +17,11 @@ BOOTSTRAPS = {
 }
 REPOSITORY = "https://github.com/IngvarConsulting/unica"
 MARKETPLACE = "https://github.com/IngvarConsulting/unica-marketplace.git"
+# main serves the stable catalog; next serves release candidates and every
+# stable release after them, under its own marketplace name.
+CATALOG_NAMES = {"stable": "unica", "next": "unica-next"}
+RELEASE = r"(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"
+CANDIDATE = RELEASE + r"-rc\.(0|[1-9]\d*)"
 
 
 class ContractError(ValueError):
@@ -38,7 +43,27 @@ def require(condition: bool, message: str) -> None:
         raise ContractError(message)
 
 
-def verify_plugin(root: Path) -> str:
+def is_channel_version(version: object, channel: str) -> bool:
+    """A stable channel serves releases only; next also serves `-rc.N` candidates."""
+    if not isinstance(version, str):
+        return False
+    if re.fullmatch(RELEASE, version):
+        return True
+    return channel == "next" and re.fullmatch(CANDIDATE, version) is not None
+
+
+def version_key(version: str) -> tuple[int, int, int, int, int]:
+    """SemVer order for releases and candidates: a release follows its candidates."""
+    match = re.fullmatch(RELEASE + r"(?:-rc\.(0|[1-9]\d*))?", version)
+    if match is None:
+        raise ContractError(f"not a release or candidate version: {version}")
+    major, minor, patch, candidate = match.groups()
+    if candidate is None:
+        return (int(major), int(minor), int(patch), 1, 0)
+    return (int(major), int(minor), int(patch), 0, int(candidate))
+
+
+def verify_plugin(root: Path, channel: str = "stable") -> str:
     plugin = root / "plugins" / "unica"
     require(plugin.is_dir(), "plugins/unica is missing")
     require(not any(path.is_symlink() for path in plugin.rglob("*")), "plugin contains symlinks")
@@ -46,8 +71,7 @@ def verify_plugin(root: Path) -> str:
     descriptor = load_json(plugin / ".codex-plugin" / "plugin.json")
     manifest = load_json(plugin / "runtime-manifest.json")
     version = descriptor.get("version")
-    require(isinstance(version, str) and re.fullmatch(r"\d+\.\d+\.\d+", version) is not None,
-            "plugin version is not semantic")
+    require(is_channel_version(version, channel), "plugin version is not semantic")
     require(manifest.get("schemaVersion") == 1, "runtime manifest schema mismatch")
     require(manifest.get("pluginVersion") == version, "plugin/runtime version mismatch")
     require(manifest.get("development") is False, "development runtime manifest is forbidden")
@@ -76,42 +100,63 @@ def verify_plugin(root: Path) -> str:
     return version
 
 
-def verify_catalog(root: Path, version: str) -> None:
+def verify_source(source: object, channel: str) -> str:
+    require(isinstance(source, dict), f"{channel} source is missing")
+    require(source.get("source") == "git-subdir", f"{channel} source must use git-subdir")
+    require(source.get("url") == MARKETPLACE, f"{channel} source repository mismatch")
+    # Bare form only: a "./" prefix breaks `git sparse-checkout set --cone`
+    # on git <= 2.34, where the argument lands as a literal non-matching pattern.
+    require(source.get("path") == "plugins/unica", f"{channel} source path mismatch")
+    ref = source.get("ref")
+    require(isinstance(ref, str) and ref.startswith("v") and is_channel_version(ref[1:], channel),
+            f"{channel} source ref is not a semantic version tag")
+    return ref
+
+
+def verify_catalog(root: Path, version: str, channel: str = "stable") -> None:
     catalog_path = root / ".agents" / "plugins" / "marketplace.json"
-    require(catalog_path.is_file(), "stable marketplace catalog is missing")
+    require(catalog_path.is_file(), f"{channel} marketplace catalog is missing")
     catalog = load_json(catalog_path)
-    require(catalog.get("name") == "unica", "marketplace name mismatch")
+    require(catalog.get("name") == CATALOG_NAMES[channel], "marketplace name mismatch")
     plugins = catalog.get("plugins")
     require(isinstance(plugins, list) and len(plugins) == 1, "marketplace must expose one plugin")
     entry = plugins[0]
     require(entry.get("name") == "unica", "catalog plugin name mismatch")
-    source = entry.get("source", {})
-    require(source.get("source") == "git-subdir", "stable source must use git-subdir")
-    require(source.get("url") == MARKETPLACE, "stable source repository mismatch")
-    # Bare form only: a "./" prefix breaks `git sparse-checkout set --cone`
-    # on git <= 2.34, where the argument lands as a literal non-matching pattern.
-    require(source.get("path") == "plugins/unica", "stable source path mismatch")
-    stable_ref = source.get("ref")
-    require(isinstance(stable_ref, str) and re.fullmatch(r"v\d+\.\d+\.\d+", stable_ref),
-            "stable source ref is not a semantic version tag")
-    stable_version = stable_ref.removeprefix("v")
+    served_ref = verify_source(entry.get("source"), channel)
     require(
-        tuple(map(int, version.split("."))) >= tuple(map(int, stable_version.split("."))),
-        "staged plugin version is older than the stable catalog",
+        version_key(version) >= version_key(served_ref.removeprefix("v")),
+        f"staged plugin version is older than the {channel} catalog",
     )
-    require(entry.get("policy", {}).get("installation") == "AVAILABLE", "stable policy mismatch")
+    require(entry.get("policy", {}).get("installation") == "AVAILABLE", f"{channel} policy mismatch")
+
+    # Claude Code reads its own catalog, which must serve the same release: a
+    # prerelease reaching either host through main is the same failure.
+    claude_path = root / ".claude-plugin" / "marketplace.json"
+    require(claude_path.is_file(), f"{channel} Claude catalog is missing")
+    claude = load_json(claude_path)
+    require(claude.get("name") == CATALOG_NAMES[channel], "Claude marketplace name mismatch")
+    claude_plugins = claude.get("plugins")
+    require(isinstance(claude_plugins, list) and len(claude_plugins) == 1,
+            "Claude marketplace must expose one plugin")
+    claude_entry = claude_plugins[0]
+    require(claude_entry.get("name") == "unica", "Claude catalog plugin name mismatch")
+    require(verify_source(claude_entry.get("source"), channel) == served_ref,
+            "host catalogs serve different releases")
+    # Claude Code detects an update by this string, so it names the served release.
+    require(claude_entry.get("version") == served_ref.removeprefix("v"),
+            "Claude catalog version does not name the served release")
 
 
-def verify(root: Path, allow_empty: bool = False) -> str | None:
+def verify(root: Path, allow_empty: bool = False, channel: str = "stable") -> str | None:
     plugin = root / "plugins" / "unica"
     if not plugin.exists() and allow_empty:
         require(not (root / ".agents" / "plugins" / "marketplace.json").exists(),
                 "catalog cannot exist before the plugin is staged")
         return None
-    version = verify_plugin(root)
+    version = verify_plugin(root, channel)
     catalog = root / ".agents" / "plugins" / "marketplace.json"
     if catalog.exists():
-        verify_catalog(root, version)
+        verify_catalog(root, version, channel)
     return version
 
 
@@ -119,8 +164,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--allow-empty", action="store_true")
+    parser.add_argument("--channel", choices=sorted(CATALOG_NAMES), default="stable")
     args = parser.parse_args()
-    version = verify(args.root.resolve(), args.allow_empty)
+    version = verify(args.root.resolve(), args.allow_empty, args.channel)
     print("verified empty pre-release marketplace" if version is None else f"verified Unica marketplace {version}")
 
 
