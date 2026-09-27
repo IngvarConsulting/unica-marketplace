@@ -38,6 +38,29 @@ def require(condition: bool, message: str) -> None:
         raise ContractError(message)
 
 
+def verify_runtime_artifacts(manifest: dict, version: str) -> None:
+    """Schema 2 pins every artifact separately; the core must cover every target.
+
+    The core is the only artifact this release publishes, so its assets must come
+    from this release's own tag. Engines keep the origin their publisher named.
+    """
+    artifacts = manifest.get("artifacts")
+    require(isinstance(artifacts, dict) and bool(artifacts), "runtime artifacts are missing")
+    for name, artifact in artifacts.items():
+        require(isinstance(artifact, dict) and artifact.get("role") in {"core", "engine"},
+                f"runtime artifact {name} has no role")
+        targets = artifact.get("targets")
+        require(isinstance(targets, dict) and bool(targets) and set(targets) <= TARGETS,
+                f"runtime artifact {name} names an unknown target")
+    core = artifacts.get("unica")
+    require(isinstance(core, dict) and core.get("role") == "core", "runtime core artifact is missing")
+    require(set(core["targets"]) == TARGETS, "runtime target matrix mismatch")
+    for target, entry in core["targets"].items():
+        asset = entry.get("asset", {}) if isinstance(entry, dict) else {}
+        expected = f"{REPOSITORY}/releases/download/v{version}/unica-runtime-{target}.tar.gz"
+        require(asset.get("url") == expected, f"core runtime asset for {target} is not pinned to the release")
+
+
 def verify_plugin(root: Path) -> str:
     plugin = root / "plugins" / "unica"
     require(plugin.is_dir(), "plugins/unica is missing")
@@ -48,13 +71,17 @@ def verify_plugin(root: Path) -> str:
     version = descriptor.get("version")
     require(isinstance(version, str) and re.fullmatch(r"\d+\.\d+\.\d+", version) is not None,
             "plugin version is not semantic")
-    require(manifest.get("schemaVersion") == 1, "runtime manifest schema mismatch")
+    schema = manifest.get("schemaVersion")
+    require(schema in (1, 2), "runtime manifest schema mismatch")
     require(manifest.get("pluginVersion") == version, "plugin/runtime version mismatch")
     require(manifest.get("development") is False, "development runtime manifest is forbidden")
     require(manifest.get("source", {}).get("repository") == REPOSITORY, "source repository mismatch")
     require(manifest.get("release", {}).get("repository") == REPOSITORY, "release repository mismatch")
     require(manifest.get("release", {}).get("tag") == f"v{version}", "release tag is not version-pinned")
-    require(set(manifest.get("targets", {})) == TARGETS, "runtime target matrix mismatch")
+    if schema == 1:
+        require(set(manifest.get("targets", {})) == TARGETS, "runtime target matrix mismatch")
+    else:
+        verify_runtime_artifacts(manifest, version)
 
     for target, executable in BOOTSTRAPS.items():
         path = plugin / "bootstrap" / "bin" / target / executable

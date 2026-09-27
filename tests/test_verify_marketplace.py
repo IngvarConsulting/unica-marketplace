@@ -6,7 +6,93 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from scripts.verify_marketplace import ContractError, verify, verify_catalog
+from scripts.verify_marketplace import ContractError, verify, verify_catalog, verify_plugin
+
+
+REPOSITORY = "https://github.com/IngvarConsulting/unica"
+TARGETS = ("darwin-arm64", "linux-x64", "win-x64")
+
+
+def write_plugin(root: Path, version: str, manifest: dict) -> None:
+    """The smallest staged plugin tree verify_plugin accepts, around `manifest`."""
+    plugin = root / "plugins" / "unica"
+    (plugin / ".codex-plugin").mkdir(parents=True)
+    (plugin / ".codex-plugin" / "plugin.json").write_text(json.dumps({"version": version}), encoding="utf-8")
+    (plugin / "runtime-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    for target, executable in zip(TARGETS, ("unica-bootstrap", "unica-bootstrap", "unica-bootstrap.exe")):
+        path = plugin / "bootstrap" / "bin" / target / executable
+        path.parent.mkdir(parents=True)
+        path.write_bytes(b"")
+    (plugin / "bootstrap" / "launch.sh").write_text("#!/bin/sh\n", encoding="utf-8")
+    alias = "alias.unica-bootstrap=!f() { :; }; f"
+    (plugin / ".mcp.json").write_text(
+        json.dumps({"mcpServers": {"unica": {"command": "git", "args": ["-c", alias, "unica-bootstrap"]}}}),
+        encoding="utf-8",
+    )
+
+
+def schema_2_manifest(version: str, *, core_tag: str | None = None, engine_targets=TARGETS) -> dict:
+    tag = core_tag or f"v{version}"
+    core = {
+        target: {"asset": {"url": f"{REPOSITORY}/releases/download/{tag}/unica-runtime-{target}.tar.gz"}}
+        for target in TARGETS
+    }
+    engine = {
+        target: {"asset": {"url": f"https://github.com/IngvarConsulting/unica-toolchain/releases/download/t/{target}"}}
+        for target in engine_targets
+    }
+    return {
+        "schemaVersion": 2,
+        "pluginVersion": version,
+        "development": False,
+        "source": {"repository": REPOSITORY, "commit": "0" * 40},
+        "release": {"repository": REPOSITORY, "tag": f"v{version}"},
+        "artifacts": {
+            "unica": {"version": version, "role": "core", "targets": core},
+            "bsl-analyzer": {"version": "1.0.0", "role": "engine", "targets": engine},
+        },
+    }
+
+
+class RuntimeManifestSchemaTests(unittest.TestCase):
+    def verify_manifest(self, manifest: dict, version: str = "0.13.0") -> str:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            write_plugin(root, version, manifest)
+            return verify_plugin(root)
+
+    def test_schema_1_keeps_its_target_matrix(self) -> None:
+        manifest = schema_2_manifest("0.12.3")
+        manifest = {key: value for key, value in manifest.items() if key != "artifacts"}
+        manifest.update({"schemaVersion": 1, "targets": {target: {} for target in TARGETS}})
+
+        self.assertEqual(self.verify_manifest(manifest, "0.12.3"), "0.12.3")
+
+    def test_schema_2_pins_the_core_of_this_release_on_every_target(self) -> None:
+        # Пакеты 0.13 пишут схему 2: цели лежат у каждого артефакта, а не в корне.
+        self.assertEqual(self.verify_manifest(schema_2_manifest("0.13.0")), "0.13.0")
+
+    def test_schema_2_refuses_a_core_from_another_release(self) -> None:
+        with self.assertRaisesRegex(ContractError, "not pinned to the release"):
+            self.verify_manifest(schema_2_manifest("0.13.0", core_tag="v0.12.3"))
+
+    def test_schema_2_refuses_a_core_missing_a_target(self) -> None:
+        manifest = schema_2_manifest("0.13.0")
+        del manifest["artifacts"]["unica"]["targets"]["win-x64"]
+
+        with self.assertRaisesRegex(ContractError, "runtime target matrix mismatch"):
+            self.verify_manifest(manifest)
+
+    def test_schema_2_refuses_an_engine_for_an_unknown_target(self) -> None:
+        with self.assertRaisesRegex(ContractError, "unknown target"):
+            self.verify_manifest(schema_2_manifest("0.13.0", engine_targets=TARGETS + ("linux-arm64",)))
+
+    def test_an_unknown_schema_is_refused(self) -> None:
+        manifest = schema_2_manifest("0.13.0")
+        manifest["schemaVersion"] = 3
+
+        with self.assertRaisesRegex(ContractError, "runtime manifest schema mismatch"):
+            self.verify_manifest(manifest)
 
 
 class MarketplaceContractTests(unittest.TestCase):
