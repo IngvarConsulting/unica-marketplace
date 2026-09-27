@@ -2,7 +2,7 @@ name: Verify marketplace
 
 on:
   push:
-    branches: [main]
+    branches: [main, next]
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
@@ -14,6 +14,8 @@ jobs:
   contract:
     runs-on: ubuntu-latest
     outputs:
+      channel: ${{ steps.detect.outputs.channel }}
+      fresh_install_required: ${{ steps.detect.outputs.fresh_install_required }}
       has_plugin: ${{ steps.detect.outputs.has_plugin }}
       catalog_matches_plugin: ${{ steps.detect.outputs.catalog_matches_plugin }}
       plugin_version: ${{ steps.detect.outputs.plugin_version }}
@@ -38,13 +40,16 @@ jobs:
           EVENT_SHA: ${{ github.sha }}
           PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
           python3 scripts/detect_promotion.py
       - name: Verify repository contract
         shell: bash
+        env:
+          CHANNEL: ${{ steps.detect.outputs.channel }}
         run: |
           set -euo pipefail
-          args=()
+          args=(--channel "$CHANNEL")
           test -d plugins/unica || args+=(--allow-empty)
           python3 scripts/verify_marketplace.py "${args[@]}"
           python3 -m unittest discover -s tests -v
@@ -189,7 +194,7 @@ jobs:
 
   consumer-fresh-install:
     needs: contract
-    if: ${{ needs.contract.outputs.catalog_matches_plugin == 'true' }}
+    if: ${{ needs.contract.outputs.fresh_install_required == 'true' }}
     strategy:
       fail-fast: false
       matrix:
@@ -490,7 +495,7 @@ jobs:
           SEED_RESULT: ${{ needs.previous-stable-seed.result }}
           UPGRADE_RESULT: ${{ needs.previous-stable-upgrade.result }}
           HAS_PLUGIN: ${{ needs.contract.outputs.has_plugin }}
-          CATALOG_MATCHES_PLUGIN: ${{ needs.contract.outputs.catalog_matches_plugin }}
+          FRESH_INSTALL_REQUIRED: ${{ needs.contract.outputs.fresh_install_required }}
           PROMOTION_REQUIRED: ${{ needs.contract.outputs.promotion_required }}
           SEED_REQUIRED: ${{ needs.contract.outputs.seed_required }}
         run: |
@@ -512,6 +517,6 @@ jobs:
           check_result contract "$CONTRACT_RESULT" true
           check_result resolve-migration-target "$RESOLVE_RESULT" "$PROMOTION_REQUIRED"
           check_result staged-package-smoke "$STAGED_RESULT" "$HAS_PLUGIN"
-          check_result consumer-fresh-install "$FRESH_RESULT" "$CATALOG_MATCHES_PLUGIN"
+          check_result consumer-fresh-install "$FRESH_RESULT" "$FRESH_INSTALL_REQUIRED"
           check_result previous-stable-seed "$SEED_RESULT" "$SEED_REQUIRED"
           check_result previous-stable-upgrade "$UPGRADE_RESULT" "$PROMOTION_REQUIRED"
