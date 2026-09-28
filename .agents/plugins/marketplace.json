@@ -1,7 +1,7 @@
 {
-  "name": "unica",
+  "name": "unica-next",
   "interface": {
-    "displayName": "Unica"
+    "displayName": "Unica (next)"
   },
   "plugins": [
     {
