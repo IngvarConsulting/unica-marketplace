@@ -7,16 +7,14 @@ description: "Безопасная аутентификация и крипто�
 
 ## MCP routing
 
-- Preferred path: use MCP `unica` tools `unica.project.map`, `unica.code.search`, `unica.meta.info`, `unica.role.info`, `unica.code.diagnostics`, `unica.standards.search`, `unica.standards.explain`, and `unica.runtime.execute`.
-- По INV-MCP-RUNTIME-RECEIPT и ADR-0074: `unica.runtime.execute` с `dryRun: true`
-показывает запланированную команду без побочных эффектов, а с `dryRun: false`
-исполняет классифицированную операцию и отвечает её терминальным результатом в
-том же вызове, приложив названную причину риска (`runtime_risk_*`)
-предупреждением; неклассифицированная операция по-прежнему отказывает
-`runtime_operation_unbounded` до обнаружения рабочего пространства. Preview
-исполнением не является. Работу, которую вызов ждать не должен, запускай через
-`unica.runtime.job.start`. Не обходи контракт прямым runner-ом или через
-`unica.build.*`.
+- Preferred path: use MCP `unica` tools `unica.view {}`, `unica.search`, `unica.view` on the object node, `unica.view` on the role node, `unica.check`, `unica.docs`, and `unica.run`.
+- Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
+контракт каждой — `argsSchema`, `execution`, `previewRequired`,
+`ifRevRequiredOnApply`. Контракт вызова бери оттуда, а не из этого текста;
+при `implemented: true` используй опубликованную `argsSchema`; при
+`support.state: limited` разрешено только подмножество `support.supportedArgs`.
+При `support.state: unavailable` остановись; не выдумывай аргументов при
+`argsSchema: null`. Превью исполнением не является. Не обходи контракт прямым runner-ом.
 - Use integration and autonomous-server skills when auth behavior must be verified through HTTP service or web-client runtime.
 - Do not call internal analyzer, standards, runtime, or package adapters directly. They are hidden behind MCP `unica`.
 
@@ -29,16 +27,16 @@ description: "Безопасная аутентификация и крипто�
 ## Workflow
 
 1. Identify the trust boundary: user login, service account, external API, OpenID provider, certificate store, CryptoPro provider, TLS endpoint, or file/key storage.
-2. Inspect existing auth and role paths with `unica.code.search`, `unica.meta.info`, and `unica.role.info`.
+2. Inspect existing auth and role paths with `unica.search`, `unica.view` on the object node, and `unica.view` on the role node.
 3. Define secret lifecycle: source, storage, rotation, masking, runtime process user, test fixture policy, and log redaction.
 4. Define auth error semantics: missing credentials, expired token, invalid certificate, provider unavailable, denied rights, tenant mismatch, and remote auth failure.
-5. Verify statically with `unica.code.diagnostics`; use `unica.runtime.execute` to preview typed syntax/test arguments and, with `dryRun: false`, to run them and report runtime behavior as unverified.
+5. Verify statically with `unica.check` on the module node (test runs are outside the v0.13 surface) and report runtime behavior as unverified.
 
 ## Review checklist
 
 - Secrets and private keys are not committed, logged, or echoed in final output.
 - Certificate/OpenID/CryptoPro behavior states platform version, OS/process user, store location, and client/server boundary.
-- Rights checks are explicit and audited with `unica.role.info` when metadata rights matter.
+- Rights checks are explicit and audited with `unica.view` on the role node when metadata rights matter.
 - Integration auth failures are distinguishable from validation and business failures.
 - Temporary files with sensitive data have clear cleanup and access boundaries.
 

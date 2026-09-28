@@ -1,1228 +1,1357 @@
 {
-  "schemaVersion": 1,
-  "pluginVersion": "0.12.3",
+  "schemaVersion": 2,
+  "pluginVersion": "0.13.0-rc.3",
   "development": false,
   "source": {
     "repository": "https://github.com/IngvarConsulting/unica",
-    "commit": "f6d23068c397cd85c540812de7627b2c3f434d68"
+    "commit": "368c010bde8fd761fb4b9145ede96d921ba90026"
   },
   "release": {
     "repository": "https://github.com/IngvarConsulting/unica",
-    "tag": "v0.12.3"
+    "tag": "v0.13.0-rc.3"
   },
-  "targets": {
-    "darwin-arm64": {
-      "asset": {
-        "mediaType": "application/gzip",
-        "name": "unica-runtime-darwin-arm64.tar.gz",
-        "sha256": "f257a154fe45fa9fe76a4f8ae456e3ddbfb8b0567fd88b5e67e55b1838171c9b",
-        "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.12.3/unica-runtime-darwin-arm64.tar.gz"
-      },
-      "files": [
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/Python",
-          "sha256": "b556019ad1012aab5c2324b3aef3904a915fd582a29ce76d0b9342468a676e0c"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_asyncio.so",
-          "sha256": "954d10e934ab70389abf7788da8a82203c1c392f7153ef83c40b0971e98ab339"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_blake2.so",
-          "sha256": "af8b601fd4dd042ccc226308c014b8094a9885cfbacdc6e5d9fa01ce22a5c38f"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_bz2.so",
-          "sha256": "0d28a5c8d863b8a710fc3bf4fd0c230b35de5f4432fcf079773f07f5f846a1c6"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_codecs_cn.so",
-          "sha256": "53b310305e4a3193a8d50a391e86c1c3fd36edfbc7d171f2ba5cf86ee1604e09"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_codecs_hk.so",
-          "sha256": "bc29ca1babc463b40b6a3c30c852b23573c2205cc4df33e534cdfedebdb90f3c"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_codecs_iso2022.so",
-          "sha256": "e3126d41de7c41de3be7e3572734065e7b5a0d9da4128a7f02dfb1c4ea726f23"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_codecs_jp.so",
-          "sha256": "83b1c4942daf82e4feca6a7807ce7cb9be521dae286a37b7b268d2462d9dddba"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_codecs_kr.so",
-          "sha256": "790f979ff0bbdf17824204c9f0aae3ea69ff617d6995b77bbad8f3bf7e36ec65"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_codecs_tw.so",
-          "sha256": "cccc4722ef5ff6e423131beb7759248b5c82c1a96b0c1e4ed531858579cf2223"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_contextvars.so",
-          "sha256": "ebd6bdddac605976808e7232b849c29ed4430da2241e5843eafa0f6c7209efb5"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_csv.so",
-          "sha256": "b8eca89764cdde9d6fb022fc44820d78d4855b968e9452a69fc556693cce118d"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_ctypes.so",
-          "sha256": "bec6afa1a59a6a6bf6af5052126cb99a569d1f647b7468df8b268b9adf06c9f8"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_datetime.so",
-          "sha256": "02140734925be46d05617c3bf8eff3bd64797bc28f7e3260316f30b42babae9a"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_decimal.so",
-          "sha256": "0f33ae377fc69db566113f430d7b1dd04666a7d701fa5d4fc22a5e7201010f7a"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_elementtree.so",
-          "sha256": "ad88b5c7472c332f66d2fd0f461118c2f34de27ee2481f78a4d991769ecb569e"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_hashlib.so",
-          "sha256": "dc893d6ae285ccbd462cb1206670d903f29b1b11acf31c449edd205069b9034a"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_heapq.so",
-          "sha256": "a8483a40a3b2eb142a3dbc93b0f119f97f4364a3f88211d47498f417aba544ea"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_lzma.so",
-          "sha256": "5e8e919e23ee9860d509bfd993adfb0aedc0984e9b763895fe64ad07f19c54d9"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_md5.so",
-          "sha256": "27e826ae9dc9ef3171dd2b175f7350a1951c03dff33653f46ad1e36853579fb6"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_multibytecodec.so",
-          "sha256": "8415b4030e1c7571756e6a8643f040f5dad81fc7534fea2b6f36276138ccaaf9"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_multiprocessing.so",
-          "sha256": "fb6a6b112792598dfdcb38132b8c316e63d8a48bb03024c2dee96451a1ed1909"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_opcode.so",
-          "sha256": "5e3c815675cc0d9047ab2670eace4c135708f091d0c87aa7ab0e6af5aac60ef0"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_pickle.so",
-          "sha256": "c4c0a695a23ccf0b785555a0f47155afbe924a893eda8bc7c285d9437714a13c"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_posixshmem.so",
-          "sha256": "73aeca8d695ccc04fa3c2bdec35decc0583a2bb50c0386f1587565d13b0690b8"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_posixsubprocess.so",
-          "sha256": "085eb2eace0c7378ad2ebb769bec4a986c63b52165a6707c8c9787f225003df3"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_queue.so",
-          "sha256": "0f352832650a78c53bff4eeb7dbef866e7dfb2b7c064f9fdfdc231256f074d70"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_random.so",
-          "sha256": "7e1b13162368954bab5c0e41b4c0cf4e19548053f6b0e88677ab9ab8795129ee"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_scproxy.so",
-          "sha256": "e6732fd83c28e87b9ebddfd82e88867c34f8fb2b4f417f4f8f25ffb0013957e3"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_sha1.so",
-          "sha256": "4cb2bbd118d8033253ec4c159ab4641d89839d5929bb0ba787aacb04ccecbdc6"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_sha2.so",
-          "sha256": "86fbca5d74f2acb61891ea2a6252a2b81583c593d511f8cc2c76650ede13ec9c"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_sha3.so",
-          "sha256": "0d5cb4792f1416f4e415ce5ce4157407df6a8e7fc57df3e80f8aa0ea059e86f3"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_socket.so",
-          "sha256": "15f0066f88bf055cd83f7d5acedd54c6245c983d2a366987c3b7a3f6d70f057f"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_sqlite3.so",
-          "sha256": "06eaf074047b9e7be070f1b8c67a18a78072f445a95d6c1de0565e2c58d62301"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_ssl.so",
-          "sha256": "3201bfb42c2d2821121fd8770a0249a9094b56ed94825bb8bb469c81f47b37ff"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_statistics.so",
-          "sha256": "1bd601a89162e43a66132679032e6509e30a7917a550fcb12e7b80b0d62cdbb4"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_struct.so",
-          "sha256": "9c99133d077de05ec08a0e39ee895280570833ee83425b0cac5de0eb25f14e9a"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_uuid.so",
-          "sha256": "0dca8b6d4e70b256203deda90ddb789cf390612d32c5a5cd895dcb28a011d59c"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/_zoneinfo.so",
-          "sha256": "7b1e899584e47064b9006e6aab7340f462745253a5d2b308795a0654e1de2b22"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/array.so",
-          "sha256": "64f5fd94330f85446466848b0b3345e399e5e8cba3f46d317fa84a780f9d5a0c"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/binascii.so",
-          "sha256": "580ef81ed70364fe337f2044e8a72ff39832c928e908e97e45e200541ab02e67"
-        },
-        {
-          "executable": true,
-          "path": "bin/darwin-arm64/bsl-analyzer",
-          "sha256": "d18c3b79d017d60f229faf4e427bcefc0a9da59a93b57acbb867b064c52926bd"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/certifi/cacert.pem",
-          "sha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/fcntl.so",
-          "sha256": "a5cbf77d816bdcc61cecee4661fc18f53605c77f763a341ef4dde62a6b483ad6"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/grp.so",
-          "sha256": "5a5cacea1ce77e2a2bba14e5306366e1228bdb0058ac1db82b1a8b244d6ceb87"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jiter/jiter.so",
-          "sha256": "084c3c1196cf3105142c043aa31ef58c78592cd642a1261b969eae100b46b3bb"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft201909/metaschema.json",
-          "sha256": "7b761b3e121f0a0ca1ea2a0b8e2cc856bcf801604b8268d71bacaa202bc0c13b"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft201909/vocabularies/applicator",
-          "sha256": "6895100e99726fbb107058512bbec3ecfd4b24e8fd2facee3e505ee72b0d4c31"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft201909/vocabularies/content",
-          "sha256": "9b7d4f55a4e2fdb02c430068fdffabc732addce238da3f1df2690249c3353274"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft201909/vocabularies/core",
-          "sha256": "b5a2c4957f6495d0a5081f0409ebe8a14e4139acb203fc748471f8ede2af5b2c"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft201909/vocabularies/format",
-          "sha256": "50ebbfe790611a849b8cc400a09c1d0e0fb6ab5c0d43a0f22201fd3625056bf4"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft201909/vocabularies/meta-data",
-          "sha256": "d47e2445dd6a82271a298d83cc6c6cb8d4ae1e15e0dc56becd37a163ecf01286"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft201909/vocabularies/validation",
-          "sha256": "1e526c1d335a734805fc82cf5798c12b960ad7da2517c66cda5a1b09359c3c1c"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft202012/metaschema.json",
-          "sha256": "41da76f5afb7ce062d248f762463a92f7ca47e4e0f905b224ba6afeef91ded0f"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft202012/vocabularies/applicator",
-          "sha256": "c4a6e4147b91fef7fea6dc058cb1bf93402f7414b76578a8b16aaf1dad6aacef"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft202012/vocabularies/content",
-          "sha256": "08343747764e4a5814262793cf4d652057a7913863c5950d43297e8e1fdac5b6"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft202012/vocabularies/core",
-          "sha256": "c2d12a8e4dd11d336dfc83a3f663aa4c69f0b49b3beb094ffeb25b5316f4803d"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft202012/vocabularies/format-annotation",
-          "sha256": "abc775adfefd89d22358170d9bf93f4ebd2349563bbbedd60f02bef7c812bcc0"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft202012/vocabularies/format-assertion",
-          "sha256": "c52242b9a1bb786b26c3e82c7add428c31f9c96e575dce99e56ea5feaa6da20c"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft202012/vocabularies/meta-data",
-          "sha256": "8f76d6e14f41b9b92ef933b708cdc5144c8b5268651ad11918485fb1754f1c76"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft202012/vocabularies/unevaluated",
-          "sha256": "2dbfbcb73994b670b0976492adee1fffb46c21682784d2f5a4ca561f9e2d0cb4"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft202012/vocabularies/validation",
-          "sha256": "7010a31e541f32d2be721e2de348df75c9b36876a3ed304877fc0abda1d37a58"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft3/metaschema.json",
-          "sha256": "2cf75f64436fb5be374a2eaa27ab8b7e1fd651c9b46daea6c67b02fd64e2458b"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft4/metaschema.json",
-          "sha256": "e1489d0b4755f02793302591d3fcb8f07b6893a82a94f24895f8e4edf11b82e2"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft6/metaschema.json",
-          "sha256": "c29dfce9f54835c3a06c03b3c5d5ec0eda77706568f9c4df7cfbc7566a51006d"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/jsonschema_specifications/schemas/draft7/metaschema.json",
-          "sha256": "3d5392088261606c559b603f385329c9f1ab45b5d667eb990687453b055d405e"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/libcrypto.3.dylib",
-          "sha256": "f63f0d3991b947e3f820e2195fca514491fb726d1178bc7a86cf307474e3aa88"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/libssl.3.dylib",
-          "sha256": "96d259e6542d39a88588500875cbe0ea174b75ecac9302a4405d34c064b8e3f7"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/math.so",
-          "sha256": "5acd3d80570b3607b1caead3978bda83132cae6b8d57802491fb45e552bed73e"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/mmap.so",
-          "sha256": "1702047fcadd611d3980eb057f5c552446a580cbc708c9a68c47343e323e6720"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/pydantic_core/_pydantic_core.so",
-          "sha256": "7b1f7f00851a395960ee36887c265da03b072e9f6e92e284b488ae5d398a1c21"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/pyexpat.so",
-          "sha256": "a4ff7ed2ae4697175231be64b2a76ef0165618f72ef09aadc496a18486528201"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/resource.so",
-          "sha256": "e60f799d98bd25c6cbf3a3905398c5d7f33e7a36153575346ae532cda5db7102"
-        },
-        {
-          "executable": true,
-          "path": "bin/darwin-arm64/rlm-bsl-index",
-          "sha256": "bdf429e3a8dee1fb9b1f1af66adcc4280732cc4287c92c4fbe4effddc0f8492e"
-        },
-        {
-          "executable": true,
-          "path": "bin/darwin-arm64/rlm-bsl-mcp",
-          "sha256": "bdf429e3a8dee1fb9b1f1af66adcc4280732cc4287c92c4fbe4effddc0f8492e"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/rpds/rpds.so",
-          "sha256": "1ddd52211f9f628aca0aa7d1da83523800fcc6f007b92fb8b36bf8ecc3dc1fee"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/select.so",
-          "sha256": "6db56ba138c41c06fa9e945e8e2f3d3e2bf46324f99d5783ea506560ffbdaac8"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/termios.so",
-          "sha256": "543eb29b2131a7d3a9c3c636ad13643aef62a7f69eb13d3c56291e39666492f1"
-        },
-        {
-          "executable": true,
-          "path": "bin/darwin-arm64/unica",
-          "sha256": "306cb86ec20e2b652e8682f18ebd7f5fc28a7e5f1a3dde571c7f0ecc40288dd7"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/unicodedata.so",
-          "sha256": "0942d0455ec0f02305f3ab14bb21fb8e584aaf4ae9522835cd70834b848de140"
-        },
-        {
-          "executable": true,
-          "path": "bin/darwin-arm64/v8-runner",
-          "sha256": "2a92802edf5a73d5fdcc42cc61b1abbbc95226cd75bdfe3c50407b13eb8da590"
-        },
-        {
-          "executable": false,
-          "path": "bin/darwin-arm64/zlib.so",
-          "sha256": "3069751b46e25fe6342d15213c19d1dfc4039c08af222946de40ab87defa2967"
-        },
-        {
-          "executable": false,
-          "path": "third-party/manifest.json",
-          "sha256": "7640b48a6f9308dfa764b832f00982bb5fbf4f3213c09fcdab462ff22da06833"
+  "artifacts": {
+    "bsl-analyzer": {
+      "version": "0.2.67",
+      "role": "engine",
+      "targets": {
+        "darwin-arm64": {
+          "asset": {
+            "mediaType": "application/octet-stream",
+            "name": "bsl-analyzer-darwin-arm64",
+            "sha256": "d18c3b79d017d60f229faf4e427bcefc0a9da59a93b57acbb867b064c52926bd",
+            "url": "https://github.com/IngvarConsulting/unica-toolchain/releases/download/bsl-analyzer-v0.2.67-build.1/bsl-analyzer-darwin-arm64"
+          },
+          "files": [
+            {
+              "executable": true,
+              "path": "bsl-analyzer",
+              "sha256": "d18c3b79d017d60f229faf4e427bcefc0a9da59a93b57acbb867b064c52926bd"
+            }
+          ]
+        },
+        "linux-x64": {
+          "asset": {
+            "mediaType": "application/octet-stream",
+            "name": "bsl-analyzer-linux-x64",
+            "sha256": "c476c10fcdfa6eb7d310e83d0e69b02a27f9afeec0d394681feadb889de97301",
+            "url": "https://github.com/IngvarConsulting/unica-toolchain/releases/download/bsl-analyzer-v0.2.67-build.1/bsl-analyzer-linux-x64"
+          },
+          "files": [
+            {
+              "executable": true,
+              "path": "bsl-analyzer",
+              "sha256": "c476c10fcdfa6eb7d310e83d0e69b02a27f9afeec0d394681feadb889de97301"
+            }
+          ]
+        },
+        "win-x64": {
+          "asset": {
+            "mediaType": "application/octet-stream",
+            "name": "bsl-analyzer-win-x64.exe",
+            "sha256": "a54d883bcb7ed0e0039953fb4d5cd7c2efbf30155de9951952f1a4060776eb3e",
+            "url": "https://github.com/IngvarConsulting/unica-toolchain/releases/download/bsl-analyzer-v0.2.67-build.1/bsl-analyzer-win-x64.exe"
+          },
+          "files": [
+            {
+              "executable": true,
+              "path": "bsl-analyzer.exe",
+              "sha256": "a54d883bcb7ed0e0039953fb4d5cd7c2efbf30155de9951952f1a4060776eb3e"
+            }
+          ]
         }
-      ],
-      "entrypoint": "bin/darwin-arm64/unica"
+      }
     },
-    "linux-x64": {
-      "asset": {
-        "mediaType": "application/gzip",
-        "name": "unica-runtime-linux-x64.tar.gz",
-        "sha256": "ce50acd0ce90f185607c008cf696f1b37546d25dcf782f1c005665d54f3ddde5",
-        "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.12.3/unica-runtime-linux-x64.tar.gz"
-      },
-      "files": [
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_asyncio.so",
-          "sha256": "59a7885ae79810ef4e28777364d458d66416b2d72857dd9b6c6032791600e7ac"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_blake2.so",
-          "sha256": "8d1d121c9335b6b87a16ab21c98b12d809aeaab58569c5b901dcac7d667edcb5"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_bz2.so",
-          "sha256": "7896443e82498907bb55326d6711130a0e76022dd1d1bc28d08275f14f8a245f"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_codecs_cn.so",
-          "sha256": "601a36f2291257455d5b81aa8067476df2c7b9e3f48f3a45a8f5746f76d15dd4"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_codecs_hk.so",
-          "sha256": "2a460c2127e74890573d72ed8d3a36850eb81b0492ff054c5ac220f5625d046f"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_codecs_iso2022.so",
-          "sha256": "64b6904fe392db73ba47c7984d17d75dc794c7b89a2ce5d3f3ea830a7420d1fe"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_codecs_jp.so",
-          "sha256": "9f0a286ca534444c630ce3a99017e840bf6b09d6366929d8b747ffc4731677cd"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_codecs_kr.so",
-          "sha256": "e18161579a4fb1d53fc77dd587de3e5799eda4a26ec8a8633606a4c489214c08"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_codecs_tw.so",
-          "sha256": "64b0b47e35b1939bdd5c949bf5ed5684786bd52a75beeec45ce2387fae1de449"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_contextvars.so",
-          "sha256": "54e4dbd38da81cc4f709988d5adf6fd6e27755efcbf5a9ffe4a4f270f6661e63"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_csv.so",
-          "sha256": "3f97bcdd5bfa17b9430d7bffba941f3eec315bec8ce1895199852a7dcfe69d46"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_ctypes.so",
-          "sha256": "fd2877827b1e1f0ebc060764a5a3ed7fed511319026953e00747a3766bfe691e"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_datetime.so",
-          "sha256": "a69b314ee3f2ded212250a7443fe80239d5f589b5ee710e1d8e5a864e78e5446"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_decimal.so",
-          "sha256": "a91ec2241b27eafe0ec4e48e5b3a69c30c289c165471f01def867b9c43f5045d"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_elementtree.so",
-          "sha256": "110d97cfb1b1e9b0eae7a3844aa9ec4a03af078ab399b23fe8e6f50fd5f12c61"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_hashlib.so",
-          "sha256": "0c72334d4502e4f95d5be633d2ef545e8f496446e04dc57e4c2e3ec7dca73279"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_heapq.so",
-          "sha256": "38c2622f029668c43d06433e3a4f5cec5fee9da4ec53478e35e852d6e99a15c3"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_lzma.so",
-          "sha256": "b2be4c54358b71b1c750011c5680bd8af17af45deaad2685c2b8965a073635d3"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_md5.so",
-          "sha256": "85e550b47175a86c192e7fb7a34d4957cbfe8ec0b09e403f3d6bbe3f8f6aeca9"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_multibytecodec.so",
-          "sha256": "ba11b609999940d4091ea62280be6c09d1ef900b7660284399d5acc111b46aa5"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_multiprocessing.so",
-          "sha256": "31c21216775def9a3a1d7b0fa940f05511a9752b6ddd1145878b76c00c3359be"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_opcode.so",
-          "sha256": "c49c9a883502148d9936669c1f21f68154027a659377f0c38e4661fa9f2ec816"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_pickle.so",
-          "sha256": "027c0bece1b9d025d96e0d06310798b152ada444379513fdff773ff9cb480d04"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_posixshmem.so",
-          "sha256": "d4b04dd00c358b80fc5b93250a94d1088e6ae584655c4437fbc4d9b6fdaae9b8"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_posixsubprocess.so",
-          "sha256": "388f8f0c4af682922276186a4be396b1a5e96c2c25bca57dbf891f228dbaf6aa"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_queue.so",
-          "sha256": "6d74daee22c05698cadaa9729b77e2457fcbf7f40bae9e04c6699a7322af70ef"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_random.so",
-          "sha256": "61b32fd9c7997737d0430040f65fb8cfe79ed5c33918b8bf0ddd7b8088179351"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_sha1.so",
-          "sha256": "41ad4680be2bef94637a99844918556f77cde8f8b5ffebc288dc52b428be3392"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_sha2.so",
-          "sha256": "c42c65ad49bf3105ac677020c308a9bd1324a406cfb602782a1b6ffa8d22cc69"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_sha3.so",
-          "sha256": "948063c6eaaec09bfb679e8f99a1292e283ccb77ad720e96c3041ae205fbfd43"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_socket.so",
-          "sha256": "9e1114aa763bd6cac44a5215be9d2da5bb8812d9e11a270cda2156d2342eb599"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_sqlite3.so",
-          "sha256": "dda47249b8ffbac3ad8808b77cd3cfad24f39d2cde84a586ba18299f9c80e843"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_ssl.so",
-          "sha256": "3951027571f42911e2221845cef5201e2070e01aaf8ded0871d01d02213e890f"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_statistics.so",
-          "sha256": "4f2ac3014cddf5aa09ac5a036139628d2c225f5c732cd5562fd54cd2ff311cc2"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_struct.so",
-          "sha256": "6a6675c748fdec382a343268fab0cce7c7ee644f020dd65fdbfa12f4e764f487"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_uuid.so",
-          "sha256": "2569e8a24255411788686c446be80de662ef4e6eda4582154c5bd358149acd30"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/_zoneinfo.so",
-          "sha256": "61cf3928efd92fa24d680f54c97f4110426dc6de6cc4b241a5e4873d933546cd"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/array.so",
-          "sha256": "21e47b4f41bcdc793df5745af1b7b3b95bed6e24eba30ce41d898aa7e98126ed"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/binascii.so",
-          "sha256": "5b9c850d7dcaf95c8d36928f042555fb7a005a952fa90a8cde4dfab392f3601b"
-        },
-        {
-          "executable": true,
-          "path": "bin/linux-x64/bsl-analyzer",
-          "sha256": "c476c10fcdfa6eb7d310e83d0e69b02a27f9afeec0d394681feadb889de97301"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/certifi/cacert.pem",
-          "sha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/fcntl.so",
-          "sha256": "147b97a774845a7c3dcba8a679926227618ea32fc8dbe1d0da251134bbb4b104"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/grp.so",
-          "sha256": "d37782be38c636abf759af4b7aee05093d41cb4e4ddf7557be41cfa36865c40b"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jiter/jiter.so",
-          "sha256": "006edf6828c69dcdff1b0656a81ccd654ecc110f9fa9ae3647ff1ff36064e767"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft201909/metaschema.json",
-          "sha256": "7b761b3e121f0a0ca1ea2a0b8e2cc856bcf801604b8268d71bacaa202bc0c13b"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft201909/vocabularies/applicator",
-          "sha256": "6895100e99726fbb107058512bbec3ecfd4b24e8fd2facee3e505ee72b0d4c31"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft201909/vocabularies/content",
-          "sha256": "9b7d4f55a4e2fdb02c430068fdffabc732addce238da3f1df2690249c3353274"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft201909/vocabularies/core",
-          "sha256": "b5a2c4957f6495d0a5081f0409ebe8a14e4139acb203fc748471f8ede2af5b2c"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft201909/vocabularies/format",
-          "sha256": "50ebbfe790611a849b8cc400a09c1d0e0fb6ab5c0d43a0f22201fd3625056bf4"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft201909/vocabularies/meta-data",
-          "sha256": "d47e2445dd6a82271a298d83cc6c6cb8d4ae1e15e0dc56becd37a163ecf01286"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft201909/vocabularies/validation",
-          "sha256": "1e526c1d335a734805fc82cf5798c12b960ad7da2517c66cda5a1b09359c3c1c"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft202012/metaschema.json",
-          "sha256": "41da76f5afb7ce062d248f762463a92f7ca47e4e0f905b224ba6afeef91ded0f"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft202012/vocabularies/applicator",
-          "sha256": "c4a6e4147b91fef7fea6dc058cb1bf93402f7414b76578a8b16aaf1dad6aacef"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft202012/vocabularies/content",
-          "sha256": "08343747764e4a5814262793cf4d652057a7913863c5950d43297e8e1fdac5b6"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft202012/vocabularies/core",
-          "sha256": "c2d12a8e4dd11d336dfc83a3f663aa4c69f0b49b3beb094ffeb25b5316f4803d"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft202012/vocabularies/format-annotation",
-          "sha256": "abc775adfefd89d22358170d9bf93f4ebd2349563bbbedd60f02bef7c812bcc0"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft202012/vocabularies/format-assertion",
-          "sha256": "c52242b9a1bb786b26c3e82c7add428c31f9c96e575dce99e56ea5feaa6da20c"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft202012/vocabularies/meta-data",
-          "sha256": "8f76d6e14f41b9b92ef933b708cdc5144c8b5268651ad11918485fb1754f1c76"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft202012/vocabularies/unevaluated",
-          "sha256": "2dbfbcb73994b670b0976492adee1fffb46c21682784d2f5a4ca561f9e2d0cb4"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft202012/vocabularies/validation",
-          "sha256": "7010a31e541f32d2be721e2de348df75c9b36876a3ed304877fc0abda1d37a58"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft3/metaschema.json",
-          "sha256": "2cf75f64436fb5be374a2eaa27ab8b7e1fd651c9b46daea6c67b02fd64e2458b"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft4/metaschema.json",
-          "sha256": "e1489d0b4755f02793302591d3fcb8f07b6893a82a94f24895f8e4edf11b82e2"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft6/metaschema.json",
-          "sha256": "c29dfce9f54835c3a06c03b3c5d5ec0eda77706568f9c4df7cfbc7566a51006d"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/jsonschema_specifications/schemas/draft7/metaschema.json",
-          "sha256": "3d5392088261606c559b603f385329c9f1ab45b5d667eb990687453b055d405e"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/libbz2.so.1.0",
-          "sha256": "f22d66fc09a2e4cfc11a06049fb7abaf2532b91654b3efc6b4c2060dfea81b94"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/libcrypto.so.3",
-          "sha256": "6b157e782b36581fc95a1c92b734a8dd0a5775b192f0acfd44f48aa69048ecda"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/libffi.so.8",
-          "sha256": "fdf9b469d48f0ebb660dbf9632a52cd521142387d1f77eff62f48cea25f029b8"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/liblzma.so.5",
-          "sha256": "87dead00f66afb0b947d6410ab83b1a8ec2e98b0f4b6d4bf77ccb2b383f800e5"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/libpython3.12.so.1.0",
-          "sha256": "db538d8b04e18719da4a562544f7e61135ad32b2d663e3c1f28249c086c82b9d"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/libsqlite3.so.0",
-          "sha256": "c67bfee2c68c25fbe1e70ecd3f67bc6bed276b4503ff853fa4d9012e1c799ad6"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/libssl.so.3",
-          "sha256": "c6be23e6148c3a1259b22be4b6a61da446a4d78bbbcac051c224525ff1c1ea1d"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/libuuid.so.1",
-          "sha256": "c6c7af76a408707c5610c89720d38d0cbf8bd27a0ff8449bb030f6791b2ee54e"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/math.so",
-          "sha256": "5d00ecdb8c004a381a5790583d820e215bfe7699e97db3c4da09074f14a997eb"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/mmap.so",
-          "sha256": "14ce944eedf68be0e83c281de5dea132b1de68e0a10eaeca554dbe646fc9d053"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/pydantic_core/_pydantic_core.so",
-          "sha256": "03dbdf8c1a699d2cd0a32dd651a48bced3aaab664155a6a6dbca96d66f6504e7"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/pyexpat.so",
-          "sha256": "bd03e9359ab2d6650ed81e7ac910d03a79213b5bf7afe8dbf248b2a31855a751"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/resource.so",
-          "sha256": "c5309bf6c75554a1516d395e822f84ec186a36511f02318a15d4aa1c30c4e0ee"
-        },
-        {
-          "executable": true,
-          "path": "bin/linux-x64/rlm-bsl-index",
-          "sha256": "d63ea531fb67c30f921e59333ec009cd45df99f9d35d24bd2345f1a023d83027"
-        },
-        {
-          "executable": true,
-          "path": "bin/linux-x64/rlm-bsl-mcp",
-          "sha256": "d63ea531fb67c30f921e59333ec009cd45df99f9d35d24bd2345f1a023d83027"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/rpds/rpds.so",
-          "sha256": "b9d6eaced7af1c5627571b7d4721e86b22cd62217a619815b467638f0845f426"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/select.so",
-          "sha256": "ef469528dfe8716533c6d7f26f3e6a23f332f9ce4160e311af5c628159e9c5fb"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/termios.so",
-          "sha256": "d32e22ae9af75574843ef93a7080c1344f7da528e7584c543e73e2f6a1f0b368"
-        },
-        {
-          "executable": true,
-          "path": "bin/linux-x64/unica",
-          "sha256": "6a4a3634eb221cf377a9a930657e0211e58fb7d8620eb8659714e72b13cfedb6"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/unicodedata.so",
-          "sha256": "f86395dcc96ccc05780f386338ca497d5f526a84dfc3ad8939ff193ae6b7962a"
-        },
-        {
-          "executable": true,
-          "path": "bin/linux-x64/v8-runner",
-          "sha256": "70690845033ab41abe4ed0a6af206f7022cd1481ae408748b7de03c56ced0b6b"
-        },
-        {
-          "executable": false,
-          "path": "bin/linux-x64/zlib.so",
-          "sha256": "5f75be61c25477b192a6b2f64a9111f24083e2ddf9eb4d871c14e79b7568c801"
-        },
-        {
-          "executable": false,
-          "path": "third-party/manifest.json",
-          "sha256": "7fb484ec2f9edfdae9b54856a36f9494c0d8258cc9133f3e0802ac029a671198"
+    "rlm-tools-bsl": {
+      "version": "1.33.0",
+      "role": "engine",
+      "targets": {
+        "darwin-arm64": {
+          "asset": {
+            "mediaType": "application/gzip",
+            "name": "rlm-tools-bsl-darwin-arm64.tar.gz",
+            "sha256": "55caf6a245b3bb47344e2191408841f45aefb614b23480d9941f2cb3e2d8af2c",
+            "url": "https://github.com/IngvarConsulting/unica-toolchain/releases/download/rlm-tools-bsl-v1.33.0-build.3/rlm-tools-bsl-darwin-arm64.tar.gz"
+          },
+          "files": [
+            {
+              "executable": false,
+              "path": "manifest.json",
+              "sha256": "d4b032d798857a5ab752953c562f13e974906438d169b95f6881a8caf0cb639f"
+            },
+            {
+              "executable": false,
+              "path": "payload/Python",
+              "sha256": "b556019ad1012aab5c2324b3aef3904a915fd582a29ce76d0b9342468a676e0c"
+            },
+            {
+              "executable": false,
+              "path": "payload/_asyncio.so",
+              "sha256": "954d10e934ab70389abf7788da8a82203c1c392f7153ef83c40b0971e98ab339"
+            },
+            {
+              "executable": false,
+              "path": "payload/_blake2.so",
+              "sha256": "af8b601fd4dd042ccc226308c014b8094a9885cfbacdc6e5d9fa01ce22a5c38f"
+            },
+            {
+              "executable": false,
+              "path": "payload/_bz2.so",
+              "sha256": "0d28a5c8d863b8a710fc3bf4fd0c230b35de5f4432fcf079773f07f5f846a1c6"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_cn.so",
+              "sha256": "53b310305e4a3193a8d50a391e86c1c3fd36edfbc7d171f2ba5cf86ee1604e09"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_hk.so",
+              "sha256": "bc29ca1babc463b40b6a3c30c852b23573c2205cc4df33e534cdfedebdb90f3c"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_iso2022.so",
+              "sha256": "e3126d41de7c41de3be7e3572734065e7b5a0d9da4128a7f02dfb1c4ea726f23"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_jp.so",
+              "sha256": "83b1c4942daf82e4feca6a7807ce7cb9be521dae286a37b7b268d2462d9dddba"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_kr.so",
+              "sha256": "790f979ff0bbdf17824204c9f0aae3ea69ff617d6995b77bbad8f3bf7e36ec65"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_tw.so",
+              "sha256": "cccc4722ef5ff6e423131beb7759248b5c82c1a96b0c1e4ed531858579cf2223"
+            },
+            {
+              "executable": false,
+              "path": "payload/_contextvars.so",
+              "sha256": "ebd6bdddac605976808e7232b849c29ed4430da2241e5843eafa0f6c7209efb5"
+            },
+            {
+              "executable": false,
+              "path": "payload/_csv.so",
+              "sha256": "b8eca89764cdde9d6fb022fc44820d78d4855b968e9452a69fc556693cce118d"
+            },
+            {
+              "executable": false,
+              "path": "payload/_ctypes.so",
+              "sha256": "bec6afa1a59a6a6bf6af5052126cb99a569d1f647b7468df8b268b9adf06c9f8"
+            },
+            {
+              "executable": false,
+              "path": "payload/_datetime.so",
+              "sha256": "02140734925be46d05617c3bf8eff3bd64797bc28f7e3260316f30b42babae9a"
+            },
+            {
+              "executable": false,
+              "path": "payload/_decimal.so",
+              "sha256": "0f33ae377fc69db566113f430d7b1dd04666a7d701fa5d4fc22a5e7201010f7a"
+            },
+            {
+              "executable": false,
+              "path": "payload/_elementtree.so",
+              "sha256": "ad88b5c7472c332f66d2fd0f461118c2f34de27ee2481f78a4d991769ecb569e"
+            },
+            {
+              "executable": false,
+              "path": "payload/_hashlib.so",
+              "sha256": "dc893d6ae285ccbd462cb1206670d903f29b1b11acf31c449edd205069b9034a"
+            },
+            {
+              "executable": false,
+              "path": "payload/_heapq.so",
+              "sha256": "a8483a40a3b2eb142a3dbc93b0f119f97f4364a3f88211d47498f417aba544ea"
+            },
+            {
+              "executable": false,
+              "path": "payload/_lzma.so",
+              "sha256": "5e8e919e23ee9860d509bfd993adfb0aedc0984e9b763895fe64ad07f19c54d9"
+            },
+            {
+              "executable": false,
+              "path": "payload/_md5.so",
+              "sha256": "27e826ae9dc9ef3171dd2b175f7350a1951c03dff33653f46ad1e36853579fb6"
+            },
+            {
+              "executable": false,
+              "path": "payload/_multibytecodec.so",
+              "sha256": "8415b4030e1c7571756e6a8643f040f5dad81fc7534fea2b6f36276138ccaaf9"
+            },
+            {
+              "executable": false,
+              "path": "payload/_multiprocessing.so",
+              "sha256": "fb6a6b112792598dfdcb38132b8c316e63d8a48bb03024c2dee96451a1ed1909"
+            },
+            {
+              "executable": false,
+              "path": "payload/_opcode.so",
+              "sha256": "5e3c815675cc0d9047ab2670eace4c135708f091d0c87aa7ab0e6af5aac60ef0"
+            },
+            {
+              "executable": false,
+              "path": "payload/_pickle.so",
+              "sha256": "c4c0a695a23ccf0b785555a0f47155afbe924a893eda8bc7c285d9437714a13c"
+            },
+            {
+              "executable": false,
+              "path": "payload/_posixshmem.so",
+              "sha256": "73aeca8d695ccc04fa3c2bdec35decc0583a2bb50c0386f1587565d13b0690b8"
+            },
+            {
+              "executable": false,
+              "path": "payload/_posixsubprocess.so",
+              "sha256": "085eb2eace0c7378ad2ebb769bec4a986c63b52165a6707c8c9787f225003df3"
+            },
+            {
+              "executable": false,
+              "path": "payload/_queue.so",
+              "sha256": "0f352832650a78c53bff4eeb7dbef866e7dfb2b7c064f9fdfdc231256f074d70"
+            },
+            {
+              "executable": false,
+              "path": "payload/_random.so",
+              "sha256": "7e1b13162368954bab5c0e41b4c0cf4e19548053f6b0e88677ab9ab8795129ee"
+            },
+            {
+              "executable": false,
+              "path": "payload/_scproxy.so",
+              "sha256": "e6732fd83c28e87b9ebddfd82e88867c34f8fb2b4f417f4f8f25ffb0013957e3"
+            },
+            {
+              "executable": false,
+              "path": "payload/_sha1.so",
+              "sha256": "4cb2bbd118d8033253ec4c159ab4641d89839d5929bb0ba787aacb04ccecbdc6"
+            },
+            {
+              "executable": false,
+              "path": "payload/_sha2.so",
+              "sha256": "86fbca5d74f2acb61891ea2a6252a2b81583c593d511f8cc2c76650ede13ec9c"
+            },
+            {
+              "executable": false,
+              "path": "payload/_sha3.so",
+              "sha256": "0d5cb4792f1416f4e415ce5ce4157407df6a8e7fc57df3e80f8aa0ea059e86f3"
+            },
+            {
+              "executable": false,
+              "path": "payload/_socket.so",
+              "sha256": "15f0066f88bf055cd83f7d5acedd54c6245c983d2a366987c3b7a3f6d70f057f"
+            },
+            {
+              "executable": false,
+              "path": "payload/_sqlite3.so",
+              "sha256": "06eaf074047b9e7be070f1b8c67a18a78072f445a95d6c1de0565e2c58d62301"
+            },
+            {
+              "executable": false,
+              "path": "payload/_ssl.so",
+              "sha256": "3201bfb42c2d2821121fd8770a0249a9094b56ed94825bb8bb469c81f47b37ff"
+            },
+            {
+              "executable": false,
+              "path": "payload/_statistics.so",
+              "sha256": "1bd601a89162e43a66132679032e6509e30a7917a550fcb12e7b80b0d62cdbb4"
+            },
+            {
+              "executable": false,
+              "path": "payload/_struct.so",
+              "sha256": "9c99133d077de05ec08a0e39ee895280570833ee83425b0cac5de0eb25f14e9a"
+            },
+            {
+              "executable": false,
+              "path": "payload/_uuid.so",
+              "sha256": "0dca8b6d4e70b256203deda90ddb789cf390612d32c5a5cd895dcb28a011d59c"
+            },
+            {
+              "executable": false,
+              "path": "payload/_zoneinfo.so",
+              "sha256": "7b1e899584e47064b9006e6aab7340f462745253a5d2b308795a0654e1de2b22"
+            },
+            {
+              "executable": false,
+              "path": "payload/array.so",
+              "sha256": "64f5fd94330f85446466848b0b3345e399e5e8cba3f46d317fa84a780f9d5a0c"
+            },
+            {
+              "executable": false,
+              "path": "payload/binascii.so",
+              "sha256": "580ef81ed70364fe337f2044e8a72ff39832c928e908e97e45e200541ab02e67"
+            },
+            {
+              "executable": false,
+              "path": "payload/certifi/cacert.pem",
+              "sha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
+            },
+            {
+              "executable": false,
+              "path": "payload/fcntl.so",
+              "sha256": "a5cbf77d816bdcc61cecee4661fc18f53605c77f763a341ef4dde62a6b483ad6"
+            },
+            {
+              "executable": false,
+              "path": "payload/grp.so",
+              "sha256": "5a5cacea1ce77e2a2bba14e5306366e1228bdb0058ac1db82b1a8b244d6ceb87"
+            },
+            {
+              "executable": false,
+              "path": "payload/jiter/jiter.so",
+              "sha256": "084c3c1196cf3105142c043aa31ef58c78592cd642a1261b969eae100b46b3bb"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/metaschema.json",
+              "sha256": "7b761b3e121f0a0ca1ea2a0b8e2cc856bcf801604b8268d71bacaa202bc0c13b"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/applicator",
+              "sha256": "6895100e99726fbb107058512bbec3ecfd4b24e8fd2facee3e505ee72b0d4c31"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/content",
+              "sha256": "9b7d4f55a4e2fdb02c430068fdffabc732addce238da3f1df2690249c3353274"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/core",
+              "sha256": "b5a2c4957f6495d0a5081f0409ebe8a14e4139acb203fc748471f8ede2af5b2c"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/format",
+              "sha256": "50ebbfe790611a849b8cc400a09c1d0e0fb6ab5c0d43a0f22201fd3625056bf4"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/meta-data",
+              "sha256": "d47e2445dd6a82271a298d83cc6c6cb8d4ae1e15e0dc56becd37a163ecf01286"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/validation",
+              "sha256": "1e526c1d335a734805fc82cf5798c12b960ad7da2517c66cda5a1b09359c3c1c"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/metaschema.json",
+              "sha256": "41da76f5afb7ce062d248f762463a92f7ca47e4e0f905b224ba6afeef91ded0f"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/applicator",
+              "sha256": "c4a6e4147b91fef7fea6dc058cb1bf93402f7414b76578a8b16aaf1dad6aacef"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/content",
+              "sha256": "08343747764e4a5814262793cf4d652057a7913863c5950d43297e8e1fdac5b6"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/core",
+              "sha256": "c2d12a8e4dd11d336dfc83a3f663aa4c69f0b49b3beb094ffeb25b5316f4803d"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/format-annotation",
+              "sha256": "abc775adfefd89d22358170d9bf93f4ebd2349563bbbedd60f02bef7c812bcc0"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/format-assertion",
+              "sha256": "c52242b9a1bb786b26c3e82c7add428c31f9c96e575dce99e56ea5feaa6da20c"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/meta-data",
+              "sha256": "8f76d6e14f41b9b92ef933b708cdc5144c8b5268651ad11918485fb1754f1c76"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/unevaluated",
+              "sha256": "2dbfbcb73994b670b0976492adee1fffb46c21682784d2f5a4ca561f9e2d0cb4"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/validation",
+              "sha256": "7010a31e541f32d2be721e2de348df75c9b36876a3ed304877fc0abda1d37a58"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft3/metaschema.json",
+              "sha256": "2cf75f64436fb5be374a2eaa27ab8b7e1fd651c9b46daea6c67b02fd64e2458b"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft4/metaschema.json",
+              "sha256": "e1489d0b4755f02793302591d3fcb8f07b6893a82a94f24895f8e4edf11b82e2"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft6/metaschema.json",
+              "sha256": "c29dfce9f54835c3a06c03b3c5d5ec0eda77706568f9c4df7cfbc7566a51006d"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft7/metaschema.json",
+              "sha256": "3d5392088261606c559b603f385329c9f1ab45b5d667eb990687453b055d405e"
+            },
+            {
+              "executable": false,
+              "path": "payload/libcrypto.3.dylib",
+              "sha256": "f63f0d3991b947e3f820e2195fca514491fb726d1178bc7a86cf307474e3aa88"
+            },
+            {
+              "executable": false,
+              "path": "payload/libssl.3.dylib",
+              "sha256": "96d259e6542d39a88588500875cbe0ea174b75ecac9302a4405d34c064b8e3f7"
+            },
+            {
+              "executable": false,
+              "path": "payload/math.so",
+              "sha256": "5acd3d80570b3607b1caead3978bda83132cae6b8d57802491fb45e552bed73e"
+            },
+            {
+              "executable": false,
+              "path": "payload/mmap.so",
+              "sha256": "1702047fcadd611d3980eb057f5c552446a580cbc708c9a68c47343e323e6720"
+            },
+            {
+              "executable": false,
+              "path": "payload/pydantic_core/_pydantic_core.so",
+              "sha256": "7b1f7f00851a395960ee36887c265da03b072e9f6e92e284b488ae5d398a1c21"
+            },
+            {
+              "executable": false,
+              "path": "payload/pyexpat.so",
+              "sha256": "a4ff7ed2ae4697175231be64b2a76ef0165618f72ef09aadc496a18486528201"
+            },
+            {
+              "executable": false,
+              "path": "payload/resource.so",
+              "sha256": "e60f799d98bd25c6cbf3a3905398c5d7f33e7a36153575346ae532cda5db7102"
+            },
+            {
+              "executable": true,
+              "path": "payload/rlm-bsl-index",
+              "sha256": "bdf429e3a8dee1fb9b1f1af66adcc4280732cc4287c92c4fbe4effddc0f8492e"
+            },
+            {
+              "executable": true,
+              "path": "payload/rlm-bsl-mcp",
+              "sha256": "bdf429e3a8dee1fb9b1f1af66adcc4280732cc4287c92c4fbe4effddc0f8492e"
+            },
+            {
+              "executable": false,
+              "path": "payload/rpds/rpds.so",
+              "sha256": "1ddd52211f9f628aca0aa7d1da83523800fcc6f007b92fb8b36bf8ecc3dc1fee"
+            },
+            {
+              "executable": false,
+              "path": "payload/select.so",
+              "sha256": "6db56ba138c41c06fa9e945e8e2f3d3e2bf46324f99d5783ea506560ffbdaac8"
+            },
+            {
+              "executable": false,
+              "path": "payload/termios.so",
+              "sha256": "543eb29b2131a7d3a9c3c636ad13643aef62a7f69eb13d3c56291e39666492f1"
+            },
+            {
+              "executable": false,
+              "path": "payload/unicodedata.so",
+              "sha256": "0942d0455ec0f02305f3ab14bb21fb8e584aaf4ae9522835cd70834b848de140"
+            },
+            {
+              "executable": false,
+              "path": "payload/zlib.so",
+              "sha256": "3069751b46e25fe6342d15213c19d1dfc4039c08af222946de40ab87defa2967"
+            }
+          ]
+        },
+        "linux-x64": {
+          "asset": {
+            "mediaType": "application/gzip",
+            "name": "rlm-tools-bsl-linux-x64.tar.gz",
+            "sha256": "1a27e1305c159c01f4b928fa63358567236197844af4663188bd5b30aa780f40",
+            "url": "https://github.com/IngvarConsulting/unica-toolchain/releases/download/rlm-tools-bsl-v1.33.0-build.3/rlm-tools-bsl-linux-x64.tar.gz"
+          },
+          "files": [
+            {
+              "executable": false,
+              "path": "manifest.json",
+              "sha256": "51ee9f88787f0d51305ab9056ccf3447a14b47d0a23f189ff3a52d22172400cc"
+            },
+            {
+              "executable": false,
+              "path": "payload/_asyncio.so",
+              "sha256": "59a7885ae79810ef4e28777364d458d66416b2d72857dd9b6c6032791600e7ac"
+            },
+            {
+              "executable": false,
+              "path": "payload/_blake2.so",
+              "sha256": "8d1d121c9335b6b87a16ab21c98b12d809aeaab58569c5b901dcac7d667edcb5"
+            },
+            {
+              "executable": false,
+              "path": "payload/_bz2.so",
+              "sha256": "7896443e82498907bb55326d6711130a0e76022dd1d1bc28d08275f14f8a245f"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_cn.so",
+              "sha256": "601a36f2291257455d5b81aa8067476df2c7b9e3f48f3a45a8f5746f76d15dd4"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_hk.so",
+              "sha256": "2a460c2127e74890573d72ed8d3a36850eb81b0492ff054c5ac220f5625d046f"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_iso2022.so",
+              "sha256": "64b6904fe392db73ba47c7984d17d75dc794c7b89a2ce5d3f3ea830a7420d1fe"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_jp.so",
+              "sha256": "9f0a286ca534444c630ce3a99017e840bf6b09d6366929d8b747ffc4731677cd"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_kr.so",
+              "sha256": "e18161579a4fb1d53fc77dd587de3e5799eda4a26ec8a8633606a4c489214c08"
+            },
+            {
+              "executable": false,
+              "path": "payload/_codecs_tw.so",
+              "sha256": "64b0b47e35b1939bdd5c949bf5ed5684786bd52a75beeec45ce2387fae1de449"
+            },
+            {
+              "executable": false,
+              "path": "payload/_contextvars.so",
+              "sha256": "54e4dbd38da81cc4f709988d5adf6fd6e27755efcbf5a9ffe4a4f270f6661e63"
+            },
+            {
+              "executable": false,
+              "path": "payload/_csv.so",
+              "sha256": "3f97bcdd5bfa17b9430d7bffba941f3eec315bec8ce1895199852a7dcfe69d46"
+            },
+            {
+              "executable": false,
+              "path": "payload/_ctypes.so",
+              "sha256": "fd2877827b1e1f0ebc060764a5a3ed7fed511319026953e00747a3766bfe691e"
+            },
+            {
+              "executable": false,
+              "path": "payload/_datetime.so",
+              "sha256": "a69b314ee3f2ded212250a7443fe80239d5f589b5ee710e1d8e5a864e78e5446"
+            },
+            {
+              "executable": false,
+              "path": "payload/_decimal.so",
+              "sha256": "a91ec2241b27eafe0ec4e48e5b3a69c30c289c165471f01def867b9c43f5045d"
+            },
+            {
+              "executable": false,
+              "path": "payload/_elementtree.so",
+              "sha256": "110d97cfb1b1e9b0eae7a3844aa9ec4a03af078ab399b23fe8e6f50fd5f12c61"
+            },
+            {
+              "executable": false,
+              "path": "payload/_hashlib.so",
+              "sha256": "0c72334d4502e4f95d5be633d2ef545e8f496446e04dc57e4c2e3ec7dca73279"
+            },
+            {
+              "executable": false,
+              "path": "payload/_heapq.so",
+              "sha256": "38c2622f029668c43d06433e3a4f5cec5fee9da4ec53478e35e852d6e99a15c3"
+            },
+            {
+              "executable": false,
+              "path": "payload/_lzma.so",
+              "sha256": "b2be4c54358b71b1c750011c5680bd8af17af45deaad2685c2b8965a073635d3"
+            },
+            {
+              "executable": false,
+              "path": "payload/_md5.so",
+              "sha256": "85e550b47175a86c192e7fb7a34d4957cbfe8ec0b09e403f3d6bbe3f8f6aeca9"
+            },
+            {
+              "executable": false,
+              "path": "payload/_multibytecodec.so",
+              "sha256": "ba11b609999940d4091ea62280be6c09d1ef900b7660284399d5acc111b46aa5"
+            },
+            {
+              "executable": false,
+              "path": "payload/_multiprocessing.so",
+              "sha256": "31c21216775def9a3a1d7b0fa940f05511a9752b6ddd1145878b76c00c3359be"
+            },
+            {
+              "executable": false,
+              "path": "payload/_opcode.so",
+              "sha256": "c49c9a883502148d9936669c1f21f68154027a659377f0c38e4661fa9f2ec816"
+            },
+            {
+              "executable": false,
+              "path": "payload/_pickle.so",
+              "sha256": "027c0bece1b9d025d96e0d06310798b152ada444379513fdff773ff9cb480d04"
+            },
+            {
+              "executable": false,
+              "path": "payload/_posixshmem.so",
+              "sha256": "d4b04dd00c358b80fc5b93250a94d1088e6ae584655c4437fbc4d9b6fdaae9b8"
+            },
+            {
+              "executable": false,
+              "path": "payload/_posixsubprocess.so",
+              "sha256": "388f8f0c4af682922276186a4be396b1a5e96c2c25bca57dbf891f228dbaf6aa"
+            },
+            {
+              "executable": false,
+              "path": "payload/_queue.so",
+              "sha256": "6d74daee22c05698cadaa9729b77e2457fcbf7f40bae9e04c6699a7322af70ef"
+            },
+            {
+              "executable": false,
+              "path": "payload/_random.so",
+              "sha256": "61b32fd9c7997737d0430040f65fb8cfe79ed5c33918b8bf0ddd7b8088179351"
+            },
+            {
+              "executable": false,
+              "path": "payload/_sha1.so",
+              "sha256": "41ad4680be2bef94637a99844918556f77cde8f8b5ffebc288dc52b428be3392"
+            },
+            {
+              "executable": false,
+              "path": "payload/_sha2.so",
+              "sha256": "c42c65ad49bf3105ac677020c308a9bd1324a406cfb602782a1b6ffa8d22cc69"
+            },
+            {
+              "executable": false,
+              "path": "payload/_sha3.so",
+              "sha256": "948063c6eaaec09bfb679e8f99a1292e283ccb77ad720e96c3041ae205fbfd43"
+            },
+            {
+              "executable": false,
+              "path": "payload/_socket.so",
+              "sha256": "9e1114aa763bd6cac44a5215be9d2da5bb8812d9e11a270cda2156d2342eb599"
+            },
+            {
+              "executable": false,
+              "path": "payload/_sqlite3.so",
+              "sha256": "dda47249b8ffbac3ad8808b77cd3cfad24f39d2cde84a586ba18299f9c80e843"
+            },
+            {
+              "executable": false,
+              "path": "payload/_ssl.so",
+              "sha256": "3951027571f42911e2221845cef5201e2070e01aaf8ded0871d01d02213e890f"
+            },
+            {
+              "executable": false,
+              "path": "payload/_statistics.so",
+              "sha256": "4f2ac3014cddf5aa09ac5a036139628d2c225f5c732cd5562fd54cd2ff311cc2"
+            },
+            {
+              "executable": false,
+              "path": "payload/_struct.so",
+              "sha256": "6a6675c748fdec382a343268fab0cce7c7ee644f020dd65fdbfa12f4e764f487"
+            },
+            {
+              "executable": false,
+              "path": "payload/_uuid.so",
+              "sha256": "2569e8a24255411788686c446be80de662ef4e6eda4582154c5bd358149acd30"
+            },
+            {
+              "executable": false,
+              "path": "payload/_zoneinfo.so",
+              "sha256": "61cf3928efd92fa24d680f54c97f4110426dc6de6cc4b241a5e4873d933546cd"
+            },
+            {
+              "executable": false,
+              "path": "payload/array.so",
+              "sha256": "21e47b4f41bcdc793df5745af1b7b3b95bed6e24eba30ce41d898aa7e98126ed"
+            },
+            {
+              "executable": false,
+              "path": "payload/binascii.so",
+              "sha256": "5b9c850d7dcaf95c8d36928f042555fb7a005a952fa90a8cde4dfab392f3601b"
+            },
+            {
+              "executable": false,
+              "path": "payload/certifi/cacert.pem",
+              "sha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
+            },
+            {
+              "executable": false,
+              "path": "payload/fcntl.so",
+              "sha256": "147b97a774845a7c3dcba8a679926227618ea32fc8dbe1d0da251134bbb4b104"
+            },
+            {
+              "executable": false,
+              "path": "payload/grp.so",
+              "sha256": "d37782be38c636abf759af4b7aee05093d41cb4e4ddf7557be41cfa36865c40b"
+            },
+            {
+              "executable": false,
+              "path": "payload/jiter/jiter.so",
+              "sha256": "006edf6828c69dcdff1b0656a81ccd654ecc110f9fa9ae3647ff1ff36064e767"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/metaschema.json",
+              "sha256": "7b761b3e121f0a0ca1ea2a0b8e2cc856bcf801604b8268d71bacaa202bc0c13b"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/applicator",
+              "sha256": "6895100e99726fbb107058512bbec3ecfd4b24e8fd2facee3e505ee72b0d4c31"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/content",
+              "sha256": "9b7d4f55a4e2fdb02c430068fdffabc732addce238da3f1df2690249c3353274"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/core",
+              "sha256": "b5a2c4957f6495d0a5081f0409ebe8a14e4139acb203fc748471f8ede2af5b2c"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/format",
+              "sha256": "50ebbfe790611a849b8cc400a09c1d0e0fb6ab5c0d43a0f22201fd3625056bf4"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/meta-data",
+              "sha256": "d47e2445dd6a82271a298d83cc6c6cb8d4ae1e15e0dc56becd37a163ecf01286"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/validation",
+              "sha256": "1e526c1d335a734805fc82cf5798c12b960ad7da2517c66cda5a1b09359c3c1c"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/metaschema.json",
+              "sha256": "41da76f5afb7ce062d248f762463a92f7ca47e4e0f905b224ba6afeef91ded0f"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/applicator",
+              "sha256": "c4a6e4147b91fef7fea6dc058cb1bf93402f7414b76578a8b16aaf1dad6aacef"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/content",
+              "sha256": "08343747764e4a5814262793cf4d652057a7913863c5950d43297e8e1fdac5b6"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/core",
+              "sha256": "c2d12a8e4dd11d336dfc83a3f663aa4c69f0b49b3beb094ffeb25b5316f4803d"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/format-annotation",
+              "sha256": "abc775adfefd89d22358170d9bf93f4ebd2349563bbbedd60f02bef7c812bcc0"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/format-assertion",
+              "sha256": "c52242b9a1bb786b26c3e82c7add428c31f9c96e575dce99e56ea5feaa6da20c"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/meta-data",
+              "sha256": "8f76d6e14f41b9b92ef933b708cdc5144c8b5268651ad11918485fb1754f1c76"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/unevaluated",
+              "sha256": "2dbfbcb73994b670b0976492adee1fffb46c21682784d2f5a4ca561f9e2d0cb4"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/validation",
+              "sha256": "7010a31e541f32d2be721e2de348df75c9b36876a3ed304877fc0abda1d37a58"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft3/metaschema.json",
+              "sha256": "2cf75f64436fb5be374a2eaa27ab8b7e1fd651c9b46daea6c67b02fd64e2458b"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft4/metaschema.json",
+              "sha256": "e1489d0b4755f02793302591d3fcb8f07b6893a82a94f24895f8e4edf11b82e2"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft6/metaschema.json",
+              "sha256": "c29dfce9f54835c3a06c03b3c5d5ec0eda77706568f9c4df7cfbc7566a51006d"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft7/metaschema.json",
+              "sha256": "3d5392088261606c559b603f385329c9f1ab45b5d667eb990687453b055d405e"
+            },
+            {
+              "executable": false,
+              "path": "payload/libbz2.so.1.0",
+              "sha256": "f22d66fc09a2e4cfc11a06049fb7abaf2532b91654b3efc6b4c2060dfea81b94"
+            },
+            {
+              "executable": false,
+              "path": "payload/libcrypto.so.3",
+              "sha256": "6b157e782b36581fc95a1c92b734a8dd0a5775b192f0acfd44f48aa69048ecda"
+            },
+            {
+              "executable": false,
+              "path": "payload/libffi.so.8",
+              "sha256": "fdf9b469d48f0ebb660dbf9632a52cd521142387d1f77eff62f48cea25f029b8"
+            },
+            {
+              "executable": false,
+              "path": "payload/liblzma.so.5",
+              "sha256": "87dead00f66afb0b947d6410ab83b1a8ec2e98b0f4b6d4bf77ccb2b383f800e5"
+            },
+            {
+              "executable": false,
+              "path": "payload/libpython3.12.so.1.0",
+              "sha256": "db538d8b04e18719da4a562544f7e61135ad32b2d663e3c1f28249c086c82b9d"
+            },
+            {
+              "executable": false,
+              "path": "payload/libsqlite3.so.0",
+              "sha256": "c67bfee2c68c25fbe1e70ecd3f67bc6bed276b4503ff853fa4d9012e1c799ad6"
+            },
+            {
+              "executable": false,
+              "path": "payload/libssl.so.3",
+              "sha256": "c6be23e6148c3a1259b22be4b6a61da446a4d78bbbcac051c224525ff1c1ea1d"
+            },
+            {
+              "executable": false,
+              "path": "payload/libuuid.so.1",
+              "sha256": "c6c7af76a408707c5610c89720d38d0cbf8bd27a0ff8449bb030f6791b2ee54e"
+            },
+            {
+              "executable": false,
+              "path": "payload/math.so",
+              "sha256": "5d00ecdb8c004a381a5790583d820e215bfe7699e97db3c4da09074f14a997eb"
+            },
+            {
+              "executable": false,
+              "path": "payload/mmap.so",
+              "sha256": "14ce944eedf68be0e83c281de5dea132b1de68e0a10eaeca554dbe646fc9d053"
+            },
+            {
+              "executable": false,
+              "path": "payload/pydantic_core/_pydantic_core.so",
+              "sha256": "03dbdf8c1a699d2cd0a32dd651a48bced3aaab664155a6a6dbca96d66f6504e7"
+            },
+            {
+              "executable": false,
+              "path": "payload/pyexpat.so",
+              "sha256": "bd03e9359ab2d6650ed81e7ac910d03a79213b5bf7afe8dbf248b2a31855a751"
+            },
+            {
+              "executable": false,
+              "path": "payload/resource.so",
+              "sha256": "c5309bf6c75554a1516d395e822f84ec186a36511f02318a15d4aa1c30c4e0ee"
+            },
+            {
+              "executable": true,
+              "path": "payload/rlm-bsl-index",
+              "sha256": "d63ea531fb67c30f921e59333ec009cd45df99f9d35d24bd2345f1a023d83027"
+            },
+            {
+              "executable": true,
+              "path": "payload/rlm-bsl-mcp",
+              "sha256": "d63ea531fb67c30f921e59333ec009cd45df99f9d35d24bd2345f1a023d83027"
+            },
+            {
+              "executable": false,
+              "path": "payload/rpds/rpds.so",
+              "sha256": "b9d6eaced7af1c5627571b7d4721e86b22cd62217a619815b467638f0845f426"
+            },
+            {
+              "executable": false,
+              "path": "payload/select.so",
+              "sha256": "ef469528dfe8716533c6d7f26f3e6a23f332f9ce4160e311af5c628159e9c5fb"
+            },
+            {
+              "executable": false,
+              "path": "payload/termios.so",
+              "sha256": "d32e22ae9af75574843ef93a7080c1344f7da528e7584c543e73e2f6a1f0b368"
+            },
+            {
+              "executable": false,
+              "path": "payload/unicodedata.so",
+              "sha256": "f86395dcc96ccc05780f386338ca497d5f526a84dfc3ad8939ff193ae6b7962a"
+            },
+            {
+              "executable": false,
+              "path": "payload/zlib.so",
+              "sha256": "5f75be61c25477b192a6b2f64a9111f24083e2ddf9eb4d871c14e79b7568c801"
+            }
+          ]
+        },
+        "win-x64": {
+          "asset": {
+            "mediaType": "application/gzip",
+            "name": "rlm-tools-bsl-win-x64.tar.gz",
+            "sha256": "9655a8d052ae3d033ea8761e7a503ffd1d9a7e4f303b17ed6c8bc9fd86e5abb2",
+            "url": "https://github.com/IngvarConsulting/unica-toolchain/releases/download/rlm-tools-bsl-v1.33.0-build.3/rlm-tools-bsl-win-x64.tar.gz"
+          },
+          "files": [
+            {
+              "executable": false,
+              "path": "manifest.json",
+              "sha256": "fb2f6e6b2d64a9b55a355242d16e12933a4023e926ce300dea8e6851ac29da59"
+            },
+            {
+              "executable": false,
+              "path": "payload/_asyncio.pyd",
+              "sha256": "c77de90cad749087a0c5dc5e19d78d24f6ef44e7e5ac19b8420cfc0cea62395d"
+            },
+            {
+              "executable": false,
+              "path": "payload/_bz2.pyd",
+              "sha256": "65f610646d10d5babea080e060d244b546ec52c54012e5e937dc72dcc2e2e7bc"
+            },
+            {
+              "executable": false,
+              "path": "payload/_ctypes.pyd",
+              "sha256": "0e56107a891100535f2da79d85a5ae65ff1227b4765bd108f8593ac1a1110d81"
+            },
+            {
+              "executable": false,
+              "path": "payload/_decimal.pyd",
+              "sha256": "aeacfead2befcc0768063a037bb64bd32109ae09cb144e5f571b04dd7965db9d"
+            },
+            {
+              "executable": false,
+              "path": "payload/_elementtree.pyd",
+              "sha256": "5009a9a53c03ef8387443b5cf6ce08e5c3a79727466a0b931c5bbca915bf89ca"
+            },
+            {
+              "executable": false,
+              "path": "payload/_hashlib.pyd",
+              "sha256": "03d233dbace599168eaffec823de6ed7beec8c2a4ebfe9b8a3d8e042a59af3ba"
+            },
+            {
+              "executable": false,
+              "path": "payload/_lzma.pyd",
+              "sha256": "e3deecc1f59a3b811c608861decd84de1e8df8bafd5e2b39188861318c5a38cf"
+            },
+            {
+              "executable": false,
+              "path": "payload/_multiprocessing.pyd",
+              "sha256": "2c636df7059cb0dd7e978dd735c7c5c8ddb09cf94754cf9e232296b96c5c545a"
+            },
+            {
+              "executable": false,
+              "path": "payload/_overlapped.pyd",
+              "sha256": "662126ff80c3a1b4cedf74074029c12ae4743e6d3b37376e39ac70aacb7d4d3c"
+            },
+            {
+              "executable": false,
+              "path": "payload/_queue.pyd",
+              "sha256": "48e76e0ad63f6932b4a77b5819f41c1e7595636ca8d9e824f0943a14b8bb5035"
+            },
+            {
+              "executable": false,
+              "path": "payload/_socket.pyd",
+              "sha256": "3efa4636cf9e350856f6927d67a4c2564bf9bd2758a00bbf17d3aece5b60016d"
+            },
+            {
+              "executable": false,
+              "path": "payload/_sqlite3.pyd",
+              "sha256": "64b51df2805c58b023a875e8ae3be7ac7f61ef664f32ca6c90f6315da47ef0bc"
+            },
+            {
+              "executable": false,
+              "path": "payload/_ssl.pyd",
+              "sha256": "0bc527d2dbc50009f43b2ed5d5982c4f63f4b647647ffa9eda612dcda80f6040"
+            },
+            {
+              "executable": false,
+              "path": "payload/_uuid.pyd",
+              "sha256": "acce4f281d7ffb2dec0997527faf25b1df62ad7bd3032c568ddcf65c90edc867"
+            },
+            {
+              "executable": false,
+              "path": "payload/_win32sysloader.pyd",
+              "sha256": "2478402d3eab2a1fc721b0b08c71c0b7612d52c15e01d50896e468a10083d7e2"
+            },
+            {
+              "executable": false,
+              "path": "payload/_wmi.pyd",
+              "sha256": "a980f1e7a29842bd946863fc2693fbeb555a9dc0f9e1630dfed9a2fcdef3ece2"
+            },
+            {
+              "executable": false,
+              "path": "payload/_zoneinfo.pyd",
+              "sha256": "76f1439cda82ab6976df6ba505c4079444703f6d44d8b0259ce59c0ff4279fb4"
+            },
+            {
+              "executable": false,
+              "path": "payload/certifi/cacert.pem",
+              "sha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
+            },
+            {
+              "executable": false,
+              "path": "payload/jiter/jiter.pyd",
+              "sha256": "928cfaf6207a4a4d3f31622d37fc312479924a419bac75bde0d08f81505cca2e"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/metaschema.json",
+              "sha256": "7b761b3e121f0a0ca1ea2a0b8e2cc856bcf801604b8268d71bacaa202bc0c13b"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/applicator",
+              "sha256": "6895100e99726fbb107058512bbec3ecfd4b24e8fd2facee3e505ee72b0d4c31"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/content",
+              "sha256": "9b7d4f55a4e2fdb02c430068fdffabc732addce238da3f1df2690249c3353274"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/core",
+              "sha256": "b5a2c4957f6495d0a5081f0409ebe8a14e4139acb203fc748471f8ede2af5b2c"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/format",
+              "sha256": "50ebbfe790611a849b8cc400a09c1d0e0fb6ab5c0d43a0f22201fd3625056bf4"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/meta-data",
+              "sha256": "d47e2445dd6a82271a298d83cc6c6cb8d4ae1e15e0dc56becd37a163ecf01286"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft201909/vocabularies/validation",
+              "sha256": "1e526c1d335a734805fc82cf5798c12b960ad7da2517c66cda5a1b09359c3c1c"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/metaschema.json",
+              "sha256": "41da76f5afb7ce062d248f762463a92f7ca47e4e0f905b224ba6afeef91ded0f"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/applicator",
+              "sha256": "c4a6e4147b91fef7fea6dc058cb1bf93402f7414b76578a8b16aaf1dad6aacef"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/content",
+              "sha256": "08343747764e4a5814262793cf4d652057a7913863c5950d43297e8e1fdac5b6"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/core",
+              "sha256": "c2d12a8e4dd11d336dfc83a3f663aa4c69f0b49b3beb094ffeb25b5316f4803d"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/format-annotation",
+              "sha256": "abc775adfefd89d22358170d9bf93f4ebd2349563bbbedd60f02bef7c812bcc0"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/format-assertion",
+              "sha256": "c52242b9a1bb786b26c3e82c7add428c31f9c96e575dce99e56ea5feaa6da20c"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/meta-data",
+              "sha256": "8f76d6e14f41b9b92ef933b708cdc5144c8b5268651ad11918485fb1754f1c76"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/unevaluated",
+              "sha256": "2dbfbcb73994b670b0976492adee1fffb46c21682784d2f5a4ca561f9e2d0cb4"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft202012/vocabularies/validation",
+              "sha256": "7010a31e541f32d2be721e2de348df75c9b36876a3ed304877fc0abda1d37a58"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft3/metaschema.json",
+              "sha256": "2cf75f64436fb5be374a2eaa27ab8b7e1fd651c9b46daea6c67b02fd64e2458b"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft4/metaschema.json",
+              "sha256": "e1489d0b4755f02793302591d3fcb8f07b6893a82a94f24895f8e4edf11b82e2"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft6/metaschema.json",
+              "sha256": "c29dfce9f54835c3a06c03b3c5d5ec0eda77706568f9c4df7cfbc7566a51006d"
+            },
+            {
+              "executable": false,
+              "path": "payload/jsonschema_specifications/schemas/draft7/metaschema.json",
+              "sha256": "3d5392088261606c559b603f385329c9f1ab45b5d667eb990687453b055d405e"
+            },
+            {
+              "executable": false,
+              "path": "payload/libcrypto-3.dll",
+              "sha256": "ccfffddcd3defb8d899026298af9af43bc186130f8483d77e97c93233d5f27d7"
+            },
+            {
+              "executable": false,
+              "path": "payload/libffi-8.dll",
+              "sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a"
+            },
+            {
+              "executable": false,
+              "path": "payload/libssl-3.dll",
+              "sha256": "007142039f04d04e0ed607bda53de095e5bc6a8a10d26ecedde94ea7d2d7eefe"
+            },
+            {
+              "executable": false,
+              "path": "payload/perfmon.pyd",
+              "sha256": "e2f657826c174b2cc438fa66e430e7b0c94ce18a88a77244204be09407e37036"
+            },
+            {
+              "executable": false,
+              "path": "payload/pydantic_core/_pydantic_core.pyd",
+              "sha256": "f1156d52678a6a6a1827185bc0d484fb8b23606f053a721cef36c62c99b9db6b"
+            },
+            {
+              "executable": false,
+              "path": "payload/pyexpat.pyd",
+              "sha256": "d615e193d1affcdbfe504e90d3621cbdcff94bf72b79d899126534507fd6d27a"
+            },
+            {
+              "executable": false,
+              "path": "payload/python312.dll",
+              "sha256": "9a0e3435aaa680d868150f87ab3e388ad2eebc22f87e036155c7b4eda8cd2120"
+            },
+            {
+              "executable": false,
+              "path": "payload/pythoncom312.dll",
+              "sha256": "97b7258c32a555170e658d843f8e64a24bb0e087cca2183fc521084d35a08f8a"
+            },
+            {
+              "executable": false,
+              "path": "payload/pywintypes312.dll",
+              "sha256": "b29e4098f9f53f05e3281636d079de58b05a26c03669cea4ec1673e51750fa31"
+            },
+            {
+              "executable": true,
+              "path": "payload/rlm-bsl-index.exe",
+              "sha256": "dd7f12096475eca857d6d144eaf9bd7af3446690f0cef4a0e2c6ac5ba4dee5b3"
+            },
+            {
+              "executable": true,
+              "path": "payload/rlm-bsl-mcp.exe",
+              "sha256": "dd7f12096475eca857d6d144eaf9bd7af3446690f0cef4a0e2c6ac5ba4dee5b3"
+            },
+            {
+              "executable": false,
+              "path": "payload/rpds/rpds.pyd",
+              "sha256": "68ee8e02e31d0c1536b76410ed67b3016e4d089fe066c5df6f60b15412b4dd66"
+            },
+            {
+              "executable": false,
+              "path": "payload/select.pyd",
+              "sha256": "d4d7181b11db0bd22a6cd5cda6f8583d1f5c77615fd0a6ca33350619d6e0438a"
+            },
+            {
+              "executable": false,
+              "path": "payload/servicemanager.pyd",
+              "sha256": "99b50ad498ace317bed02f279d63d5ad9ec8147db04e3f5e758f3e8f476e9d74"
+            },
+            {
+              "executable": false,
+              "path": "payload/sqlite3.dll",
+              "sha256": "8daa45684bf6688fca28d956b2e8942f2fa98f656675ce68e6d61dd869848a7a"
+            },
+            {
+              "executable": false,
+              "path": "payload/unicodedata.pyd",
+              "sha256": "208ee1cd3cbad0828433ca7246b05be2b1ff5569983d27d296c0b38888585488"
+            },
+            {
+              "executable": false,
+              "path": "payload/vcruntime140.dll",
+              "sha256": "052ad6a20d375957e82aa6a3c441ea548d89be0981516ca7eb306e063d5027f4"
+            },
+            {
+              "executable": false,
+              "path": "payload/vcruntime140_1.dll",
+              "sha256": "6a99bc0128e0c7d6cbbf615fcc26909565e17d4ca3451b97f8987f9c6acbc6c8"
+            },
+            {
+              "executable": false,
+              "path": "payload/win32api.pyd",
+              "sha256": "b54d63d771b4db2a1bf1e724ff2597e970173ec5a9860c2b0dfdff83cd7a160e"
+            },
+            {
+              "executable": false,
+              "path": "payload/win32event.pyd",
+              "sha256": "c64500261bb9bfeffa3ab5ed03af3a57dc52a959022d727a9fec9a0389672013"
+            },
+            {
+              "executable": false,
+              "path": "payload/win32evtlog.pyd",
+              "sha256": "2a4092730b74eccff37102eddbe207ac6bc73dd735fbc0632e2eff3a4e218701"
+            },
+            {
+              "executable": false,
+              "path": "payload/win32job.pyd",
+              "sha256": "5422bafbcfae0484c46abaf3093f21fecf7310d160a9d7e700ce154acc91129d"
+            },
+            {
+              "executable": false,
+              "path": "payload/win32service.pyd",
+              "sha256": "4029359f5037a76f0ceac94b297208eb792a07147b7323397d6269f9e64ea583"
+            }
+          ]
         }
-      ],
-      "entrypoint": "bin/linux-x64/unica"
+      }
     },
-    "win-x64": {
-      "asset": {
-        "mediaType": "application/gzip",
-        "name": "unica-runtime-win-x64.tar.gz",
-        "sha256": "9bc4ff6c39d453d61105d218a926d17490d774deab6ec75463179c72c087f797",
-        "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.12.3/unica-runtime-win-x64.tar.gz"
-      },
-      "files": [
-        {
-          "executable": false,
-          "path": "bin/win-x64/_asyncio.pyd",
-          "sha256": "c77de90cad749087a0c5dc5e19d78d24f6ef44e7e5ac19b8420cfc0cea62395d"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_bz2.pyd",
-          "sha256": "65f610646d10d5babea080e060d244b546ec52c54012e5e937dc72dcc2e2e7bc"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_ctypes.pyd",
-          "sha256": "0e56107a891100535f2da79d85a5ae65ff1227b4765bd108f8593ac1a1110d81"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_decimal.pyd",
-          "sha256": "aeacfead2befcc0768063a037bb64bd32109ae09cb144e5f571b04dd7965db9d"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_elementtree.pyd",
-          "sha256": "5009a9a53c03ef8387443b5cf6ce08e5c3a79727466a0b931c5bbca915bf89ca"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_hashlib.pyd",
-          "sha256": "03d233dbace599168eaffec823de6ed7beec8c2a4ebfe9b8a3d8e042a59af3ba"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_lzma.pyd",
-          "sha256": "e3deecc1f59a3b811c608861decd84de1e8df8bafd5e2b39188861318c5a38cf"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_multiprocessing.pyd",
-          "sha256": "2c636df7059cb0dd7e978dd735c7c5c8ddb09cf94754cf9e232296b96c5c545a"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_overlapped.pyd",
-          "sha256": "662126ff80c3a1b4cedf74074029c12ae4743e6d3b37376e39ac70aacb7d4d3c"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_queue.pyd",
-          "sha256": "48e76e0ad63f6932b4a77b5819f41c1e7595636ca8d9e824f0943a14b8bb5035"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_socket.pyd",
-          "sha256": "3efa4636cf9e350856f6927d67a4c2564bf9bd2758a00bbf17d3aece5b60016d"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_sqlite3.pyd",
-          "sha256": "64b51df2805c58b023a875e8ae3be7ac7f61ef664f32ca6c90f6315da47ef0bc"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_ssl.pyd",
-          "sha256": "0bc527d2dbc50009f43b2ed5d5982c4f63f4b647647ffa9eda612dcda80f6040"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_uuid.pyd",
-          "sha256": "acce4f281d7ffb2dec0997527faf25b1df62ad7bd3032c568ddcf65c90edc867"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_win32sysloader.pyd",
-          "sha256": "2478402d3eab2a1fc721b0b08c71c0b7612d52c15e01d50896e468a10083d7e2"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_wmi.pyd",
-          "sha256": "a980f1e7a29842bd946863fc2693fbeb555a9dc0f9e1630dfed9a2fcdef3ece2"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/_zoneinfo.pyd",
-          "sha256": "76f1439cda82ab6976df6ba505c4079444703f6d44d8b0259ce59c0ff4279fb4"
-        },
-        {
-          "executable": true,
-          "path": "bin/win-x64/bsl-analyzer.exe",
-          "sha256": "a54d883bcb7ed0e0039953fb4d5cd7c2efbf30155de9951952f1a4060776eb3e"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/certifi/cacert.pem",
-          "sha256": "4f3975ff30abbf35443b486064ae8bcb41dff707ffdf576c76d292fb458aa0a9"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jiter/jiter.pyd",
-          "sha256": "928cfaf6207a4a4d3f31622d37fc312479924a419bac75bde0d08f81505cca2e"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft201909/metaschema.json",
-          "sha256": "7b761b3e121f0a0ca1ea2a0b8e2cc856bcf801604b8268d71bacaa202bc0c13b"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft201909/vocabularies/applicator",
-          "sha256": "6895100e99726fbb107058512bbec3ecfd4b24e8fd2facee3e505ee72b0d4c31"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft201909/vocabularies/content",
-          "sha256": "9b7d4f55a4e2fdb02c430068fdffabc732addce238da3f1df2690249c3353274"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft201909/vocabularies/core",
-          "sha256": "b5a2c4957f6495d0a5081f0409ebe8a14e4139acb203fc748471f8ede2af5b2c"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft201909/vocabularies/format",
-          "sha256": "50ebbfe790611a849b8cc400a09c1d0e0fb6ab5c0d43a0f22201fd3625056bf4"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft201909/vocabularies/meta-data",
-          "sha256": "d47e2445dd6a82271a298d83cc6c6cb8d4ae1e15e0dc56becd37a163ecf01286"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft201909/vocabularies/validation",
-          "sha256": "1e526c1d335a734805fc82cf5798c12b960ad7da2517c66cda5a1b09359c3c1c"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft202012/metaschema.json",
-          "sha256": "41da76f5afb7ce062d248f762463a92f7ca47e4e0f905b224ba6afeef91ded0f"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft202012/vocabularies/applicator",
-          "sha256": "c4a6e4147b91fef7fea6dc058cb1bf93402f7414b76578a8b16aaf1dad6aacef"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft202012/vocabularies/content",
-          "sha256": "08343747764e4a5814262793cf4d652057a7913863c5950d43297e8e1fdac5b6"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft202012/vocabularies/core",
-          "sha256": "c2d12a8e4dd11d336dfc83a3f663aa4c69f0b49b3beb094ffeb25b5316f4803d"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft202012/vocabularies/format-annotation",
-          "sha256": "abc775adfefd89d22358170d9bf93f4ebd2349563bbbedd60f02bef7c812bcc0"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft202012/vocabularies/format-assertion",
-          "sha256": "c52242b9a1bb786b26c3e82c7add428c31f9c96e575dce99e56ea5feaa6da20c"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft202012/vocabularies/meta-data",
-          "sha256": "8f76d6e14f41b9b92ef933b708cdc5144c8b5268651ad11918485fb1754f1c76"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft202012/vocabularies/unevaluated",
-          "sha256": "2dbfbcb73994b670b0976492adee1fffb46c21682784d2f5a4ca561f9e2d0cb4"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft202012/vocabularies/validation",
-          "sha256": "7010a31e541f32d2be721e2de348df75c9b36876a3ed304877fc0abda1d37a58"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft3/metaschema.json",
-          "sha256": "2cf75f64436fb5be374a2eaa27ab8b7e1fd651c9b46daea6c67b02fd64e2458b"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft4/metaschema.json",
-          "sha256": "e1489d0b4755f02793302591d3fcb8f07b6893a82a94f24895f8e4edf11b82e2"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft6/metaschema.json",
-          "sha256": "c29dfce9f54835c3a06c03b3c5d5ec0eda77706568f9c4df7cfbc7566a51006d"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/jsonschema_specifications/schemas/draft7/metaschema.json",
-          "sha256": "3d5392088261606c559b603f385329c9f1ab45b5d667eb990687453b055d405e"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/libcrypto-3.dll",
-          "sha256": "ccfffddcd3defb8d899026298af9af43bc186130f8483d77e97c93233d5f27d7"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/libffi-8.dll",
-          "sha256": "eff52743773eb550fcc6ce3efc37c85724502233b6b002a35496d828bd7b280a"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/libssl-3.dll",
-          "sha256": "007142039f04d04e0ed607bda53de095e5bc6a8a10d26ecedde94ea7d2d7eefe"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/perfmon.pyd",
-          "sha256": "e2f657826c174b2cc438fa66e430e7b0c94ce18a88a77244204be09407e37036"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/pydantic_core/_pydantic_core.pyd",
-          "sha256": "f1156d52678a6a6a1827185bc0d484fb8b23606f053a721cef36c62c99b9db6b"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/pyexpat.pyd",
-          "sha256": "d615e193d1affcdbfe504e90d3621cbdcff94bf72b79d899126534507fd6d27a"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/python312.dll",
-          "sha256": "9a0e3435aaa680d868150f87ab3e388ad2eebc22f87e036155c7b4eda8cd2120"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/pythoncom312.dll",
-          "sha256": "97b7258c32a555170e658d843f8e64a24bb0e087cca2183fc521084d35a08f8a"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/pywintypes312.dll",
-          "sha256": "b29e4098f9f53f05e3281636d079de58b05a26c03669cea4ec1673e51750fa31"
-        },
-        {
-          "executable": true,
-          "path": "bin/win-x64/rlm-bsl-index.exe",
-          "sha256": "dd7f12096475eca857d6d144eaf9bd7af3446690f0cef4a0e2c6ac5ba4dee5b3"
-        },
-        {
-          "executable": true,
-          "path": "bin/win-x64/rlm-bsl-mcp.exe",
-          "sha256": "dd7f12096475eca857d6d144eaf9bd7af3446690f0cef4a0e2c6ac5ba4dee5b3"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/rpds/rpds.pyd",
-          "sha256": "68ee8e02e31d0c1536b76410ed67b3016e4d089fe066c5df6f60b15412b4dd66"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/select.pyd",
-          "sha256": "d4d7181b11db0bd22a6cd5cda6f8583d1f5c77615fd0a6ca33350619d6e0438a"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/servicemanager.pyd",
-          "sha256": "99b50ad498ace317bed02f279d63d5ad9ec8147db04e3f5e758f3e8f476e9d74"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/sqlite3.dll",
-          "sha256": "8daa45684bf6688fca28d956b2e8942f2fa98f656675ce68e6d61dd869848a7a"
-        },
-        {
-          "executable": true,
-          "path": "bin/win-x64/unica.exe",
-          "sha256": "1b1935f59eb3a4f6ef5aae6d10c3a9cddcbb57dcc38a391aa0c98ce408fad517"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/unicodedata.pyd",
-          "sha256": "208ee1cd3cbad0828433ca7246b05be2b1ff5569983d27d296c0b38888585488"
-        },
-        {
-          "executable": true,
-          "path": "bin/win-x64/v8-runner.exe",
-          "sha256": "191a3d7c930007377238dda0543d1e42cc1a1bd4b209736d54fd41c0ffaac32e"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/vcruntime140.dll",
-          "sha256": "052ad6a20d375957e82aa6a3c441ea548d89be0981516ca7eb306e063d5027f4"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/vcruntime140_1.dll",
-          "sha256": "6a99bc0128e0c7d6cbbf615fcc26909565e17d4ca3451b97f8987f9c6acbc6c8"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/win32api.pyd",
-          "sha256": "b54d63d771b4db2a1bf1e724ff2597e970173ec5a9860c2b0dfdff83cd7a160e"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/win32event.pyd",
-          "sha256": "c64500261bb9bfeffa3ab5ed03af3a57dc52a959022d727a9fec9a0389672013"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/win32evtlog.pyd",
-          "sha256": "2a4092730b74eccff37102eddbe207ac6bc73dd735fbc0632e2eff3a4e218701"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/win32job.pyd",
-          "sha256": "5422bafbcfae0484c46abaf3093f21fecf7310d160a9d7e700ce154acc91129d"
-        },
-        {
-          "executable": false,
-          "path": "bin/win-x64/win32service.pyd",
-          "sha256": "4029359f5037a76f0ceac94b297208eb792a07147b7323397d6269f9e64ea583"
-        },
-        {
-          "executable": false,
-          "path": "third-party/manifest.json",
-          "sha256": "dae40b5b8a432c93bc8fda5b184e6a4b0da491f0f855ea2de5986ab8cbeadf2e"
+    "unica": {
+      "version": "0.13.0-rc.3",
+      "role": "core",
+      "targets": {
+        "darwin-arm64": {
+          "asset": {
+            "mediaType": "application/gzip",
+            "name": "unica-runtime-darwin-arm64.tar.gz",
+            "sha256": "23933967ca53d7b1ca491cd50e334601d24cc7e2bef90068ea989cc0971086f5",
+            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.13.0-rc.3/unica-runtime-darwin-arm64.tar.gz"
+          },
+          "files": [
+            {
+              "executable": true,
+              "path": "bin/darwin-arm64/unica",
+              "sha256": "f957c2ead7f099c5f4255dc54acf006b116641e5f8702efe64909c0eabaa217b"
+            },
+            {
+              "executable": false,
+              "path": "third-party/manifest.json",
+              "sha256": "85db00db5c6313ae7f6a9e9db0b71b624ae7ee2db1ffcc70cba10a878d88c962"
+            }
+          ],
+          "entrypoint": "bin/darwin-arm64/unica"
+        },
+        "linux-x64": {
+          "asset": {
+            "mediaType": "application/gzip",
+            "name": "unica-runtime-linux-x64.tar.gz",
+            "sha256": "9818f6ac24d4b5089a160ae279eb726ca825fc56bc97d711f13cc2a9ac55f13f",
+            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.13.0-rc.3/unica-runtime-linux-x64.tar.gz"
+          },
+          "files": [
+            {
+              "executable": true,
+              "path": "bin/linux-x64/unica",
+              "sha256": "0439c05c9c5116582fc1deec16b8f923fa86de9a8bbabb30d683822193f2e917"
+            },
+            {
+              "executable": false,
+              "path": "third-party/manifest.json",
+              "sha256": "af0883790e88ca6dc19a60c22f3c2ee5081c260f8862e2efbb26b71abec084d9"
+            }
+          ],
+          "entrypoint": "bin/linux-x64/unica"
+        },
+        "win-x64": {
+          "asset": {
+            "mediaType": "application/gzip",
+            "name": "unica-runtime-win-x64.tar.gz",
+            "sha256": "dffd704003a8651911be639e9d6b470b22113fdf21dcca518b72b317c7e8f7e2",
+            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.13.0-rc.3/unica-runtime-win-x64.tar.gz"
+          },
+          "files": [
+            {
+              "executable": true,
+              "path": "bin/win-x64/unica.exe",
+              "sha256": "bcb86113699d0a2e1364310cee504ead2678221274af25b523488ee6d7b05c5a"
+            },
+            {
+              "executable": false,
+              "path": "third-party/manifest.json",
+              "sha256": "e91f85b8b254890227ddbe5b45139525dc351ac3a429df32346561a96092f38f"
+            }
+          ],
+          "entrypoint": "bin/win-x64/unica.exe"
         }
-      ],
-      "entrypoint": "bin/win-x64/unica.exe"
+      }
+    },
+    "v8-runner": {
+      "version": "0.11.2",
+      "role": "engine",
+      "targets": {
+        "darwin-arm64": {
+          "asset": {
+            "mediaType": "application/octet-stream",
+            "name": "v8-runner-darwin-arm64",
+            "sha256": "f9d1b029dc302cccb8c42af2ca8659f3316585f539b20eb7b6d2efa22a63386a",
+            "url": "https://github.com/IngvarConsulting/v8-runner-rust/releases/download/v0.11.2/v8-runner-darwin-arm64"
+          },
+          "files": [
+            {
+              "executable": true,
+              "path": "v8-runner",
+              "sha256": "f9d1b029dc302cccb8c42af2ca8659f3316585f539b20eb7b6d2efa22a63386a"
+            }
+          ]
+        },
+        "linux-x64": {
+          "asset": {
+            "mediaType": "application/octet-stream",
+            "name": "v8-runner-linux-x64",
+            "sha256": "95e615f3e4c9dca07b401ef8a997d49d6c6f733abddf076c0485d5d57b627929",
+            "url": "https://github.com/IngvarConsulting/v8-runner-rust/releases/download/v0.11.2/v8-runner-linux-x64"
+          },
+          "files": [
+            {
+              "executable": true,
+              "path": "v8-runner",
+              "sha256": "95e615f3e4c9dca07b401ef8a997d49d6c6f733abddf076c0485d5d57b627929"
+            }
+          ]
+        },
+        "win-x64": {
+          "asset": {
+            "mediaType": "application/octet-stream",
+            "name": "v8-runner-win-x64.exe",
+            "sha256": "451c623aeff487f94e7ae2e2ca1b4b767cdafb701870c1c25a464331c9140436",
+            "url": "https://github.com/IngvarConsulting/v8-runner-rust/releases/download/v0.11.2/v8-runner-win-x64.exe"
+          },
+          "files": [
+            {
+              "executable": true,
+              "path": "v8-runner.exe",
+              "sha256": "451c623aeff487f94e7ae2e2ca1b4b767cdafb701870c1c25a464331c9140436"
+            }
+          ]
+        }
+      }
     }
   }
 }
