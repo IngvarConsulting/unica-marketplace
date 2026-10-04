@@ -1,7 +1,7 @@
 {
   "name": "unica",
   "version": "0.13.0-rc.4",
-  "description": "Practical 1C:Enterprise development workflows for Claude Code.",
+  "description": "Practical 1C:Enterprise development workflows for ZCode.",
   "author": {
     "name": "Ingvar Consulting, LLC",
     "url": "https://ingvar.pro"
@@ -23,5 +23,7 @@
     "v8-runner",
     "rlm",
     "code-analysis"
-  ]
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json"
 }
