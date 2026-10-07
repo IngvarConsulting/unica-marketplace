@@ -94,11 +94,12 @@ their own: install those versions by branch. From `v0.13.0-rc.6` on, a tag
 installs its own version.
 
 A marketplace with the same name (`unica` or `unica-next`) that is already
-added by branch must be removed before it is added by tag:
+added by branch must be removed before it is added by tag. Use the name in
+use — `unica` for a stable tag, `unica-next` for a candidate:
 
 ```sh
-codex plugin marketplace remove unica-next
-claude plugin marketplace remove unica-next
+codex plugin marketplace remove <unica|unica-next>
+claude plugin marketplace remove <unica|unica-next>
 ```
 
 ## Release candidates
