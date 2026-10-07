@@ -88,10 +88,18 @@ claude plugin marketplace add IngvarConsulting/unica-marketplace#v0.13.0-rc.6
 claude plugin install unica@unica-next
 ```
 
-Tags install their own version from `v0.13.0-rc.6` on. Tags up to
-`v0.13.0-rc.5` name the staging commit, whose catalogs still named the
-previous release, so they install that release instead; add the marketplace by
-branch for those versions.
+Tags `v0.9.1` through `v0.13.0-rc.5` name the staging commit, whose catalogs
+still named the previous version, so they install that version instead of
+their own: install those versions by branch. From `v0.13.0-rc.6` on, a tag
+installs its own version.
+
+A marketplace with the same name (`unica` or `unica-next`) that is already
+added by branch must be removed before it is added by tag:
+
+```sh
+codex plugin marketplace remove unica-next
+claude plugin marketplace remove unica-next
+```
 
 ## Release candidates
 
@@ -135,7 +143,7 @@ claude plugin marketplace remove unica
 
 Catalog entries point at immutable version tags. The Unica publishing pipeline
 stages a release in `plugins/unica` first, without touching a catalog, and
-marks that commit with the candidate anchor `candidate/vX.Y.Z`; its install and
+marks that commit with the candidate anchor `candidate-vX.Y.Z`; its install and
 upgrade checks resolve the anchor. Only after they pass does a promotion commit
 update both catalogs of the channel, `.agents/plugins/marketplace.json` for
 Codex and `.claude-plugin/marketplace.json` for Claude Code. The version tag
