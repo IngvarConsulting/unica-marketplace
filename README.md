@@ -65,6 +65,43 @@ claude plugin update unica@unica
 
 Then run `/reload-plugins`.
 
+## A branch or an exact version
+
+Add the marketplace by branch to follow a channel, or by tag to stay on one
+version:
+
+- **Branch** — `--ref main` for Codex and no suffix for Claude Code serve the
+  latest stable release; `--ref next` and `#next` serve the latest release of
+  the [candidate channel](#release-candidates). Updating the marketplace brings
+  the channel's next release.
+- **Tag** — `--ref vX.Y.Z` for Codex and `#vX.Y.Z` for Claude Code install
+  exactly X.Y.Z and stay there. A candidate's tag carries the `next` catalog,
+  so its plugin is `unica@unica-next`.
+
+```sh
+codex plugin marketplace add IngvarConsulting/unica-marketplace --ref v0.13.0-rc.6
+codex plugin add unica@unica-next
+```
+
+```sh
+claude plugin marketplace add IngvarConsulting/unica-marketplace#v0.13.0-rc.6
+claude plugin install unica@unica-next
+```
+
+Tags `v0.9.1` through `v0.13.0-rc.5` name the staging commit, whose catalogs
+still named the previous version, so they install that version instead of
+their own: install those versions by branch. From `v0.13.0-rc.6` on, a tag
+installs its own version.
+
+A marketplace with the same name (`unica` or `unica-next`) that is already
+added by branch must be removed before it is added by tag. Use the name in
+use — `unica` for a stable tag, `unica-next` for a candidate:
+
+```sh
+codex plugin marketplace remove <unica|unica-next>
+claude plugin marketplace remove <unica|unica-next>
+```
+
 ## Release candidates
 
 Release candidates (`X.Y.Z-rc.N`) are served only by the `next` branch, as a
@@ -105,16 +142,22 @@ claude plugin marketplace remove unica
 
 ## Delivery contract
 
-Stable catalog entries point at immutable version tags. A release is staged in
-`plugins/unica` first. A separate promotion commit updates both stable catalogs,
-`.agents/plugins/marketplace.json` for Codex and `.claude-plugin/marketplace.json`
-for Claude Code; the signed version tag is created on that exact commit, and the
-promotion is merged only after its checks pass. See [MIGRATION.md](MIGRATION.md)
-for transition details.
+Catalog entries point at immutable version tags. The Unica publishing pipeline
+stages a release in `plugins/unica` first, without touching a catalog, and
+marks that commit with the candidate anchor `candidate-vX.Y.Z`; its install and
+upgrade checks resolve the anchor. Only after they pass does a promotion commit
+update both catalogs of the channel, `.agents/plugins/marketplace.json` for
+Codex and `.claude-plugin/marketplace.json` for Claude Code. The version tag
+`vX.Y.Z` is created on that promotion commit and pushed atomically with the
+branch, so the catalogs inside a tag always name the tag itself. A stable
+release is tagged on `main`, a candidate on `next`. See
+[MIGRATION.md](MIGRATION.md) for transition details.
 
 The `next` branch carries the candidate channel. Its catalogs, named
 `unica-next`, point at the immutable tag of the newest candidate or stable
-release and are never older than the `main` catalogs. Everything else on `next`
+release and are never older than the `main` catalogs: a stable release pushes
+`main`, its tag and `next` in one atomic push, and leaves `next` alone only
+when it already serves a newer candidate. Everything else on `next`
 follows `main`: each publication to it brings over the scripts and workflows,
 so edit them on `main` only. The consumer install, seed and legacy migration
 checks of this repository cover the stable catalog; the publishing pipeline
