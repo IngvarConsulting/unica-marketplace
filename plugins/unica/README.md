@@ -41,6 +41,31 @@ claude plugin install unica@unica
 Claude Code 2.1.68 and earlier reject the catalog's `git-subdir` source type and
 cannot load it at all; 2.1.69 is the first release that accepts it.
 
+### A branch or an exact version
+
+The marketplace is added by branch or by tag. A branch follows its channel:
+`--ref main` (Claude Code: no suffix) serves the latest stable release,
+`--ref next` (`#next`) the latest release of the
+[candidate channel](#release-candidates), and updating the marketplace brings
+the channel's next release. A tag pins one version: `--ref vX.Y.Z` (Claude
+Code: `#vX.Y.Z`) installs exactly X.Y.Z and stays there. A candidate's tag
+carries the `next` catalog, so its plugin is `unica@unica-next`:
+
+```sh
+codex plugin marketplace add IngvarConsulting/unica-marketplace --ref v0.13.0-rc.6
+codex plugin add unica@unica-next
+```
+
+Tags `v0.9.1` through `v0.13.0-rc.5` carry the previous version's catalog and
+install that version instead of their own: install those versions by branch.
+From `v0.13.0-rc.6` on, a tag installs its own version.
+
+A marketplace with the same name (`unica` or `unica-next`) that is already
+added by branch must be removed first, with
+`codex plugin marketplace remove <unica|unica-next>` or
+`claude plugin marketplace remove <unica|unica-next>` (the name in use), before
+it is added by tag.
+
 ### ZCode
 
 In **Plugin Marketplace → Add → Add Plugin Marketplace**, add a release
@@ -211,7 +236,11 @@ is migrated or deleted.
 
 The plugin-data directory is not a workspace identity. ZCode supplies
 `ZCODE_PROJECT_DIR` and the compatible `CLAUDE_PROJECT_DIR`; conflicting project
-paths are rejected. The existing canonical workspace/profile keys continue to
+paths are rejected. These variables are captured when the host starts the
+server. When a client declares MCP `roots` in a session before protocol
+2026-07-28, each workspace tool call without host request metadata asks for
+them afresh, and the first root outranks the captured variables. A new session
+project is therefore picked up without restarting the server. The existing canonical workspace/profile keys continue to
 isolate project state.
 
 Each installed artifact lives below
@@ -240,6 +269,20 @@ building an offline image, run:
 ```sh
 <plugin-root>/bootstrap/bin/<target>/unica-bootstrap prefetch --plugin-root <plugin-root>
 ```
+
+Core and engine downloads and the network documentation providers share one
+HTTP client. The operating system verifies certificates, so a corporate gateway
+root installed in the OS trust store is accepted; on Linux `SSL_CERT_FILE` and
+`SSL_CERT_DIR` replace the system bundle. When Linux yields no
+certificates at all (for example, an image without `ca-certificates`, or an
+unreadable `SSL_CERT_FILE`),
+the chain is checked against bundled Mozilla roots instead; the two are never
+mixed. HTTPS requests use `https_proxy` or
+`HTTPS_PROXY`, then `all_proxy` or `ALL_PROXY`; only HTTP proxies are supported,
+and `NO_PROXY` lists hosts reached directly (no CIDR ranges). These settings
+are read when a Unica process starts; the background process is shared by all
+sessions and exits after 15 minutes without work. If the OS does not trust the presented certificate, the refusal
+names TLS interception by security software or a gateway as the likely cause.
 
 ## Skills
 

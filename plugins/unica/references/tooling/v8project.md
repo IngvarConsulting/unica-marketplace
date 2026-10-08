@@ -29,39 +29,57 @@ For a new repository with no workspace, call `unica.view {}` first. Оно
 
 ## Minimal Shape
 
+`v8project.yaml`:
+
 ```yaml
 workPath: 'build'
-execution_timeout: 300000
 format: DESIGNER
-infobases:
-  origin:
-    connection: 'File=build/ib'
 source-set:
   - name: main
     type: CONFIGURATION
     path: 'src'
-push:
-  partialLoadThreshold: 20
 ```
 
-`infobases.origin.connection` is the target form. Put machine addresses and
-credentials in `v8project.local.yaml`; the primary example is only a minimal
-local project. The runner 0.11 adapter privately projects this form into its
-legacy config and removes the temporary files after execution. It supports
-only `origin`; multiple named bases, raw connection argv and mixed old/new
-infobase keys are refused. `unica.run` accepts optional top-level
-`infobase: "origin"`; another target is never silently redirected to origin.
-Legacy `infobase.connection` remains readable during migration. Do not use
-legacy top-level `connection` in `v8project.yaml`.
+`v8project.local.yaml`:
 
-`basePath` is also removed from the pinned v8-runner contract. Relative
-`workPath`, infobase file paths, and source-set paths are resolved from the
-directory containing the primary config.
+```yaml
+infobases:
+  origin:
+    connection: 'File=build/ib'
+```
 
-`execution_timeout` is the v8-runner operation budget in milliseconds. The
-default is `300000`; v8-runner validates the value in the `1..=86400000` range.
-For a `unica.run` operation this project config value is the runner budget;
-Unica adds no timeout argument of its own.
+The infobase belongs in `v8project.local.yaml`: which infobase a checkout is
+attached to is known to the machine, not to the project. v8-runner 0.14 reads
+the infobase map only from the local layer. An `infobases` section (or the
+legacy `infobase` key) in `v8project.yaml` is still accepted: the adapter
+moves it into a private copy of the local layer, where fields of the local
+file override it, and keeps that copy in `.build/unica/runner-project/` of the
+working copy (the runner records this directory as the holder of a file infobase). Only
+`origin` is supported; multiple named bases, raw connection argv and `infobase`
+mixed with `infobases` in one file are refused. `unica.run` accepts optional
+top-level `infobase: "origin"`; another target is never silently redirected to
+origin. Do not use legacy top-level `connection` in `v8project.yaml`.
+
+`basePath` is not part of the pinned v8-runner contract, and `unica.run`
+refuses a config that sets it. Relative `workPath`, infobase file paths, and
+source-set paths are resolved from the directory containing the primary config.
+
+`push.partialLoadThreshold` (and `build.partialLoadThreshold`) is not supported:
+v8-runner 0.14 has no partial-load threshold and chooses the mode itself; request
+a full load with `push` `full:true`. Unica refuses a config with this key; remove it.
+
+A file infobase is held by one working copy. The runner records the holder next
+to the infobase directory. A write from another working copy is not refused: it
+changes that copy's infobase, and the answer warns
+`infobase_of_another_copy`. Give each working copy its own infobase
+(`infobase.create`).
+
+`execution_timeout` is not supported. v8-runner 0.14 has no overall command
+deadline: a command runs to its terminal outcome, and limits belong to the
+steps that need them (`tools.edt_cli.command_timeout_ms`,
+`tests.execution_timeout_seconds`, `tools.client_mcp.wait_ready_timeout_ms`).
+Unica refuses to run with `execution_timeout` in either file and adds no
+timeout of its own; remove the key.
 
 Server infobase connections use the normal 1C connection string form in
 `infobases.origin.connection`, for example `Srvr="srv01";Ref="dev";`. IBCMD server
@@ -70,9 +88,9 @@ connections also require the documented `infobases.origin.dbms` block.
 `v8project.local.yaml` is loaded automatically next to the primary config. It
 may override local-only `workPath`, `infobases` (or legacy `infobase`), `providers`, `tools`, `tests`, and `mcp`
 settings. It is not selectable by a call and must not redefine shared
-`source-set`, `format`, or `execution_timeout`.
+`source-set` or `format`.
 
-## Runner 0.11 migration
+## Runner migration
 
 The top-level `builder` key is rejected. Remove it to use the runner's per-operation
 provider defaults. If the project requires a particular executor, declare it in
@@ -162,18 +180,18 @@ directory named `main` keeps it.
 
 | Intent | `unica.run` operation |
 | --- | --- |
-| Create an absent empty infobase | `infobase.create`, empty args; then send sources separately; no sync baseline |
-| Send sources / delete an extension | `push`, `force:true`, optional `sourceSet` and `full`; applies the database configuration. Deletion uses only `delete: "InstalledName"` |
+| Create an absent infobase | `infobase.create`, empty args; a file infobase is created with the main configuration of the `CONFIGURATION` source set (`initializesSources: true`), and the first `push` loads that set only if it changed and the other sets in full; a cluster infobase is created empty, and the first `push` loads every set in full |
+| Send sources / delete an extension | `push`, optional `sourceSet`, `full` and `force`; applies the database configuration after the generation check, `force:true` overwrites the infobase. Deletion uses only `delete: "InstalledName"` |
 | Replace one source set from the working configuration | `pull`, `force:true`, optional `sourceSet`, `extension`; no local-work protection |
 | Export the configuration or an extension as `.cf`/`.cfe` | `download`, `state=working` or `state=database`, `output`, optional `extension` |
-| Load a `.cf`/`.cfe` into the working configuration only | `upload`, `input`, optional `extension`; loading does not apply the database configuration |
+| Load a `.cf`/`.cfe` into the working configuration only | `upload` — unavailable: v8-runner 0.14 has no load without applying the database configuration ([#1246](https://github.com/IngvarConsulting/unica/issues/1246)) |
 | Build a `.cf`/`.cfe` from sources | `make`, `output`, optional `sourceSet`, `extension`; `.epf`/`.erf` are not published |
 | Export the whole infobase as `.dt` | `infobase.dump`, `output` |
 | Load a `.dt` | `infobase.restore`, `input`, `mode=create` or `mode=replace` |
 | Launch a 1C client | `launch`, `clientMode`, optional `execute`; `waitForExit` with `waitTimeoutMs` supports `thin` + `.epf`; terminal, no preview required |
 | Inspect installed extensions | `extensions.list`, empty args; preview/apply opens a platform session |
 | Change installed extension activity | `extensions.set`, `name`, boolean `active`; other properties are unavailable |
-| Apply or discard pending configuration changes | `apply`, optional `extension`; `reset`, `force:true`, optional `extension`; Designer only |
+| Apply or discard pending configuration changes | `apply` and `reset` — unavailable until the runner supports them ([#1246](https://github.com/IngvarConsulting/unica/issues/1246)) |
 
 Syntax checks are `unica.check`; test runs and Designer/EDT conversion are not
 operations of the dictionary. A previewApply operation requires explicit boolean
@@ -182,12 +200,13 @@ inputs, without requiring a previous preview. `unica.run` accepts no `ifRev`
 and returns no `rev`. In this workflow, inspect the preview before execution.
 Preview does not freeze the workspace or the database between calls.
 
-The runner 0.11.3 adapter supports source `push` and `pull` with explicit
-`force:true`, without local-work protection or generation checks. Source
+Source `push` checks the infobase generation before loading a set and is refused with `non_fast_forward` when the infobase moved ahead of this working copy's record, or with `no_memory` when this working copy has no memory of the infobase; the refusal offers a `pull` preview and a `push` preview with `force:true`. `force:true` overwrites the infobase: every selected set is loaded in full without that check, and changes made in the infobase are lost. A set the runner skips by its memory is neither loaded nor checked. Full pulling requires explicit `force:true` and provides no local-work protection. Source
 `push` also applies the database configuration; `noApply:true` is unavailable.
-`upload` keeps loading separate from applying.
-`unica.apply` edits source files; `unica.run` with `op: "apply"` applies pending
-changes to the database configuration, optionally for one named extension.
+With `force:true`, `pull` discards uncommitted and untracked files of the
+source set without a copy. `upload`, `apply` and `reset` are unavailable until
+the runner can load without applying and apply separately
+([#1246](https://github.com/IngvarConsulting/unica/issues/1246)).
+`unica.apply` edits source files and is unrelated to the runtime `apply`.
 
 ## Skill Rules
 
@@ -197,11 +216,11 @@ changes to the database configuration, optionally for one named extension.
   `unica.view {}` and write `v8project.yaml` yourself: no tool creates it.
 - Prefer `source-set` names over ad hoc source directories.
 - Treat a platform-generated CDFI sidecar `ConfigDumpInfo.xml` whose root is `ConfigDumpInfo` as local per-infobase runtime state: keep it out of Git and never use it as source-format evidence. A legitimate metadata descriptor (including an external EPF/ERF descriptor) for an object actually named `ConfigDumpInfo` remains source and belongs in Git.
-- `execution_timeout` in `v8project.yaml` is the runner budget for `unica.run`
-  operations; Unica exposes no `timeoutMs` argument.
-- `upload` with adapter 0.11.3 loads a CF/CFE without applying the database configuration. Use the separate `apply` operation to apply it; preview each operation with `dryRun: true`, then execute it with `dryRun: false`.
+- Do not write `execution_timeout` or `push.partialLoadThreshold`: v8-runner 0.14 has neither an overall command
+  deadline nor a partial-load threshold, and Unica refuses a config with either key. Unica exposes no `timeoutMs` argument.
+- `upload`, `apply` and `reset` are unavailable: report loading a CF/CFE as a Unica MCP contract gap ([#1246](https://github.com/IngvarConsulting/unica/issues/1246)) and do not call the runner directly.
 - Designer/EDT conversion is not on the surface: Unica reads platform XML only.
-- Designer `rawKeys` are not on the surface; source `push` and `pull` require explicit `force:true` with the 0.11.3 adapter and do not protect generations or local work.
+- Designer `rawKeys` are not on the surface. Source `push` checks the infobase generation unless `force:true` is given; never add `force:true` on your own after a `non_fast_forward` or `no_memory` refusal: choosing between pulling the infobase and overwriting it belongs to the user. `pull` requires explicit `force:true` and does not protect local work.
 - When credentials are absent, do not initiate a runtime probe to discover them. Ask the user; classify only authentication evidence already supplied by a verified boundary.
 - If a command reports a 1C license problem, stop and ask the user to fix licensing. Do not edit license services, HASP settings, registry, or license files.
 - If a runtime flag or debug-server step is missing from the `unica.run`
