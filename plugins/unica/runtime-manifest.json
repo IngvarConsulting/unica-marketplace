@@ -1,14 +1,14 @@
 {
   "schemaVersion": 2,
-  "pluginVersion": "0.13.0-rc.7",
+  "pluginVersion": "0.13.0",
   "development": false,
   "source": {
     "repository": "https://github.com/IngvarConsulting/unica",
-    "commit": "7bfc4c3fd7425c27e318e46c24d93ea095908abd"
+    "commit": "ee118d78cd4c6fc2df50e68c42a4eddfe4c3401a"
   },
   "release": {
     "repository": "https://github.com/IngvarConsulting/unica",
-    "tag": "v0.13.0-rc.7"
+    "tag": "v0.13.0"
   },
   "artifacts": {
     "bsl-analyzer": {
@@ -1239,26 +1239,26 @@
       }
     },
     "unica": {
-      "version": "0.13.0-rc.7",
+      "version": "0.13.0",
       "role": "core",
       "targets": {
         "darwin-arm64": {
           "asset": {
             "mediaType": "application/gzip",
             "name": "unica-runtime-darwin-arm64.tar.gz",
-            "sha256": "5d29466d5201fb87460ba8d0d22141a22315788209cdde4107ee2111c8294630",
-            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.13.0-rc.7/unica-runtime-darwin-arm64.tar.gz"
+            "sha256": "61d8d5ee615539497c83d7aa32afdf20bcdb8499ea1ad2877d91a0a1a3f57130",
+            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.13.0/unica-runtime-darwin-arm64.tar.gz"
           },
           "files": [
             {
               "executable": true,
               "path": "bin/darwin-arm64/unica",
-              "sha256": "81232967562bfa0f08fbd2a522c4ec4a4b57f41fd764fd7988a591e8d2381e58"
+              "sha256": "53156736abbc5292e32414af63639ecbb0e4446f53eba7450896805fe7e24a09"
             },
             {
               "executable": false,
               "path": "third-party/manifest.json",
-              "sha256": "b5cdcbd109dbfab2b5f1df7dd82ec40be9f19ab0f1441e636c75e2134d358fe1"
+              "sha256": "b2b8c8956293c418011a56d9bc83ee240a132e76598424edd4a3bde377a34f26"
             }
           ],
           "entrypoint": "bin/darwin-arm64/unica"
@@ -1267,19 +1267,19 @@
           "asset": {
             "mediaType": "application/gzip",
             "name": "unica-runtime-linux-x64.tar.gz",
-            "sha256": "9fab97decd902570317194fa18d78093676ee6fe4815e0b2ebc3fb70869b749c",
-            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.13.0-rc.7/unica-runtime-linux-x64.tar.gz"
+            "sha256": "1afb5c5abf5f43e890b16f0c411abd3c0244eb3361ad79978c8306efe623ef5d",
+            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.13.0/unica-runtime-linux-x64.tar.gz"
           },
           "files": [
             {
               "executable": true,
               "path": "bin/linux-x64/unica",
-              "sha256": "bcbf22ea17f3f29c948caa6afa031263b5a174c6b7aaaded37dd49990e84224d"
+              "sha256": "2abd6cf31cea3c7be11f2d3864d6b5b5f64936b27946fbf83410da55886afaae"
             },
             {
               "executable": false,
               "path": "third-party/manifest.json",
-              "sha256": "626acb82f1d7ec3bc1137396a335a0aafd1546b2ed245b00ec932f1cd5e2be84"
+              "sha256": "08b6a13a9900dcebdf6120958b648349014ec39a93354ded4a71258dda5aeb38"
             }
           ],
           "entrypoint": "bin/linux-x64/unica"
@@ -1288,19 +1288,19 @@
           "asset": {
             "mediaType": "application/gzip",
             "name": "unica-runtime-win-x64.tar.gz",
-            "sha256": "70d4ca7ef1d72cda26d979b0b5e6e3310f85e94ae7f9bf45c783d3048471a609",
-            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.13.0-rc.7/unica-runtime-win-x64.tar.gz"
+            "sha256": "e2150fc41aea1d16fbfff5bce1d99ad2909dd2350a35e0ccc804ae41b2380d03",
+            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.13.0/unica-runtime-win-x64.tar.gz"
           },
           "files": [
             {
               "executable": true,
               "path": "bin/win-x64/unica.exe",
-              "sha256": "0ca8a139b38b9cce259222e6efe7427f521e490f936235f0083977b4834c228f"
+              "sha256": "531c614d29c0e2f6207086b911e6b7cf8baa3002ebe60f86fd71e8c684f66867"
             },
             {
               "executable": false,
               "path": "third-party/manifest.json",
-              "sha256": "47d7c4524251c23b6b47d0c43fbf361d96e5d4b8bf0831e34122c2fbb47047be"
+              "sha256": "4af779537d0ad31842f2bc531ef374946560ead4fef8dc4aca4bfbfea55986b5"
             }
           ],
           "entrypoint": "bin/win-x64/unica.exe"
