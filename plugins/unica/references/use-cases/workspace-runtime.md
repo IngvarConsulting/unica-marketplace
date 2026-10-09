@@ -2,9 +2,9 @@
 
 ## When to use
 
-Use this when the user needs a new workspace, `v8project.yaml`, infobase init,
-source build/dump, Designer/EDT conversion, CF/CFE artifact load/export,
-EPF/ERF external source-set build/export, syntax checks, tests, or 1C launch.
+Use this when the user needs a new workspace, `v8project.yaml`, infobase
+creation, source import/export, CF/CFE load, export or build, `.dt` export or
+load, or a 1C client launch.
 
 Do not use this for point edits inside XML metadata. Use the object-specific
 skills for configuration roots, metadata objects, forms, DCS, MXL, roles,
@@ -12,39 +12,69 @@ subsystems, interfaces, and templates.
 
 ## Primary path
 
-Use the `v8-runner` skill and MCP `unica.runtime.execute` both to preview typed
-runtime arguments and to run them: `dryRun: false` executes the operation and
-returns its terminal result in the same call.
+Use the package-selected MCP runtime surface directly. In v0.13, call
+`unica.run {}` first and select only an operation whose dictionary entry says
+`implemented: true`, or exactly the subset declared by `support.state: limited` and `support.supportedArgs`; refuse unavailable operations. Do not infer arguments for operations whose
+`argsSchema` is `null`.
 
-По INV-MCP-RUNTIME-RECEIPT и ADR-0074: `unica.runtime.execute` с `dryRun: true`
-показывает запланированную команду без побочных эффектов, а с `dryRun: false`
-исполняет классифицированную операцию и отвечает её терминальным результатом в
-том же вызове, приложив названную причину риска (`runtime_risk_*`)
-предупреждением; неклассифицированная операция по-прежнему отказывает
-`runtime_operation_unbounded` до обнаружения рабочего пространства. Preview
-исполнением не является. Долговременное задание запускай через
-`unica.runtime.job.start` для явно выбранной длинной работы; не используй
-`unica.runtime.job.start` как запасной путь. Не обходи контракт прямым
-runner-ом или через `unica.build.*`.
+Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
+контракт каждой — `argsSchema`, `execution`, `previewRequired`,
+`dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
+при `implemented: true` используй опубликованную `argsSchema`; при
+`support.state: limited` разрешено только подмножество `support.supportedArgs`.
+При `support.state: unavailable` остановись; не выдумывай аргументов при
+`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
+затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
+вызовами. Не обходи контракт прямым runner-ом.
 
-After clone or workspace initialization, and before `build` or `dump`, first
-call `unica.project.status`. It returns `ready`, `repositoryReady`, `checks[]`,
-`sourceSets` (an array after completed source discovery, otherwise `null`), and
-`diagnostics[]`. A false `ready` blocks the source operation
+Source `push` checks the infobase generation before loading a set and is refused with `non_fast_forward` when the infobase moved ahead of this working copy's record, or with `no_memory` when this working copy has no memory of the infobase; the refusal offers a `pull` preview and a `push` preview with `force:true`. `force:true` overwrites the infobase: every selected set is loaded in full without that check, and changes made in the infobase are lost. A set the runner skips by its memory is neither loaded nor checked. Full pulling requires explicit `force:true` and provides no local-work protection; inspect the preview before execution.
+For source readiness independently of runtime availability, first
+call `unica.check {}`. It returns `status`, `ready`, `repositoryReady`,
+`checks[]` and `diagnostics[]` — the verdict on the workspace. The facts it
+judges live in `unica.view {}`: `sourceSets` (possibly an empty array),
+`config`, `infobase` and the recommended `v8project.yaml` content. The split is
+the same as on a node, where `view {at}` gives `props` and `check {at}` gives
+`status`. A false `ready` blocks the source operation
 until its source-set problem is fixed. In particular, `sourceSet.path: .` is an
 error: explain how to move the export into a strict child such as `src/` and
 update `v8project.yaml` safely.
 
 ### Work the call must not wait for
 
-A long applied operation belongs in a durable job: `unica.runtime.job.start` runs
-it in a detached process that outlives the call, so a host deadline cannot lose
-the result. Keep the returned `jobId`, read progress with
-`unica.runtime.job.status`, wait for a bounded interval with
-`unica.runtime.job.wait`, and fetch diagnostic tails with
-`unica.runtime.job.logs`. A normal build can keep both logs empty until its
-terminal envelope; phase and heartbeat are what distinguish that from a stalled
-job.
+A long operation does not need a separate call: any `unica.run` invocation
+that outlives the handoff window becomes a durable Task. Keep the returned
+`taskId`, read the state with `unica.task.get`, wait for a bounded interval with
+`unica.task.result`, and cancel with `unica.task.cancel`; a client with native
+Tasks uses `tasks/get` and `tasks/cancel` instead. The terminal result never
+publishes raw stdout. The Task state is the authority for the outcome; a
+`working` state alone does not prove that the runner is making progress.
+
+### If a mutating runner remains `working`
+
+Keep the `taskId` and the operation's infobase and workspace identity. Read
+`tasks/get` (or `unica.task.get`) and use `unica.task.result` only for a bounded
+wait in the compatibility profile. A late `tasks/cancel` is a request, not a
+receipt that the mutation stopped: native Tasks report it in the next
+`tasks/get.statusMessage`; compatibility tools expose `cancelRequested: true`.
+If the cancel request itself times out, read the Task again before deciding
+what happened. The request may already have been saved while Windows waits to
+attach the runner to its Job Object. `ttlMs` controls retention, not execution.
+
+When `working` outlasts the operation's expected window, have the operator
+check the runner process and platform session on the host, the target infobase,
+and the available platform diagnostics. Escalate to the person responsible for
+that infobase if progress cannot be established or the occupied Task capacity
+blocks other work. Do not infer progress from `working`, rerun the mutation,
+or kill its process tree merely because cancellation was requested. An
+intervention in the runner or daemon needs an explicit operational decision
+with the target infobase identified.
+
+After a daemon restart, `outcome_uncertain` means the mutation may have taken
+effect although no final receipt was durably saved. Inspect the actual
+infobase state and intended change, record the finding alongside the `taskId`,
+then decide a new action from that evidence. Unica does not replay this work
+automatically; a second `run` call is a new mutation, not a retry of the old
+Task.
 
 Each `sourceSets[].sourceFormat` describes working-tree discovery. Repository
 checks may additionally become applicable from staged index markers; do not
@@ -56,11 +86,13 @@ for team work or another clone. Follow `diagnostics[].remediation.steps` when
 explaining a fix. `diagnostics[].remediation.commands` are advisory evidence,
 not authorization to change `.gitignore`, `.gitattributes`, files, or the Git
 index: never execute them automatically. After an approved fix, call
-`unica.project.status` again.
+`unica.check {}` again.
 
-Use `unica.project.map` when only the source layout or metadata format matters.
-It returns configured `sourceSets[]` with `kind`, `path`, `sourceFormat`, and
-`formatEvidence`; it does not inspect repository health.
+Use `unica.view {}` when only the source layout or metadata format matters.
+It returns discovered `sourceSets[]` with `kind`, `path`, `sourceFormat`, and
+`formatEvidence`. Repository health is a verdict and lives in `unica.check {}`;
+it can be ignored only when the task does not make portability or
+team-readiness claims.
 
 `v8project.yaml` can contain several source-sets. Format is resolved per
 source-set, not for the workspace as a whole. One source-set cannot be mixed:
@@ -70,28 +102,27 @@ formats, for example an EDT configuration and platform XML external processors.
 The top-level `format` value is only the default/effective format when the
 source-set path itself has no stronger structural evidence.
 
-| Intent | MCP arguments |
+| Intent | `unica.run` operation |
 | --- | --- |
-| Preview config creation | `operation=config-init`, optional `connection`, `format`, `builder`, `dryRun=true` |
-| Preview binding an external EPF config locally | `operation=config-init`, required `config`, `sourceSet`, `connection`, `dryRun=true`; no local overlay is created |
-| Preview runtime state creation | `operation=init`, `dryRun=true` |
-| Preview applying sources to the infobase | `operation=build`, optional `sourceSet`, `fullRebuild`, `dryRun=true` |
-| Preview exporting infobase state | `operation=dump`, `mode=full`, optional matching `sourceSet`/`extension`, `dryRun=true` |
-| Preview Designer/EDT conversion | `operation=convert`, optional `sourceSet`, `output`, `dryRun=true` |
-| Preview CF/CFE/EPF/ERF export | `operation=make`, required `output`, optional `sourceSet`, `extension`, `dryRun=true` |
-| Preview CF/CFE load | `operation=load`, required `path`, optional `mode`, `settings`, `extension`, `dryRun=true` |
-| Preview syntax arguments | `operation=syntax`, required `mode`, `dryRun=true` |
-| Preview test arguments | `operation=test`, required `testRunner`, `dryRun=true` |
-| Preview client or Designer launch | `operation=launch`, required `clientMode`, `dryRun=true` |
-| Preview external EPF wait arguments | `operation=launch`, `clientMode=thin`, `execute`, distinct `output`/`stderrOutput`, `waitForExit=true`, bounded `waitTimeoutMs`, `dryRun=true` |
-| Preview extension property sync | `operation=extensions`, `dryRun=true` |
+| Create an absent infobase | `infobase.create`, empty args; a file infobase is created with the main configuration of the `CONFIGURATION` source set (`initializesSources: true`), and the first `push` loads that set only if it changed and the other sets in full; a cluster infobase is created empty, and the first `push` loads every set in full |
+| Send sources / delete an extension | `push`, optional `sourceSet`, `full` and `force`; applies the database configuration after the generation check, `force:true` overwrites the infobase. Deletion uses only `delete: "InstalledName"` |
+| Replace one source set from the working configuration | `pull`, `force:true`, optional `sourceSet`, `extension`; no local-work protection |
+| Export the configuration or an extension as `.cf`/`.cfe` | `download`, `state=working` or `state=database`, `output`, optional `extension` |
+| Load a `.cf`/`.cfe` into the working configuration only | `upload` — unavailable: v8-runner 0.14 has no load without applying the database configuration ([#1246](https://github.com/IngvarConsulting/unica/issues/1246)) |
+| Build a `.cf`/`.cfe` from sources | `make`, `output`, optional `sourceSet`, `extension`; `.epf`/`.erf` are not published |
+| Export the whole infobase as `.dt` | `infobase.dump`, `output` |
+| Load a `.dt` | `infobase.restore`, `input`, `mode=create` or `mode=replace` |
+| Launch a 1C client | `launch`, `clientMode`, optional `execute`; `waitForExit` with `waitTimeoutMs` supports `thin` + `.epf`; terminal, no preview required |
+| Inspect installed extensions | `extensions.list`, empty args; preview/apply opens a platform session |
+| Change installed extension activity | `extensions.set`, `name`, boolean `active`; other properties are unavailable |
+| Apply or discard pending configuration changes | `apply` and `reset` — unavailable until the runner supports them ([#1246](https://github.com/IngvarConsulting/unica/issues/1246)) |
 
-Every applied operation carries its own named risk into the result instead of a
-refusal: non-interruptible phases, persistent writes without bounded recovery,
-unproved ownership of separately grouped 1C processes, or a detached child. An
-operation the completion map does not classify still fails closed before
-discovery or spawn. Designer `rawKeys` may not contain `DumpConfigToFiles` or
-`LoadConfigFromFiles`. Keep a
+A previewApply operation requires explicit boolean `dryRun`: `true` shows the
+plan without execution, and `false` executes using the current inputs. The API
+does not require a previous preview and accepts no `ifRev`; results contain no
+`rev`. In this workflow, inspect a preview before executing an external operation. Syntax checks are `unica.check`; test runs, Designer/EDT
+conversion, Designer `rawKeys` and extension property sync are not on the v0.13
+surface. Keep a
 platform-generated CDFI sidecar out of Git; a legitimate metadata descriptor
 (including an external EPF/ERF descriptor) for an object named
 `ConfigDumpInfo` remains source.

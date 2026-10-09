@@ -7,31 +7,31 @@ description: "Оптимизация запросов 1С и СКД. Испол�
 
 ## MCP routing
 
-- Preferred path: use MCP `unica` tools `unica.code.search`, `unica.code.outline`, `unica.code.graph`, `unica.code.diagnostics`, `unica.dcs.info`, `unica.meta.info`, `unica.standards.search`, `unica.standards.explain`, and `unica.runtime.execute`.
-- По INV-MCP-RUNTIME-RECEIPT и ADR-0074: `unica.runtime.execute` с `dryRun: true`
-показывает запланированную команду без побочных эффектов, а с `dryRun: false`
-исполняет классифицированную операцию и отвечает её терминальным результатом в
-том же вызове, приложив названную причину риска (`runtime_risk_*`)
-предупреждением; неклассифицированная операция по-прежнему отказывает
-`runtime_operation_unbounded` до обнаружения рабочего пространства. Preview
-исполнением не является. Работу, которую вызов ждать не должен, запускай через
-`unica.runtime.job.start`. Не обходи контракт прямым runner-ом или через
-`unica.build.*`.
-- Use `unica.project.map` if the source-set or format is unclear.
+- Preferred path: use MCP `unica` tools `unica.search`, `unica.view`, `unica.check`, `unica.view` on the schema node, `unica.view` on the object node, `unica.docs`, and `unica.run`.
+- Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
+контракт каждой — `argsSchema`, `execution`, `previewRequired`,
+`dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
+при `implemented: true` используй опубликованную `argsSchema`; при
+`support.state: limited` разрешено только подмножество `support.supportedArgs`.
+При `support.state: unavailable` остановись; не выдумывай аргументов при
+`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
+затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
+вызовами. Не обходи контракт прямым runner-ом.
+- Use `unica.view {}` if the source-set or format is unclear.
 - Do not call internal analyzer, standards, runtime, or package adapters directly. They are hidden behind MCP `unica`.
 
 ## Workflow
 
-1. Extract the exact query text with `unica.code.search` or `unica.dcs.info`.
-2. Inspect the execution context with `unica.code.outline`: module, exported entry point, region, temporary table chain, and caller loop.
-3. Use `unica.code.graph` for callers/callees when the query is inside reusable API, background jobs, event handlers, or suspected query-in-loop flow.
-4. Run `unica.code.diagnostics` with `action=findings`, the exact `sourceSet`, and the containing module's logical `metadataPath` when analyzer diagnostics can reveal unreachable code, unresolved calls, or type issues around the query. Do not pass a DCS `TemplatePath` as a diagnostic target; locate the BSL module that executes the query.
-5. Inspect `unica.meta.info` for both related modules, subscriptions, roles, functional options and the local registers, dimensions, resources, реквизиты, tabular sections, and indexes implied by the platform object type.
-6. Inspect DCS with `unica.dcs.info` when the query lives in a data composition schema.
-7. Search `unica.standards.search` only for `development-standard` query rules. Exact platform query semantics require a `platform-help` source; if public MCP `unica` does not expose one, report the contract gap before making a platform-dependent rewrite.
+1. Extract the exact query text with `unica.search` or `unica.view` on the schema node.
+2. Inspect the execution context with `unica.view` on the module node (its `Method` branch lists the methods): module, exported entry point, region, temporary table chain, and caller loop.
+3. Find callers with `unica.search` by the method name when the query is inside reusable API, background jobs, event handlers, or suspected query-in-loop flow; a call graph is not on the v0.13 surface.
+4. Run `unica.check {at}` on the containing module when analyzer diagnostics can reveal unreachable code, unresolved calls, or type issues around the query. Do not pass a DCS `TemplatePath` as a diagnostic target; locate the BSL module that executes the query.
+5. Inspect `unica.view` on the object node for both related modules, subscriptions, roles, functional options and the local registers, dimensions, resources, реквизиты, tabular sections, and indexes implied by the platform object type.
+6. Inspect DCS with `unica.view` on the schema node when the query lives in a data composition schema.
+7. Search `unica.docs` with `source: "development-standard"` only for `development-standard` query rules. Exact platform query semantics require `unica.docs` with `source: "platform-help"` before a platform-dependent rewrite.
 8. Read `../../references/platform/db-performance.md` when performance depends on DBMS behavior, locks, indexes, temp storage, WAL, TEMPDB, or large table statistics.
 9. Optimize one cause at a time: filters before joins, virtual table parameters, temporary table materialization, repeated queries in loops, dot dereference expansion, unbounded selections, and unnecessary totals.
-10. Use `unica.runtime.execute` only to preview typed syntax arguments; report actual syntax as unverified and require real trace/log evidence when performance depends on data volume.
+10. Check syntax with `unica.check`; require real trace/log evidence when performance depends on data volume.
 
 ## DB-aware diagnostics
 
@@ -41,6 +41,33 @@ description: "Оптимизация запросов 1С и СКД. Испол�
 - For virtual tables, prefer precise parameters over broad reads followed by post-filtering.
 - For блокировки, connect lock holder, waiter, transaction, module path, and user/API scenario before proposing a rewrite.
 
+## Query syntax guards
+
+- Do not generate `ПЕРВЫЕ &Количество` or any parameter immediately after `ПЕРВЫЕ`: the 1C query parser expects a numeric constant there and reports `Ожидается константа`.
+- For a dynamic row limit, use a controlled query template containing `ВЫБРАТЬ ПЕРВЫЕ 1` with LF immediately after `1`, without trailing spaces. In this template, the only occurrence of `"ПЕРВЫЕ 1" + Символы.ПС` must be the row-limit clause itself, not a comment or string literal. The example below checks the occurrence count; it does not parse arbitrary query text. The LF delimiter prevents matching the prefix of `ПЕРВЫЕ 10`; a different line ending or trailing spaces cause the check to refuse the template.
+- Before substitution, require `Количество` to be a positive integer of type `Число` (Number). Reject nonnumeric, fractional, zero and negative values without implicit conversion or rounding. `Формат(Количество, "ЧГ=0")` removes digit grouping; it does not enforce these preconditions. For the controlled template above, check the value and substitute the limit before execution:
+
+```bsl
+Если ТипЗнч(Количество) <> Тип("Число") Тогда
+	ВызватьИсключение "Количество должно иметь тип Число";
+КонецЕсли;
+
+Если Количество <= 0 Или Цел(Количество) <> Количество Тогда
+	ВызватьИсключение "Количество должно быть положительным целым числом";
+КонецЕсли;
+
+МаркерОграничения = "ПЕРВЫЕ 1" + Символы.ПС;
+
+Если СтрЧислоВхождений(Запрос.Текст, МаркерОграничения) <> 1 Тогда
+	ВызватьИсключение "В тексте запроса ожидается один маркер ограничения";
+КонецЕсли;
+
+Запрос.Текст = СтрЗаменить(
+	Запрос.Текст,
+	МаркерОграничения,
+	"ПЕРВЫЕ " + Формат(Количество, "ЧГ=0") + Символы.ПС);
+```
+
 ## Review checklist
 
 - Virtual tables receive parameters instead of broad post-filtering.
@@ -48,6 +75,7 @@ description: "Оптимизация запросов 1С и СКД. Испол�
 - Repeated subqueries and query-in-loop patterns are removed or justified.
 - Joins do not multiply rows silently; totals and grouping match business meaning.
 - Date and organization filters are applied as early as the platform query allows.
+- `ПЕРВЫЕ` uses a numeric constant in the query text, not a query parameter.
 - Query changes preserve rights semantics and do not replace `РАЗРЕШЕННЫЕ` blindly.
 
 ## MCP examples
@@ -57,10 +85,10 @@ description: "Оптимизация запросов 1С и СКД. Испол�
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.dcs.info",
+    "name": "unica.view",
     "arguments": {
       "cwd": "<workspace>",
-      "TemplatePath": "Reports/Продажи/Ext/Report/DataCompositionSchema.xml"
+      "at": "main:Report.Продажи.Template.ОсновнаяСхемаКомпоновкиДанных.DataSet"
     }
   }
 }
@@ -71,10 +99,10 @@ description: "Оптимизация запросов 1С и СКД. Испол�
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.standards.search",
+    "name": "unica.docs",
     "arguments": {
       "query": "оптимизация запросов 1С виртуальные таблицы",
-      "limit": 5
+      "source": "development-standard"
     }
   }
 }

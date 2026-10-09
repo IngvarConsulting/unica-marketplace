@@ -1,196 +1,185 @@
 ---
 name: interface-edit
 description: Настройка командного интерфейса подсистемы 1С. Используй когда нужно скрыть или показать команды, разместить в группах, настроить порядок
-argument-hint: <CIPath> <Operation> <Value>
+argument-hint: <at> <ops>
 allowed-tools:
-  - Bash
   - Read
-  - Write
   - Glob
 ---
 
-# /interface-edit — редактирование CommandInterface.xml
+# /interface-edit — правка командного интерфейса
 
 ## MCP routing
 
-- Preferred path: use MCP `unica` tool `unica.interface.edit`; `unica` owns XML/JSON DSL work and refreshes related workspace caches after mutations.
-- Do not call internal MCP/CLI adapters directly. They are hidden behind `unica` and synchronized by the orchestrator.
-- Execution path: call MCP `unica` tool `unica.interface.edit`; skill-local operation scripts are not part of the workflow.
-- For mutating operations, pass `dryRun: false` only when the user explicitly requested the change; otherwise keep the default dry run.
-- Vendor support guard runs inside `unica`; if it blocks a locked/read-only supported object, prefer CFE/release-support or an explicit support-state change plan instead of editing raw support metadata.
+- Preferred path: use MCP `unica` tool `unica.apply` с операциями
+  `commandVisibility.set`, `commandPlacement.set`, `commandOrder.set`,
+  `groupOrder.set` и `subsystemOrder.set`.
+- Do not call internal MCP/CLI adapters directly. They are hidden behind
+  `unica` and synchronized by the orchestrator.
+- Интерфейс называет адрес: `args.at` вида
+  `<набор>:Subsystem.<Имя>.Interface`. Пути к `CommandInterface.xml` наружу
+  нет; путь из диффа или лога переводит в адрес аварийный `unica.resolve`.
+- Сначала вызови `unica.apply` с `at` и `ops`: это план без записи.
+  Когда пользователь поручил внести эту правку, вызови `unica.apply` только
+  с `executionToken` из `data.executionToken` успешного плана.
 
-Точечное редактирование файла командного интерфейса подсистемы 1С.
-
-## Параметры
-
-| Параметр | Обяз. | Описание |
-|----------|:-----:|----------|
-| CIPath | да | Путь к CommandInterface.xml |
-| Operation | нет | Операция: hide, show, place, order, subsystem-order, group-order |
-| Value | нет | Значение для операции |
-| DefinitionFile | нет | JSON-файл с массивом операций (альтернатива Operation) |
-| CreateIfMissing | нет | Создать файл если не существует |
-| NoValidate | нет | Скрыть подробный отчёт авто-валидации; обязательная проверка корректности 8.3.27 перед фиксацией остаётся включённой |
-
-## MCP вызов
-
-### Inline mode
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.interface.edit",
-    "arguments": {
-      "cwd": "<workspace>",
-      "CIPath": "<path>",
-      "Operation": "hide",
-      "Value": "<cmd>",
-      "dryRun": false
-    }
-  }
-}
-```
-
-### JSON mode
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.interface.edit",
-    "arguments": {
-      "cwd": "<workspace>",
-      "CIPath": "<path>",
-      "DefinitionFile": "<json>",
-      "dryRun": false
-    }
-  }
-}
-```
+**Команда лежит в аргументах, а не в адресе.** Имя команды в интерфейсе — это
+ссылка на команду, живущую в другом месте (`CommonCommand.Печать`,
+`Catalog.Валюты.Command.Создать`). Адрес несёт интерфейс, потому что предмет
+правки — место, которое подсистема команде отводит, а не сама команда.
 
 ## Операции
 
-| Операция | Значение | Описание |
-|----------|----------|----------|
-| hide | Cmd.Name или массив | Скрыть команду (CommandsVisibility, false) |
-| show | Cmd.Name или массив | Показать команду (visibility, true) |
-| place | {"command":"...","group":"CommandGroup.X"} | Разместить команду в группе |
-| order | {"group":"...","commands":[...]} | Задать порядок команд в группе |
-| subsystem-order | ["Subsystem.X.Subsystem.A",...] | Порядок дочерних подсистем |
-| group-order | ["NavigationPanelOrdinary",...] | Порядок групп |
+| Операция | `at` | `args` | Секция файла |
+|---|---|---|---|
+| `commandVisibility.set` | `…Subsystem.<Имя>.Interface` | `items: [{command, visible}]` | `CommandsVisibility` |
+| `commandPlacement.set` | `…Subsystem.<Имя>.Interface` | `items: [{command, group?, placement?}]` | `CommandsPlacement` |
+| `commandOrder.set` | `…Subsystem.<Имя>.Interface` | `values: {group, commands: […]}` | `CommandsOrder` |
+| `groupOrder.set` | `…Subsystem.<Имя>.Interface` | `values: {groups: […]}` | `GroupsOrder` |
+| `subsystemOrder.set` | `<набор>:Configuration` | `values: {subsystems: […]}` | `SubsystemsOrder` |
+
+Вложенная подсистема адресуется всей цепочкой:
+`main:Subsystem.Администрирование.Subsystem.КонтрольРаботыПользователей.Interface`.
+Одноимённая подсистема в другом месте целью не становится.
+
+**Порядок подсистем верхнего уровня метит в корень конфигурации.** Корневой
+документ несёт единственную секцию, поэтому узла у него нет — он описан
+свойством корня. На интерфейсе подсистемы `subsystemOrder.set` отклоняется.
+
+**Порядок — перестановка сохранённого состава.** Три операции порядка
+принимают полную последовательность тех же элементов, что уже сохранены:
+у `commandOrder.set` — команд названной группы, у `groupOrder.set` — групп,
+у `subsystemOrder.set` — подсистем. Пропуск, повтор или лишний элемент
+отклоняются без записи: пропуск не удаляет настройку. Прочитай текущий
+порядок в `unica.view` и переставь его. Если порядка ещё нет, список
+задаёт его впервые. Порядок других групп и остальные секции файла
+не меняются.
+
+**Каждая операция правит свою секцию и ничью больше.** В частности, правка
+видимости касается только общего значения: переопределения по ролям в том же
+блоке остаются нетронутыми. Их число видно в чтении полем `roleOverrides` —
+если оно не ноль, `visible` не вся правда о видимости команды.
+
+## Порядок
+
+1. Найди подсистему: `unica.search {corpus: "names", kind: "Subsystem"}`.
+2. Прочти интерфейс: `unica.view {at: "…Subsystem.<Имя>.Interface"}` — ветви
+   `Command`, `Group` и `Subsystem` показывают команды, порядок групп и
+   порядок дочерних подсистем.
+3. Предпросмотр: `unica.apply` с `at` и `ops`; ответ несёт план и `data.executionToken`.
+4. Применение: вызов только с `executionToken` из `data.executionToken` успешного плана.
 
 ## Примеры
 
-### Скрыть команду
+### Скрыть одну команду и показать другую
 
 ```json
 {
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.interface.edit",
+    "name": "unica.apply",
     "arguments": {
-      "cwd": "<workspace>",
-      "CIPath": "Subsystems/Продажи/Ext/CommandInterface.xml",
-      "Operation": "hide",
-      "Value": "Catalog.Товары.StandardCommand.OpenList",
-      "dryRun": false
+      "at": "main:Subsystem.Продажи",
+      "ops": [
+        {
+          "op": "commandVisibility.set",
+          "args": {
+            "at": "main:Subsystem.Продажи.Interface",
+            "items": [
+              {"command": "Catalog.Товары.StandardCommand.OpenList", "visible": false},
+              {"command": "Report.Продажи.Command.Отчёт", "visible": true}
+            ]
+          }
+        }
+      ]
     }
   }
 }
 ```
 
-### Показать команду
+### Разместить команду и задать порядок в группе
+
+Пример задаёт порядок группы, у которой его ещё нет. Если порядок уже
+сохранён, `commands` перечисляет ровно его команды в новом порядке:
+только что размещённую команду в сохранённый порядок группы так не добавить,
+такой список отклоняется.
+Сначала получи план этого изменения:
 
 ```json
 {
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.interface.edit",
+    "name": "unica.apply",
     "arguments": {
-      "cwd": "<workspace>",
-      "CIPath": "Subsystems/Продажи/Ext/CommandInterface.xml",
-      "Operation": "show",
-      "Value": "Report.Продажи.Command.Отчёт",
-      "dryRun": false
+      "at": "main:Subsystem.Продажи",
+      "ops": [
+        {
+          "op": "commandPlacement.set",
+          "args": {
+            "at": "main:Subsystem.Продажи.Interface",
+            "items": [
+              {
+                "command": "Report.Продажи.Command.Отчёт",
+                "group": "NavigationPanelImportant"
+              }
+            ]
+          }
+        },
+        {
+          "op": "commandOrder.set",
+          "args": {
+            "at": "main:Subsystem.Продажи.Interface",
+            "values": {
+              "group": "NavigationPanelImportant",
+              "commands": [
+                "Report.Продажи.Command.Отчёт",
+                "Catalog.Товары.StandardCommand.OpenList"
+              ]
+            }
+          }
+        }
+      ]
     }
   }
 }
 ```
 
-### Разместить в группе
+Для исполнения передай `data.executionToken` из этого успешного плана:
 
 ```json
 {
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.interface.edit",
+    "name": "unica.apply",
     "arguments": {
-      "cwd": "<workspace>",
-      "CIPath": "Subsystems/Продажи/Ext/CommandInterface.xml",
-      "Operation": "place",
-      "Value": "{\"command\":\"Report.X.Command.Y\",\"group\":\"CommandGroup.Отчеты\"}",
-      "dryRun": false
+      "executionToken": "<data.executionToken из успешного плана>"
     }
   }
 }
 ```
 
-### Задать порядок подсистем
+### Порядок подсистем верхнего уровня
 
 ```json
 {
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.interface.edit",
+    "name": "unica.apply",
     "arguments": {
-      "cwd": "<workspace>",
-      "CIPath": "Subsystems/Продажи/Ext/CommandInterface.xml",
-      "Operation": "subsystem-order",
-      "Value": "[\"Subsystem.X.Subsystem.A\",\"Subsystem.X.Subsystem.B\"]",
-      "dryRun": false
-    }
-  }
-}
-```
-
-### Создать новый командный интерфейс
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.interface.edit",
-    "arguments": {
-      "cwd": "<workspace>",
-      "CIPath": "<new-path>",
-      "Operation": "subsystem-order",
-      "Value": "[...]",
-      "CreateIfMissing": true,
-      "dryRun": false
-    }
-  }
-}
-```
-
-## Верификация
-
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.interface.validate",
-    "arguments": {
-      "cwd": "<workspace>",
-      "CIPath": "<CIPath>"
+      "at": "main:Configuration",
+      "ops": [
+        {
+          "op": "subsystemOrder.set",
+          "args": {
+            "at": "main:Configuration",
+            "values": {"subsystems": ["Subsystem.Продажи", "Subsystem.Склад"]}
+          }
+        }
+      ]
     }
   }
 }

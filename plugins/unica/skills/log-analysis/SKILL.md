@@ -7,17 +7,17 @@ description: "Анализ журнала регистрации и технол
 
 ## MCP routing
 
-- Preferred path: use MCP `unica` tools `unica.code.search`, `unica.meta.info`, `unica.project.map`, `unica.code.diagnostics`, `unica.standards.search`, and `unica.standards.explain`.
-- По INV-MCP-RUNTIME-RECEIPT и ADR-0074: `unica.runtime.execute` с `dryRun: true`
-показывает запланированную команду без побочных эффектов, а с `dryRun: false`
-исполняет классифицированную операцию и отвечает её терминальным результатом в
-том же вызове, приложив названную причину риска (`runtime_risk_*`)
-предупреждением; неклассифицированная операция по-прежнему отказывает
-`runtime_operation_unbounded` до обнаружения рабочего пространства. Preview
-исполнением не является. Работу, которую вызов ждать не должен, запускай через
-`unica.runtime.job.start`. Не обходи контракт прямым runner-ом или через
-`unica.build.*`.
-- Use `unica.runtime.execute` to preview typed syntax/test/launch arguments and, with `dryRun: false`, to run it, never as verification or a substitute for log evidence.
+- Preferred path: use MCP `unica` tools `unica.search`, `unica.view` on the object node, `unica.view {}`, `unica.check`, and `unica.docs`.
+- Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
+контракт каждой — `argsSchema`, `execution`, `previewRequired`,
+`dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
+при `implemented: true` используй опубликованную `argsSchema`; при
+`support.state: limited` разрешено только подмножество `support.supportedArgs`.
+При `support.state: unavailable` остановись; не выдумывай аргументов при
+`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
+затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
+вызовами. Не обходи контракт прямым runner-ом.
+- Check syntax with `unica.check` and launch a client through `unica.run` (`launch`); test runs are outside the v0.13 surface, and neither call is verification or a substitute for log evidence.
 - Do not call internal runtime, analyzer, standards, or package adapters directly. They are hidden behind MCP `unica`.
 
 ## Inputs
@@ -34,8 +34,8 @@ Accept explicit journal registration exports, technological log files, copied lo
 1. Classify the evidence: ЖР event, ТЖ event, platform exception, DBMS/SQL, lock/deadlock, long call, background job, HTTP service, web client request, or auth/session problem.
 2. Build a timeline. Keep clock source and timezone explicit when several files are involved.
 3. Extract module, procedure, metadata object, HTTP path, query text, user/session, and transaction identifiers.
-4. Map log entries back to source with `unica.code.search` and metadata with `unica.meta.info`.
-5. Use `unica.standards.search` or `unica.standards.explain` for diagnostic ids and `development-standard` recommendations. The exact meaning of a platform message requires a `platform-help` source; if public MCP `unica` does not expose one, report the contract gap.
+4. Map log entries back to source with `unica.search` and metadata with `unica.view` on the object node.
+5. Use `unica.docs` with `source: "development-standard"` for diagnostic ids and `development-standard` recommendations. The exact meaning of a platform message requires `unica.docs` with `source: "platform-help"`.
 6. Separate root cause from consequences: the first exception/lock/timeout usually matters more than later rollback noise.
 7. For DBMS evidence, preserve lock holder/waiter, SQL text, transaction boundary, process id, session id, wait event, table/index name, and elapsed time together.
 
@@ -54,11 +54,10 @@ Accept explicit journal registration exports, technological log files, copied lo
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.code.search",
+    "name": "unica.search",
     "arguments": {
-      "cwd": "<workspace>",
-      "sourceSet": "<source-set-from-project-map>",
       "query": "ВыполнитьОбменСКонтрагентом",
+      "scope": "<source-set-from-unica-view>:Configuration",
       "limit": 20
     }
   }

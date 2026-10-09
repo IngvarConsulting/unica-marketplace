@@ -1,7 +1,6 @@
 ---
 name: form-compile
 description: Компиляция управляемой формы 1С из JSON-определения или из метаданных объекта. Используй когда нужно создать форму с нуля по описанию элементов или по стандартному пресету объекта
-argument-hint: <JsonPath> <OutputPath> | FromObject <OutputPath>
 allowed-tools:
   - Bash
   - Read
@@ -13,83 +12,70 @@ allowed-tools:
 
 ## MCP routing
 
-- Preferred path: use MCP `unica` tool `unica.form.compile`; `unica` owns XML/JSON DSL work and refreshes related workspace caches after mutations.
-- Do not call internal MCP/CLI adapters directly. They are hidden behind `unica` and synchronized by the orchestrator.
-- Execution path: call MCP `unica` tool `unica.form.compile`; skill-local operation scripts are not part of the workflow.
-- For mutating operations, pass `dryRun: false` only when the user explicitly requested the change; otherwise keep the default dry run.
-- Vendor support guard runs inside `unica`; if it blocks a locked/read-only supported object, prefer CFE/release-support or an explicit support-state change plan instead of editing raw support metadata.
+- Preferred path: use MCP `unica` tool `unica.apply`: форма заводится
+  операцией `form.create`, наполняется `element.add`, `formAttribute.add`,
+  `formCommand.add`, `event.bind`.
+- Не зови внутренние адаптеры напрямую: они спрятаны за MCP `unica`.
+- Сначала вызови `unica.apply` с `at` и `ops`: это план без записи.
+  Когда пользователь поручил внести эту правку, вызови `unica.apply` только
+  с `executionToken` из `data.executionToken` успешного плана.
+- Словарь операций узла даёт `unica.view {at}` в секции `can`.
 
-Режимы:
-1. **JSON DSL** — из JSON-определения формы
-2. **From object** — автоматически из метаданных объекта 1С по стандартному пресету; `OutputPath` должен указывать на `.../TypePlural/ObjectName/Forms/FormName/Ext/Form.xml`
+## Шаг 1 — завести форму
 
-> **При проектировании формы с нуля (5+ элементов или нечёткие требования)** — используй справочник `form-patterns`. Для простых форм (1-3 поля) — не нужно.
-
-## Параметры
-
-| Параметр   | Обязательный | Описание                        |
-|------------|:------------:|---------------------------------|
-| JsonPath   | режим JSON   | Путь к JSON-определению формы   |
-| FromObject | режим object | Флаг генерации по метаданным объекта |
-| ObjectPath | нет          | Путь к XML объекта; если не указан, `unica` выводит его из `OutputPath` |
-| Purpose    | нет          | Назначение формы; если не указано, `unica` выводит его из имени формы |
-| OutputPath | да           | Путь к выходному Form.xml       |
-
-## MCP вызов
-
-### JSON DSL из файла
+Адрес называет будущую форму: `<набор>:<Вид>.<Имя>.Form.<Форма>`; `values.type`
+задаёт назначение, `values.name` обязано совпасть с именем в адресе.
 
 ```json
 {
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.form.compile",
+    "name": "unica.apply",
     "arguments": {
-      "cwd": "<workspace>",
-      "JsonPath": "<json>",
-      "OutputPath": "<Form.xml>",
-      "dryRun": false
+      "at": "main:Catalog.Валюты.Form.ФормаЭлемента",
+      "ops": [
+        {"op": "form.create", "args": {"values": {"name": "ФормаЭлемента", "type": "ObjectForm"}}}
+      ]
     }
   }
 }
 ```
 
-### JSON DSL в форме объекта конфигурации
+## Шаг 2 — наполнить
+
+Применение первого шага публикует форму; после него её адрес принимает
+элементы, реквизиты и команды. Порядок тот же, что у всякой операции:
+превью → применение с `executionToken` → превью следующего шага → применение.
 
 ```json
 {
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.form.compile",
+    "name": "unica.apply",
     "arguments": {
-      "cwd": "<workspace>",
-      "JsonPath": "<json>",
-      "OutputPath": "<.../TypePlural/ObjectName/Forms/FormName/Ext/Form.xml>",
-      "dryRun": false
+      "at": "main:Catalog.Валюты.Form.ФормаЭлемента",
+      "ops": [
+        {"op": "formAttribute.add", "args": {"items": [{"name": "Объект", "type": "CatalogObject.Валюты", "main": true}]}},
+        {"op": "element.add", "args": {"items": [{"name": "Наименование", "type": "InputField", "path": "Объект.Наименование"}]}}
+      ]
     }
   }
 }
 ```
 
-### From object
+Точечные правки готовой формы держит `form-edit`; DSL ниже описывает, как
+выражать внутреннее описание элементов. На публичной поверхности `items[]`
+использует `name` и `type`, как в примере выше; для HTML-поля —
+`type: "HTMLDocumentField"`. Его параметры и пример описаны в `form-edit`.
 
-```json
-{
-  "jsonrpc": "2.0",
-  "method": "tools/call",
-  "params": {
-    "name": "unica.form.compile",
-    "arguments": {
-      "cwd": "<workspace>",
-      "FromObject": true,
-      "OutputPath": "<.../Catalogs/Валюты/Forms/ФормаЭлемента/Ext/Form.xml>",
-      "dryRun": false
-    }
-  }
-}
-```
+## Чего словарь не пишет
+
+Сборки целой формы из готового JSON-определения одним вызовом на поверхности
+**нет**: DSL ниже остаётся справочником формата. Виды элементов, которые
+словарь создаёт, и виды, которые только читаются, перечислены в `form-edit`.
+Форма, которую не собрать этими операциями, — пробел контракта Unica MCP.
 
 ## JSON DSL — справка
 
@@ -129,6 +115,7 @@ allowed-tools:
 |--------------|-------------------|---------------------------------------------------|
 | `"group"`    | UsualGroup        | `"horizontal"` / `"vertical"` / `"alwaysHorizontal"` / `"alwaysVertical"` / `"collapsible"` |
 | `"input"`    | InputField        | имя элемента                                      |
+| `"html"`     | HTMLDocumentField | имя; события `OnClick`, `DocumentComplete`          |
 | `"check"`    | CheckBoxField     | имя                                               |
 | `"label"`    | LabelDecoration   | имя — надпись-декорация; текст задаётся `title`, гиперссылка `hyperlink` |
 | `"labelField"` | LabelField      | имя                                               |
@@ -499,9 +486,9 @@ allowed-tools:
 
 ## Workflow
 
-1. **Компиляция**: `unica.form.compile` генерирует `Form.xml` и автоматически регистрирует `<Form>` в `ChildObjects` родительского объекта (если OutputPath следует конвенции `.../TypePlural/ObjectName/Forms/FormName/Ext/Form.xml`).
-2. **Метаданные формы** (`ФормаСписка.xml`) и `Module.bsl` создаёт `unica.form.add`. Если `unica.form.add` ещё не вызывался — вызови его после `unica.form.compile`. Он не перезаписывает существующий Form.xml.
-3. **Проверка**: `unica.form.validate`, затем `unica.form.info`.
+1. **Сборка**: `unica.apply` (`form.create`, затем наполнение) генерирует `Form.xml` и регистрирует `<Form>` в составе объекта-владельца, названного адресом.
+2. **Метаданные формы** (`ФормаСписка.xml`) и `Module.bsl` создаёт та же `form.create`; `form.add` регистрирует форму в составе объекта, когда она заводится списком. Существующий `Form.xml` ни одна из них не перезаписывает.
+3. **Проверка**: `unica.check` на узле формы, затем `unica.view` on the form node.
 
 ## Верификация
 
@@ -512,10 +499,9 @@ allowed-tools:
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.form.validate",
+    "name": "unica.check",
     "arguments": {
-      "cwd": "<workspace>",
-      "FormPath": "src/Catalogs/Валюты/Forms/ФормаЭлемента/Ext/Form.xml"
+      "at": "<sourceSet>:Catalog.Валюты.Form.ФормаЭлемента"
     }
   }
 }
@@ -528,10 +514,10 @@ allowed-tools:
   "jsonrpc": "2.0",
   "method": "tools/call",
   "params": {
-    "name": "unica.form.info",
+    "name": "unica.view",
     "arguments": {
       "cwd": "<workspace>",
-      "FormPath": "src/Catalogs/Валюты/Forms/ФормаЭлемента/Ext/Form.xml"
+      "at": "main:Catalog.Валюты.Form.ФормаЭлемента"
     }
   }
 }
@@ -539,16 +525,16 @@ allowed-tools:
 
 ## Особенности для внешних обработок (EPF)
 
-- По INV-MCP-RUNTIME-RECEIPT и ADR-0074: `unica.runtime.execute` с `dryRun: true`
-показывает запланированную команду без побочных эффектов, а с `dryRun: false`
-исполняет классифицированную операцию и отвечает её терминальным результатом в
-том же вызове, приложив названную причину риска (`runtime_risk_*`)
-предупреждением; неклассифицированная операция по-прежнему отказывает
-`runtime_operation_unbounded` до обнаружения рабочего пространства. Preview
-исполнением не является. Работу, которую вызов ждать не должен, запускай через
-`unica.runtime.job.start`. Не обходи контракт прямым runner-ом или через
-`unica.build.*`.
+- Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
+контракт каждой — `argsSchema`, `execution`, `previewRequired`,
+`dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
+при `implemented: true` используй опубликованную `argsSchema`; при
+`support.state: limited` разрешено только подмножество `support.supportedArgs`.
+При `support.state: unavailable` остановись; не выдумывай аргументов при
+`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
+затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
+вызовами. Не обходи контракт прямым runner-ом.
 
 - **Тип главного реквизита**: `ExternalDataProcessorObject.ИмяОбработки` (не `DataProcessorObject`)
 - **DataPath**: используйте реквизиты формы (`ИмяРеквизита`), а не `Объект.ИмяРеквизита` — у внешних обработок нет реквизитов объекта в метаданных
-- **Ссылочные типы**: `CatalogRef.XXX`, `DocumentRef.XXX` допустимы в XML, но для будущей публикации EPF потребуется база с целевой конфигурацией; через `v8-runner` skill и `unica.runtime.execute` доступен `operation=make` по external source-set — с предпросмотром и с применённым запуском
+- **Ссылочные типы**: `CatalogRef.XXX`, `DocumentRef.XXX` допустимы в XML, но для будущей публикации EPF потребуется база с целевой конфигурацией; runtime-публикацию сначала обнаруживать через `unica.run {}` и использовать `make` только при `implemented: true`, не угадывая аргументы при `argsSchema: null`

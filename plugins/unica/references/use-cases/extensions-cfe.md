@@ -14,25 +14,28 @@ Use metadata-modeling references and `unica.meta.*` for that.
 Use native CFE tools through MCP `unica`:
 
 - `unica.cfe.init`
-- `unica.cfe.validate`
-- `unica.cfe.diff`
+- `unica.check` on the extension root (`ext:Configuration`, validator `cfe`)
+- `unica.diff` between the extension and configuration sets
 - `unica.cfe.borrow`
 - `unica.cfe.patch_method`
 
-Runtime export or loading of `.cfe` artifacts is handled by `v8-runner` through
-`unica.runtime.execute` with `operation=make` or `operation=load`: preview it
-with `dryRun: true`, run it with `dryRun: false` and read the named risk the
-result carries.
+Runtime export or loading of `.cfe` artifacts goes through `unica.run`:
+`download` with `extension` writes the `.cfe` from the infobase, and `make`
+builds an artifact from sources; each operation is previewed first with
+`dryRun: true` and executed with `dryRun: false`. Loading a `.cfe` file
+(`upload`) and the separate `apply`/`reset` are unavailable until the runner
+supports them ([#1246](https://github.com/IngvarConsulting/unica/issues/1246));
+send extension sources with `push` instead.
 
-По INV-MCP-RUNTIME-RECEIPT и ADR-0074: `unica.runtime.execute` с `dryRun: true`
-показывает запланированную команду без побочных эффектов, а с `dryRun: false`
-исполняет классифицированную операцию и отвечает её терминальным результатом в
-том же вызове, приложив названную причину риска (`runtime_risk_*`)
-предупреждением; неклассифицированная операция по-прежнему отказывает
-`runtime_operation_unbounded` до обнаружения рабочего пространства. Preview
-исполнением не является. Работу, которую вызов ждать не должен, запускай через
-`unica.runtime.job.start`. Не обходи контракт прямым runner-ом или через
-`unica.build.*`.
+Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
+контракт каждой — `argsSchema`, `execution`, `previewRequired`,
+`dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
+при `implemented: true` используй опубликованную `argsSchema`; при
+`support.state: limited` разрешено только подмножество `support.supportedArgs`.
+При `support.state: unavailable` остановись; не выдумывай аргументов при
+`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
+затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
+вызовами. Не обходи контракт прямым runner-ом.
 
 ## Related references
 

@@ -26,7 +26,7 @@
 
 - Репозиторий: [itrous/bsl-analyzer](https://github.com/itrous/bsl-analyzer)
 - Автор: [BSL Analyzer Contributors](https://github.com/itrous/bsl-analyzer/graphs/contributors)
-- Закреплённая версия: `0.2.67`, commit `9a92766691bbd0191a5ff02c34fa9058e4570b85`
+- Закреплённая версия: `0.2.86`, commit `53d8765288adf3b9277b7a4112dba167e51690b7`
 - Лицензия: [LGPL-3.0-or-later](third-party/licenses/bsl-analyzer/LICENSE-LGPL)
 - Полный набор текстов лицензий компонентов: [MIT](third-party/licenses/bsl-analyzer/LICENSE-MIT),
   [Apache-2.0](third-party/licenses/bsl-analyzer/LICENSE-APACHE),
@@ -44,9 +44,11 @@ Unica поставляет LSP-бинарник `bsl-analyzer`. Его лице�
 
 <!-- unica-attribution: tool v8-runner -->
 
-- Репозиторий: [alkoleft/v8-runner-rust](https://github.com/alkoleft/v8-runner-rust)
+- Репозиторий: [IngvarConsulting/v8-runner-rust](https://github.com/IngvarConsulting/v8-runner-rust)
 - Автор: [v8-runner contributors](https://github.com/alkoleft/v8-runner-rust/graphs/contributors)
-- Закреплённая версия: `0.5.1`, commit `ad72f64222ab0a7e6dfd391adb437a956c0a2428`
+- Исходный проект: [alkoleft/v8-runner-rust](https://github.com/alkoleft/v8-runner-rust)
+- Закреплённая версия: `0.14.0`, source tag и asset tag `v0.14.0`,
+  commit `d2944fe851541ce65bc3a202f401b92229386fc3`
 - Лицензия: [AGPL-3.0-only](third-party/licenses/v8-runner/LICENSE)
 
 `v8-runner` запускается Unica как отдельный внутренний процесс. На его
@@ -61,8 +63,11 @@ LGPL-3.0-or-later проекта Unica не заменяет эти услови
 - Репозиторий: [Dach-Coin/rlm-tools-bsl](https://github.com/Dach-Coin/rlm-tools-bsl)
 - Автор: [Roman Starchenko](https://github.com/Dach-Coin); исходный проект
   `rlm-tools` — [Stefan O'Shea](https://github.com/stefanoshea)
-- Закреплённая версия: `1.33.0`, commit `3e6920cd015a61af4ba7aa1a5f1fedd8bc935549`
-- Архив standalone runtime: `rlm-tools-bsl-v1.33.0-build.3`
+- Закреплённая версия: `1.42.0`, commit `9a84f24f0c156630e1d4e757b30070a13a56d0e0`
+- Архив standalone runtime: `rlm-tools-bsl-v1.42.0-build.1`
+- Изменения исходного кода: патчи `patches/rlm-tools-bsl/` репозитория
+  [IngvarConsulting/unica-toolchain](https://github.com/IngvarConsulting/unica-toolchain)
+  удерживают сессию и inline-ресурсы, пока принятая работа не завершилась
 - Инструмент сборки standalone runtime: [Nuitka](https://nuitka.net/) `4.1.3`
 - Лицензия: [MIT](third-party/licenses/rlm-tools-bsl/LICENSE)
 
@@ -148,8 +153,9 @@ Unica адаптирует из чек-листа TemplatesNewObject1C согл�
 
 <!-- unica-attribution: upstream v8-runner-rust -->
 
-- Репозиторий: [alkoleft/v8-runner-rust](https://github.com/alkoleft/v8-runner-rust)
+- Репозиторий: [IngvarConsulting/v8-runner-rust](https://github.com/IngvarConsulting/v8-runner-rust)
 - Автор: [v8-runner contributors](https://github.com/alkoleft/v8-runner-rust/graphs/contributors)
+- Исходный проект: [alkoleft/v8-runner-rust](https://github.com/alkoleft/v8-runner-rust)
 - Проверенный baseline: версия и commit берутся из `third-party/tools.lock.json`
 - Лицензия: [AGPL-3.0-only](third-party/licenses/v8-runner/LICENSE)
 
