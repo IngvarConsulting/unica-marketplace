@@ -163,9 +163,13 @@ codex plugin marketplace remove unica
 
 ## Data composition schemas
 
-Use [dcs-compile](skills/dcs-compile/SKILL.md) to create a schema and
-[dcs-edit](skills/dcs-edit/SKILL.md) to modify it. Both use `unica.apply`
-with preview and the resulting revision for application. The XML format is
+Read the template's datasets and settings with `unica.view`; every node
+answer lists its operations in `can`. Read the chosen operation's contract at
+its own address, for example `<DataSet address>.Query.Can.query.set`.
+Preview with `unica.apply` and execute its `data.executionToken`, then read
+the result and validate with `unica.check`. See the
+[reports and printing reference](references/use-cases/reports-printing.md)
+for grouping, parameters and the current boundary of schema creation. The XML format is
 described in the [DataCompositionSchema specification](references/specs/1c-dcs-spec.md).
 
 ## Reading and changing source objects
