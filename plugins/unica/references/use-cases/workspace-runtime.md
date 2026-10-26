@@ -3,7 +3,7 @@
 ## When to use
 
 Use this when the user needs a new workspace, `v8project.yaml`, infobase
-creation, source import/export, CF/CFE load, export or build, `.dt` export or
+creation, source import/export, CF/CFE load or export, artifact build, `.dt` export or
 load, or a 1C client launch.
 
 Do not use this for point edits inside XML metadata. Use the object-specific
@@ -13,24 +13,28 @@ subsystems, interfaces, and templates.
 ## Primary path
 
 Use the package-selected MCP runtime surface directly. In v0.13, call
-`unica.run {}` first and select only an operation whose dictionary entry says
-`implemented: true`, or exactly the subset declared by `support.state: limited` and `support.supportedArgs`; refuse unavailable operations. Do not infer arguments for operations whose
-`argsSchema` is `null`.
+`unica.run {}` first and select only an operation the dictionary lists; for
+`support.state: limited` use exactly the subset in `support.supportedArgs`.
+An unavailable operation is not listed and its call is refused.
 
 Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
 контракт каждой — `argsSchema`, `execution`, `previewRequired`,
 `dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
-при `implemented: true` используй опубликованную `argsSchema`; при
-`support.state: limited` разрешено только подмножество `support.supportedArgs`.
-При `support.state: unavailable` остановись; не выдумывай аргументов при
-`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
-затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
-вызовами. Не обходи контракт прямым runner-ом.
+используй опубликованную `argsSchema`; при `support.state: limited`
+разрешено только подмножество `support.supportedArgs`. Недоступной операции
+в словаре нет. Для плановой операции сначала проверь результат
+`dryRun: true`, затем исполняй запрос с `dryRun: false`. Preview
+не фиксирует входы между вызовами. Не обходи контракт прямым runner-ом.
 
 Source `push` checks the infobase generation before loading a set and is refused with `non_fast_forward` when the infobase moved ahead of this working copy's record, or with `no_memory` when this working copy has no memory of the infobase; the refusal offers a `pull` preview and a `push` preview with `force:true`. `force:true` overwrites the infobase: every selected set is loaded in full without that check, and changes made in the infobase are lost. A set the runner skips by its memory is neither loaded nor checked. Full pulling requires explicit `force:true` and provides no local-work protection; inspect the preview before execution.
 For source readiness independently of runtime availability, first
 call `unica.check {}`. It returns `status`, `ready`, `repositoryReady`,
-`checks[]` and `diagnostics[]` — the verdict on the workspace. The facts it
+`checks[]` and `diagnostics[]` — the verdict on the workspace. Every page
+repeats the whole verdict, `checks[]` and `diagnosticCount`; diagnostic groups
+arrive in pages of up to 20 (`limit` up to 50, about 64 KiB). When the answer
+has a `cursor`, call the `unica.check` continuation from `next` until
+`page.stoppedBy` is `complete`: it reads the saved verdict and does not inspect
+again. The facts it
 judges live in `unica.view {}`: `sourceSets` (possibly an empty array),
 `config`, `infobase` and the recommended `v8project.yaml` content. The split is
 the same as on a node, where `view {at}` gives `props` and `check {at}` gives
@@ -90,7 +94,11 @@ effect although no final receipt was durably saved. Inspect the actual
 infobase state and intended change, record the finding alongside the `taskId`,
 then decide a new action from that evidence. Unica does not replay this work
 automatically; a second `run` call is a new mutation, not a retry of the old
-Task.
+Task. A read-only call (`view`, `resolve`, `search`, `check`, `diff`, `docs`)
+changed nothing: its direct `outcome_uncertain` refusal says so and carries the
+same call in `next`, which is safe to send as a new call. A read-only call that
+had become a Task reports `outcome_uncertain` without `next`; it changed
+nothing either, so send the original call again.
 
 Each `sourceSets[].sourceFormat` describes working-tree discovery. Repository
 checks may additionally become applicable from staged index markers; do not
@@ -125,13 +133,24 @@ source-set path itself has no stronger structural evidence.
 | Replace one source set from the working configuration | `pull`, `force:true`, optional `sourceSet`, `extension`; no local-work protection |
 | Export the configuration or an extension as `.cf`/`.cfe` | `download`, `state=working` or `state=database`, `output`, optional `extension` |
 | Load a `.cf`/`.cfe` into the working configuration only | `upload` — unavailable: the v8-runner 0.15 upload still applies the database configuration, and the adapter does not run `apply` or `reset` yet ([#1246](https://github.com/IngvarConsulting/unica/issues/1246)) |
-| Build a `.cf`/`.cfe` from sources | `make`, `output`, optional `sourceSet`, `extension`; `.epf`/`.erf` are not published |
+| Build a `.cf`/`.cfe`/`.epf`/`.erf` from sources | `make`, `output`; for CF/CFE optional `sourceSet` and `extension` (CFE); EPF/ERF require `sourceSet` naming a singleton matching Designer external source set and a declared main configuration |
 | Export the whole infobase as `.dt` | `infobase.dump`, `output` |
 | Load a `.dt` | `infobase.restore`, `input`, `mode=create` or `mode=replace` |
-| Launch a 1C client | `launch`, `clientMode`, optional `execute`; `waitForExit` with `waitTimeoutMs` supports `thin` + `.epf`; terminal, no preview required |
+| Launch a 1C client | `launch`, `clientMode`, optional `execute` and `applicationParameter`; bounded `waitForExit` with `waitTimeoutMs` supports `thin` + `.epf` or an explicit application parameter; terminal, no preview required |
 | Inspect installed extensions | `extensions.list`, empty args; preview/apply opens a platform session |
 | Change installed extension activity | `extensions.set`, `name`, boolean `active`; other properties are unavailable |
 | Apply or discard pending configuration changes | `apply` and `reset` — unavailable until the runner supports them ([#1246](https://github.com/IngvarConsulting/unica/issues/1246)) |
+
+For `launch`, `applicationParameter` passes one exact `/C` string to an enterprise
+client. Empty is distinct from omitted; NUL and `designer` are rejected. It may
+accompany `execute`; when waiting, that file must be `.epf`. Inspect `wait.exitCode`
+and `wait.timedOut`: completion alone does not prove an application update succeeded.
+The parameter and raw runner command are not echoed in the response. The pinned
+runner encodes the value for the 1C command-line parser on every OS, so quotes,
+spaces, tabs, line breaks and `/Execute` inside it reach `ПараметрЗапуска` as
+exactly one value and never become another launch key; an external processor
+opens only through `execute`. Delivery of 23 values, empty and quote-boundary ones
+included, is live-verified on macOS 8.3.27.2074; Windows and Linux are not measured live.
 
 A previewApply operation requires explicit boolean `dryRun`: `true` shows the
 plan without execution, and `false` executes using the current inputs. The API

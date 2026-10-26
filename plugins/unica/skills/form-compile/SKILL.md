@@ -60,6 +60,7 @@ allowed-tools:
     "arguments": {
       "at": "main:Catalog.Валюты.Form.ФормаЭлемента",
       "ops": [
+        {"op": "props.set", "args": {"values": {"Title": "Валюта", "AutoTitle": false, "Width": 60}}},
         {"op": "attribute.add", "args": {"items": [{"name": "Объект", "type": "CatalogObject.Валюты", "main": true}]}},
         {"op": "item.add", "args": {"items": [{"name": "Наименование", "type": "InputField", "path": "Объект.Наименование"}]}}
       ]
@@ -67,6 +68,12 @@ allowed-tools:
   }
 }
 ```
+
+Заголовок, размеры и поведение самой формы пишет `props.set` на адресе
+формы. Ключи — имена, которые `unica.view` формы показывает в
+`props.properties`: `Title`, `AutoTitle`, `Width`, `Height`, `Scale`,
+`WindowOpeningMode` и другие из `….Form.<Форма>.Can.props.set`. Заголовок
+без `AutoTitle: false` платформа показывает вместе с представлением объекта.
 
 Элементы внутрь группы добавляет `item.add` на адресе группы
 (`….Form.ФормаЭлемента.Item.<Группа>`), обработчик события — `event.bind`
@@ -102,8 +109,8 @@ allowed-tools:
 }
 ```
 
-- `title` — заголовок формы (multilingual). Можно указать и в `properties`, но лучше на верхнем уровне
-- `properties` — свойства формы: `autoTitle`, `windowOpeningMode`, `commandBarLocation`, `saveDataInSettings`, `width`, `height` и др.
+- `title` — заголовок формы (multilingual). На поверхности его пишет `props.set` формы ключом `Title`
+- `properties` — свойства формы: `autoTitle`, `windowOpeningMode`, `commandBarLocation`, `saveDataInSettings`, `width`, `height` и др. На поверхности их пишет `props.set` формы именами XML: `AutoTitle`, `WindowOpeningMode`, `Width`
 - `events` — обработчики событий формы (ключ: имя события 1С, значение: непустое строковое имя процедуры). Этот формат не поддерживает `callType`.
 - `excludedCommands` — исключённые стандартные команды
 
@@ -524,7 +531,6 @@ allowed-tools:
   "params": {
     "name": "unica.view",
     "arguments": {
-      "cwd": "<workspace>",
       "at": "main:Catalog.Валюты.Form.ФормаЭлемента"
     }
   }
@@ -536,13 +542,12 @@ allowed-tools:
 - Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
 контракт каждой — `argsSchema`, `execution`, `previewRequired`,
 `dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
-при `implemented: true` используй опубликованную `argsSchema`; при
-`support.state: limited` разрешено только подмножество `support.supportedArgs`.
-При `support.state: unavailable` остановись; не выдумывай аргументов при
-`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
-затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
-вызовами. Не обходи контракт прямым runner-ом.
+используй опубликованную `argsSchema`; при `support.state: limited`
+разрешено только подмножество `support.supportedArgs`. Недоступной операции
+в словаре нет. Для плановой операции сначала проверь результат
+`dryRun: true`, затем исполняй запрос с `dryRun: false`. Preview
+не фиксирует входы между вызовами. Не обходи контракт прямым runner-ом.
 
 - **Тип главного реквизита**: `ExternalDataProcessorObject.ИмяОбработки` (не `DataProcessorObject`)
 - **DataPath**: используйте реквизиты формы (`ИмяРеквизита`), а не `Объект.ИмяРеквизита` — у внешних обработок нет реквизитов объекта в метаданных
-- **Ссылочные типы**: `CatalogRef.XXX`, `DocumentRef.XXX` допустимы в XML, но для будущей публикации EPF потребуется база с целевой конфигурацией; runtime-публикацию сначала обнаруживать через `unica.run {}` и использовать `make` только при `implemented: true`, не угадывая аргументы при `argsSchema: null`
+- **Ссылочные типы**: `CatalogRef.XXX`, `DocumentRef.XXX` допустимы в XML, но для будущей публикации EPF потребуется база с целевой конфигурацией; runtime-публикацию сначала обнаруживать через `unica.run {}` и использовать `make` только когда он есть в словаре, с аргументами из его `argsSchema`

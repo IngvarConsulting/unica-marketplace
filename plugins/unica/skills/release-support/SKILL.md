@@ -11,12 +11,11 @@ description: "Поддержка поставки и обновлений 1С. �
 - Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
 контракт каждой — `argsSchema`, `execution`, `previewRequired`,
 `dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
-при `implemented: true` используй опубликованную `argsSchema`; при
-`support.state: limited` разрешено только подмножество `support.supportedArgs`.
-При `support.state: unavailable` остановись; не выдумывай аргументов при
-`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
-затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
-вызовами. Не обходи контракт прямым runner-ом.
+используй опубликованную `argsSchema`; при `support.state: limited`
+разрешено только подмножество `support.supportedArgs`. Недоступной операции
+в словаре нет. Для плановой операции сначала проверь результат
+`dryRun: true`, затем исполняй запрос с `dryRun: false`. Preview
+не фиксирует входы между вызовами. Не обходи контракт прямым runner-ом.
 - Use `unica.view` on the role node, `unica.view` on the schema node, or form/meta tools when release risk is localized to rights, reports, forms, or metadata objects.
 - Do not call internal package, metadata, analyzer, standards, or runtime adapters directly. They are hidden behind MCP `unica`.
 
@@ -37,6 +36,13 @@ Support-state checks come from `unica.view` on the configuration root (`support`
 3. List compatibility risks: metadata rename/delete, changed roles, changed integration contracts, data migrations, scheduled jobs, query behavior, BSP hooks, and extension interceptors.
 4. Run `unica.check` on the changed modules; build and update go through `unica.run` (`make`, or source `push`; loading a `.cf`/`.cfe` file is unavailable, #1246) with a `dryRun: true` preview followed by explicit `dryRun: false`; test runs are outside the v0.13 surface, so record them as unverified unless separate evidence is supplied.
 5. Produce a release readiness note: blocking findings, migration steps, rollback boundary, manual checks, and Unica MCP contract gaps.
+
+Для клиентского шага обновления `launch` принимает `applicationParameter` —
+точную строку `/C`, в том числе пустую. Для ограниченного ожидания используй
+`clientMode: "thin"`, `waitForExit: true` и положительный `waitTimeoutMs`;
+сочетание с `execute` допустимо, при ожидании файл должен быть `.epf`.
+Проверь код выхода и прикладной результат: завершение клиента не подтверждает
+успех обновления БСП. Подробности — [runtime](../../references/use-cases/workspace-runtime.md).
 
 ## Installed extensions
 

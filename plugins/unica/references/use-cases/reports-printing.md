@@ -5,22 +5,21 @@
 Use this when the user needs reports, DCS/DCS schemas, tabular document layouts,
 print forms, BSP external processing registration, or EPF/ERF build/export.
 
-`make` in `unica.run` takes `.cf`/`.cfe` only, and `upload` is unavailable.
-External processors and reports live in external source-sets. Target `push`
-and `pull` source transfer is unavailable for them, and their publication as `.epf`/`.erf`
-is outside the v0.13 surface.
+External processors and reports live in external source-sets. `make` in
+`unica.run` builds one `.epf`/`.erf` from a singleton external source-set when
+the main configuration source-set is declared; `upload` is unavailable, and
+target `push`/`pull` source transfer is unavailable for external sets.
 
 ## Primary path
 
 Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
 контракт каждой — `argsSchema`, `execution`, `previewRequired`,
 `dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
-при `implemented: true` используй опубликованную `argsSchema`; при
-`support.state: limited` разрешено только подмножество `support.supportedArgs`.
-При `support.state: unavailable` остановись; не выдумывай аргументов при
-`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
-затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
-вызовами. Не обходи контракт прямым runner-ом.
+используй опубликованную `argsSchema`; при `support.state: limited`
+разрешено только подмножество `support.supportedArgs`. Недоступной операции
+в словаре нет. Для плановой операции сначала проверь результат
+`dryRun: true`, затем исполняй запрос с `dryRun: false`. Preview
+не фиксирует входы между вызовами. Не обходи контракт прямым runner-ом.
 
 - Read schemas and layouts through `unica.view`, change them through
   `unica.apply`, and validate the template through `unica.check`.
@@ -32,15 +31,16 @@ Runtime идёт через `unica.run`: вызов без `op` отдаёт с�
 
   This is a `unica.view` argument example over the acceptance fixture;
   choose actual source-set, template and dataset names from your workspace.
-  `implemented:false` means a registered operation has no implementation.
-  An unknown operation is refused. Use the returned `props.contract.argsSchema`,
+  The dictionary lists only operations that work at the node; an unlisted
+  or unknown operation is refused. Use the returned `props.contract.argsSchema`,
   target, effects and example arguments; this reference does not duplicate
   the operation catalogue.
 - Add or remove metadata templates using the owning node's `can` dictionary.
 - `epf-init` and `erf-init` for make-ready artifact scaffolds inside external
-  source-sets, with an optional managed form. These skills call
-  `unica.epf.init` or `unica.erf.init`
-  and do not synthesize `Configuration.xml` or a platform-generated CDFI sidecar.
+  source-sets, with an optional managed form. No canonical operation creates
+  an external descriptor; this is a contract gap. The skills give the file
+  formats to write, then admit the source-set with `unica.check {}`. They do
+  not synthesize `Configuration.xml` or a platform-generated CDFI sidecar.
 - `epf-bsp-init` and `epf-bsp-add-command` for BSP registration code.
 - For source transfer, inspect the `unica.run` dictionary of the current
   source-set. External processor/report transfer and `.epf`/`.erf`
