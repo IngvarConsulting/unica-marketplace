@@ -43,6 +43,27 @@ until its source-set problem is fixed. In particular, `sourceSet.path: .` is an
 error: explain how to move the export into a strict child such as `src/` and
 update `v8project.yaml` safely.
 
+### Headless pull
+
+For Designer XML export without the Designer agent, set
+`providers: {pull: ibcmd}` in `v8project.local.yaml`; the local platform must
+provide a verifiable `ibcmd` from 1C 8.3.27. The same provider can export the
+main configuration or an installed extension.
+
+Read the `unica.run {}` dictionary first. For an extension source set named
+`Sales` containing the installed extension `Sales`, preview:
+
+```json
+{"op":"pull","args":{"sourceSet":"Sales","extension":"Sales","force":true},"dryRun":true}
+```
+
+The source-set name must match `extension`; its directory may have a different
+name. Check the returned target and replacement plan, then repeat with
+`dryRun:false`. For the main configuration, use its source-set name and omit
+`extension`. `force:true` replaces the entire target, including local and
+untracked files; this interface does not provide incremental `--sync` export.
+A preview does not write sources or read the current extension contents.
+
 ### Work the call must not wait for
 
 A long operation does not need a separate call: any `unica.run` invocation
@@ -53,12 +74,13 @@ Tasks uses `tasks/get` and `tasks/cancel` instead. The terminal result never
 publishes raw stdout. The Task state is the authority for the outcome; a
 `working` state alone does not prove that the runner is making progress.
 
-If any call fails with `data.code: submit_response_lost`, the daemon may
-already run it: wait for the `taskId` the error names (its `next`, also
-repeated in the message) instead of calling again; a client with native
-Tasks receives that Task directly. `task_not_found` for that id means the
-daemon no longer knows the call, for example after a restart: inspect the
-actual state before repeating `apply` or `run`. `submit_not_delivered` means
+If a call's answer is lost, Unica answers with the ordinary Task receipt of
+the Task the call may continue as (`data.task.taskId`, status `queued`,
+`next` to `unica.task.result`); a client with native Tasks receives that
+Task directly. Wait for it instead of calling again. `task_not_found` for
+that id means the daemon never took the call or no longer knows it, for
+example after a restart: inspect the actual state before repeating `apply`
+or `run`. `submit_not_delivered` means
 the call never reached the daemon and will not run; repeat it as is.
 `provider_limit_exceeded` whose message names the daemon request limit means
 the call is larger than the daemon accepts: it was not sent and will not run,
