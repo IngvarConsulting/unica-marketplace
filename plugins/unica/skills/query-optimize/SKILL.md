@@ -11,12 +11,11 @@ description: "Оптимизация запросов 1С и СКД. Испол�
 - Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
 контракт каждой — `argsSchema`, `execution`, `previewRequired`,
 `dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
-при `implemented: true` используй опубликованную `argsSchema`; при
-`support.state: limited` разрешено только подмножество `support.supportedArgs`.
-При `support.state: unavailable` остановись; не выдумывай аргументов при
-`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
-затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
-вызовами. Не обходи контракт прямым runner-ом.
+используй опубликованную `argsSchema`; при `support.state: limited`
+разрешено только подмножество `support.supportedArgs`. Недоступной операции
+в словаре нет. Для плановой операции сначала проверь результат
+`dryRun: true`, затем исполняй запрос с `dryRun: false`. Preview
+не фиксирует входы между вызовами. Не обходи контракт прямым runner-ом.
 - Use `unica.view {}` if the source-set or format is unclear.
 - Do not call internal analyzer, standards, runtime, or package adapters directly. They are hidden behind MCP `unica`.
 
@@ -24,7 +23,7 @@ description: "Оптимизация запросов 1С и СКД. Испол�
 
 1. Extract the exact query text with `unica.search` or `unica.view` on the schema node.
 2. Inspect the execution context with `unica.view` on the module node (its `Method` branch lists the methods): module, exported entry point, region, temporary table chain, and caller loop.
-3. Find callers with `unica.search` by the method name when the query is inside reusable API, background jobs, event handlers, or suspected query-in-loop flow; a call graph is not on the v0.13 surface.
+3. Find callers with `unica.view` at `<method>.Caller` when the query is inside reusable API, background jobs, event handlers, or suspected query-in-loop flow; `unica.search` by the method name adds literal mentions.
 4. Run `unica.check {at}` on the containing module when analyzer diagnostics can reveal unreachable code, unresolved calls, or type issues around the query. Do not pass a DCS `TemplatePath` as a diagnostic target; locate the BSL module that executes the query.
 5. Inspect `unica.view` on the object node for both related modules, subscriptions, roles, functional options and the local registers, dimensions, resources, реквизиты, tabular sections, and indexes implied by the platform object type.
 6. Inspect DCS with `unica.view` on the schema node when the query lives in a data composition schema.
@@ -87,7 +86,6 @@ description: "Оптимизация запросов 1С и СКД. Испол�
   "params": {
     "name": "unica.view",
     "arguments": {
-      "cwd": "<workspace>",
       "at": "main:Report.Продажи.Template.ОсновнаяСхемаКомпоновкиДанных.DataSet"
     }
   }

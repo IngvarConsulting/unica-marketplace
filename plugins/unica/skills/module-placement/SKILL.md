@@ -11,12 +11,11 @@ description: "Размещение кода 1С по модулям. Испол�
 - Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
 контракт каждой — `argsSchema`, `execution`, `previewRequired`,
 `dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
-при `implemented: true` используй опубликованную `argsSchema`; при
-`support.state: limited` разрешено только подмножество `support.supportedArgs`.
-При `support.state: unavailable` остановись; не выдумывай аргументов при
-`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
-затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
-вызовами. Не обходи контракт прямым runner-ом.
+используй опубликованную `argsSchema`; при `support.state: limited`
+разрешено только подмножество `support.supportedArgs`. Недоступной операции
+в словаре нет. Для плановой операции сначала проверь результат
+`dryRun: true`, затем исполняй запрос с `dryRun: false`. Preview
+не фиксирует входы между вызовами. Не обходи контракт прямым runner-ом.
 - Use `unica.docs` with `source: "development-standard"` for the standards about module hosting: 455, 469, 474, 486, 556, 679, 697, 724, 746, and diagnostics АПК:73, АПК:80, АПК:85, АПК:90, АПК:125, АПК:363, АПК:435-439, АПК:444, АПК:1245. These are standards, not evidence of runtime behavior; confirm the wording before citing one.
 - Use `unica.view` on the role node when the module enters privileged mode or carries the privileged flag.
 - Do not call internal analyzer, runtime, standards, or package adapters directly. They are hidden behind MCP `unica`.
@@ -52,7 +51,7 @@ Then pick exactly one of the four common module contexts (std469) and name it by
 
 1. Answer the three std486 questions before opening any module. The answer, not convenience, picks the host.
 2. Map the neighbourhood with `unica.view {}` and `unica.view` on the subsystem node: an existing module for the same subsystem or purpose is a reason to extend rather than add.
-3. Find the callers with `unica.search` by the method name before moving anything (a call graph is not on the v0.13 surface) — a move that changes the module context changes what the callers may pass.
+3. Find the callers with `unica.view` at `<method>.Caller` before moving anything (`unica.search` by the method name adds literal mentions) — a move that changes the module context changes what the callers may pass.
 4. When adding a common module, choose the context row first, then `unica.apply` with the matching flags and postfix.
 5. Set `Вызов сервера` only for API genuinely called from the client, and state what it exposes.
 6. Apply code with `unica.apply`, one verifiable step at a time.

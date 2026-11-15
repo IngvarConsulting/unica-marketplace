@@ -11,12 +11,11 @@ description: "Обработчики событий объекта 1С. Испо
 - Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
 контракт каждой — `argsSchema`, `execution`, `previewRequired`,
 `dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
-при `implemented: true` используй опубликованную `argsSchema`; при
-`support.state: limited` разрешено только подмножество `support.supportedArgs`.
-При `support.state: unavailable` остановись; не выдумывай аргументов при
-`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
-затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
-вызовами. Не обходи контракт прямым runner-ом.
+используй опубликованную `argsSchema`; при `support.state: limited`
+разрешено только подмножество `support.supportedArgs`. Недоступной операции
+в словаре нет. Для плановой операции сначала проверь результат
+`dryRun: true`, затем исполняй запрос с `dryRun: false`. Preview
+не фиксирует входы между вызовами. Не обходи контракт прямым runner-ом.
 - Use `unica.docs` with `source: "development-standard"` for the standards about handlers: 396, 455, 463, 464, 465, 466, 686, 752, 773, and diagnostics АПК:75, АПК:144, АПК:1340, BSLLS:DataExchangeLoading, BSLLS:UsingCancelParameter, BSLLS:MissingEventSubscriptionHandler. These are standards, not evidence of runtime behavior; confirm the wording before citing one.
 - Do not call internal analyzer, runtime, standards, or package adapters directly. They are hidden behind MCP `unica`.
 
@@ -39,11 +38,38 @@ Pick the handler by what the logic needs to see, not by what is convenient:
 
 Two rules cut across all of them: `ОбменДанными.Загрузка` is checked first in `ПередЗаписью`, `ПриЗаписи`, and `ПередУдалением` (std773), and `Отказ` is only ever assigned `Истина` (std686).
 
+## Data Visibility During A Document Write
+
+For a standard document write in 8.3.27, distinguish the form representation,
+the object being written and the database state of the same session. A form can
+be absent; trace its conversion to the object instead of assuming they match.
+
+| Handler | Form data | Object in memory | Database read in the same session | Platform write transaction |
+| --- | --- | --- | --- | --- |
+| Form `ПередЗаписьюНаСервере` | Separate representation | `ТекущийОбъект` is being prepared for writing | State before this write | Not started yet |
+| Object `ПередЗаписью` | Separate representation | Pending values for this write | State before this write, including any earlier writes in the current transaction | Already started |
+| Object `ПриЗаписи` | Separate representation | Object after writing; later memory changes can differ | Values actually written in the current transaction | Active, not yet completed |
+| Form `ПриЗаписиНаСервере` | Separate representation | `ТекущийОбъект` after object `ПриЗаписи` | Values actually written in the current transaction | Still active |
+
+Before diagnosing a mismatch, read the relevant class/event pages through
+`unica.docs` with `source: "platform-help"`; verify `applicableVersion` and open
+the returned `documentId`, not just its search snippet. A development standard
+is not evidence of event timing. A conclusion about ordering or freshness that
+has no supporting code, platform page or runtime observation remains a hypothesis
+and must be presented as one. Compare the reference, query parameters, object
+value and query result at the same point before proposing a change.
+
+For the posting contrast, memory changes after writing, movement sets and other
+sessions, follow [the worked example](../../references/platform/object-events.md#diagnosing-a-document-query-mismatch)
+and [transaction ownership](../../references/platform/transactions-locks.md).
+Other object classes, direct handler calls and caller-owned transactions need
+their own context checked; the table is not a universal event diagram.
+
 ## Workflow
 
 1. Name what the logic needs to observe — fill source, old values, written state, or nothing yet — and let that pick the handler.
 2. Locate what already runs: read the object module with `unica.view` on the module node (its `Method` branch lists the methods), and find subscriptions on the same events with `unica.search` and `unica.view` on the object node. A subscription is invisible from the object module it affects.
-3. Search the shared procedures the handler calls with `unica.search` to see what else the change reaches; a call graph is not on the v0.13 surface.
+3. Read the shared procedures the handler calls with `unica.view` at `<handler>.Callee`, and their callers at `<method>.Caller`, to see what else the change reaches.
 4. Write the guard before the logic: `Если ОбменДанными.Загрузка Тогда Возврат; КонецЕсли;` — in the subscription handler too, not only in the object module.
 5. Express conditional requiredness by collecting `НепроверяемыеРеквизиты` and removing them from `ПроверяемыеРеквизиты` at the end, never by adding to `ПроверяемыеРеквизиты`.
 6. Apply the change with `unica.apply`, one verifiable step at a time.

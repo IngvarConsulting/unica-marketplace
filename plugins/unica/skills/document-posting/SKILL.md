@@ -11,12 +11,11 @@ description: "Проведение документов 1С. Используй 
 - Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
 контракт каждой — `argsSchema`, `execution`, `previewRequired`,
 `dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
-при `implemented: true` используй опубликованную `argsSchema`; при
-`support.state: limited` разрешено только подмножество `support.supportedArgs`.
-При `support.state: unavailable` остановись; не выдумывай аргументов при
-`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
-затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
-вызовами. Не обходи контракт прямым runner-ом.
+используй опубликованную `argsSchema`; при `support.state: limited`
+разрешено только подмножество `support.supportedArgs`. Недоступной операции
+в словаре нет. Для плановой операции сначала проверь результат
+`dryRun: true`, затем исполняй запрос с `dryRun: false`. Preview
+не фиксирует входы между вызовами. Не обходи контракт прямым runner-ом.
 - Use `unica.docs` with `source: "development-standard"` for the standards about posting: 450, 477, 603, 661, 663, 664, and diagnostics АПК:105, АПК:123, АПК:226, АПК:227. These are standards, not evidence of runtime behavior; confirm the wording before citing one.
 - Use `unica.view` on the role node when posting runs in privileged mode or depends on rights or RLS on the target registers.
 - Do not call internal analyzer, runtime, standards, or package adapters directly. They are hidden behind MCP `unica`.
@@ -38,11 +37,38 @@ Posting answers four separate questions, and mixing them is the usual defect:
 
 By default the handler writes nothing itself: the platform writes the record sets implicitly when it returns, and an explicit `Записать()` inside the handler is `АПК:105` (std450). Balance control is the sanctioned exception, and it has a prescribed order.
 
+## What A Query Can Observe
+
+Use the actual document reference and distinguish these states in a standard
+8.3.27 posting call. Form data is a separate representation; it is not proof of
+the object or database value at the query point.
+
+| Point | Form data | Document object | Database query in the same session | Write transaction |
+| --- | --- | --- | --- | --- |
+| Object `ПередЗаписью` | Separate representation | Pending values | State before this write | Active |
+| Entry to `ОбработкаПроведения` | Separate representation | Values passed into posting | The document has already been written in this transaction | Active |
+| A field is changed in memory inside `ОбработкаПроведения` | Separate representation | Can be newer than the last database write | Reads the saved state unless another write occurred | Still active |
+
+Confirm the class/event and `РежимЗаписиДокумента.Проведение` through
+`unica.docs` with `source: "platform-help"`, open the returned pages and check
+`applicableVersion`. The posting-mode page establishes that document changes are
+saved before posting in the same transaction. A statement about ordering or data
+freshness without code, official help or runtime evidence is a hypothesis; label
+it and propose a concrete comparison rather than explaining a mismatch as a
+one-write delay.
+
+A saved document is not a committed transaction or proof of visibility to another
+session. A populated `Движения` set is also not proof that its records are already
+in the database: inspect its write flags and the actual write point. Keep
+transaction control and locks with [their owning reference](../../references/platform/transactions-locks.md).
+Use [the diagnostic example](../../references/platform/object-events.md#diagnosing-a-document-query-mismatch)
+to compare the form, object, query target and changes inside the handler.
+
 ## Workflow
 
 1. Name the accounting subjects the document affects before touching code. Each subject is a register, not a column on an existing one.
 2. Inspect the document with `unica.view` on the object node: declared registers, `Posting`, `RealTimePosting`, `RegisterRecordsDeletion`, `RegisterRecordsWritingOnPost`, and privileged-mode flags. Inspect every target register the same way for dimensions, resources, and periodicity.
-3. Read the current handlers with `unica.view` on the module node (its `Method` branch lists the methods) before reading full modules; find the shared procedures posting calls with `unica.search` (a call graph is not on the v0.13 surface).
+3. Read the current handlers with `unica.view` on the module node (its `Method` branch lists the methods) before reading full modules; find the shared procedures posting calls with `unica.view` at `<method>.Callee` (callers at `<method>.Caller`).
 4. Decide the branch split: what the real-time branch checks, what the regular branch skips, and what both always write.
 5. Decide which balances need control at all. Skip control where it cannot fail: a receipt document only increases balances, and re-posting cannot write off more than the first posting already did.
 6. Fix the write order for the std661 shape: uncontrolled registers early with `БлокироватьДляИзменения = Ложь` in a stable register order, controlled registers last with `БлокироватьДляИзменения = Истина`, negative-balance queries after that write. Keep the same order in every handler that shares those registers.

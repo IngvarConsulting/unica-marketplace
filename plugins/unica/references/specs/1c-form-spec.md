@@ -184,7 +184,7 @@ CommonForms регистрируются в `Configuration.xml`:
 </Form>
 ```
 
-Все 17 namespace-деклараций **идентичны** во всех формах конфигурации. В активном профиле атрибут `version` равен `"2.20"`.
+Все 17 namespace-деклараций **идентичны** во всех формах конфигурации формата 2.20. Атрибут `version` равен формату набора. В форматах 2.21 (8.5.1) и 2.22 (8.5.4) объявлений 18: между `lf` и `style` добавлено `xmlns:pal="http://v8.1c.ru/8.1/data/ui/colors/palette"`.
 
 ### Назначение namespace-префиксов
 
@@ -198,6 +198,7 @@ CommonForms регистрируются в `Configuration.xml`:
 | `style` | `http://v8.1c.ru/8.1/data/ui/style` | Стили оформления (FormBackColor и т.д.) |
 | `web` | `http://v8.1c.ru/8.1/data/ui/colors/web` | Web-цвета |
 | `win` | `http://v8.1c.ru/8.1/data/ui/colors/windows` | Windows-цвета |
+| `pal` | `http://v8.1c.ru/8.1/data/ui/colors/palette` | Палитра цветов; объявлено с формата 2.21 |
 | `sys` | `http://v8.1c.ru/8.1/data/ui/fonts/system` | Системные шрифты |
 | `xs` | `http://www.w3.org/2001/XMLSchema` | XML Schema |
 | `xsi` | `http://www.w3.org/2001/XMLSchema-instance` | XML Schema Instance |
@@ -214,7 +215,7 @@ CommonForms регистрируются в `Configuration.xml`:
 
 ```
 <Form>
-  ┌─ Свойства формы (необязательные, в произвольном порядке)
+  ┌─ Свойства формы (необязательные, в порядке платформы, см. раздел 3)
   ├─ <CommandSet>           — исключённые стандартные команды
   ├─ <AutoCommandBar>       — главная командная панель (обязательный, id="-1")
   ├─ <Events>               — обработчики событий формы
@@ -229,7 +230,19 @@ CommonForms регистрируются в `Configuration.xml`:
 
 ## 3. Свойства формы
 
-Прямые дочерние элементы `<Form>` (все необязательные, указываются до `<CommandSet>`/`<AutoCommandBar>`):
+Прямые дочерние элементы `<Form>`, все необязательные. Платформа 8.3.27 пишет их
+в фиксированном порядке: `Title`, `Width`, `Height`, `WindowOpeningMode`,
+`EnterKeyBehavior`, `AutoSaveDataInSettings`, `SaveDataInSettings`,
+`SaveWindowSettings`, `AutoTitle`, `AutoURL`, `Group`, `ChildrenAlign`,
+`HorizontalSpacing`, `VerticalSpacing`, `HorizontalAlign`, `VerticalAlign`,
+`ChildItemsWidth`, `AutoFillCheck`, `Customizable`, `Enabled`, `ReadOnly`,
+`CommandBarLocation`, `VerticalScroll`, `ScalingMode`, `Scale`,
+`ConversationsRepresentation`, `MobileDeviceCommandBarContent`, `CommandSet`,
+`ShowTitle`, `ShowCloseButton`, `CollapseItemsByImportanceVariant`, затем
+свойства справочника, документа и отчёта и `AutoCommandBar`. Свойство со
+значением по умолчанию (`Width` 0, `Scale` 100, `AutoTitle` true и т. п.)
+платформа не выгружает. Unica пишет свойства корня операцией `props.set`
+на адресе формы.
 
 ### Общие свойства (все типы форм)
 
@@ -276,10 +289,12 @@ CommonForms регистрируются в `Configuration.xml`:
 |---------|----------|----------|
 | `<ReportResult>` | string | Имя реквизита результата (`Результат`) |
 | `<DetailsData>` | string | Имя реквизита расшифровки (`ДанныеРасшифровки`) |
-| `<ReportFormType>` | `Main`, `Settings`, `Choice` | Тип формы отчёта |
-| `<AutoShowState>` | `Auto`, `Show`, `Hide` | Автоотображение состояния |
+| `<ReportFormType>` | `Main`, `Settings`, `Variant` | Тип формы отчёта |
+| `<AutoShowState>` | `Auto`, `DontShow`, `ShowOnComposition` | Автоотображение состояния |
 | `<ReportResultViewMode>` | `Auto`, `Table`, `Spreadsheet` | Режим отображения результата |
 | `<ViewModeApplicationOnSetReportResult>` | `Auto`, `Always`, `Never` | Применение режима |
+
+Какие из этих свойств платформа дописывает в форму внешнего отчёта и в каком порядке, см. [спецификацию внешнего отчёта](1c-erf-spec.md), раздел 6.2.
 
 ### Мобильные свойства
 
@@ -375,7 +390,10 @@ CommonForms регистрируются в `Configuration.xml`:
 | `FillCheckProcessingAtServer` | Сервер | Проверка заполнения |
 | `OnLoadUserSettingsAtServer` | Сервер | Загрузка пользовательских настроек (отчёты) |
 | `OnSaveUserSettingsAtServer` | Сервер | Сохранение пользовательских настроек (отчёты) |
+| `OnLoadVariantAtServer` | Сервер | Загрузка варианта (отчёты) |
 | `URLProcessing` | Клиент | Обработка навигационных ссылок |
+
+Выгрузка 8.3.27.2074 ставит `OnLoadVariantAtServer` перед `OnCreateAtServer`, даже если во входе он шёл после; полный порядок событий не установлен.
 
 ### Типичные комбинации по типам форм
 
@@ -614,6 +632,7 @@ ChildItems
   <HorizontalLines>true | false</HorizontalLines>
   <VerticalLines>true | false</VerticalLines>
   <UseAlternationRowColor>true | false</UseAlternationRowColor>
+  <!-- в форматах 2.21 и 2.22 вместо него UseAlternationRowColorBWA -->
 
   <!-- Редактирование -->
   <SelectionMode>SingleRow | MultiRow</SelectionMode>
@@ -647,6 +666,9 @@ ChildItems
   <CommandSet>
     <ExcludedCommand>...</ExcludedCommand>
   </CommandSet>
+
+  <!-- Есть у таблицы по ТЧ, ValueTable и набору записей; нет у дерева, динамического списка, списка значений и настроек компоновщика -->
+  <RowFilter xsi:nil="true"/>
 
   <!-- Служебные элементы -->
   <ContextMenu name="..." id="..."/>
@@ -723,7 +745,7 @@ ChildItems
 
 ```xml
 <ButtonGroup name="..." id="...">
-  <Representation>Auto | Compact | Separate</Representation>
+  <Representation>Auto | Usual | Compact</Representation>
   <CommandSource>Form | FormCommandPanelGlobalCommands | CommandPanel</CommandSource>
 
   <ChildItems>
@@ -896,6 +918,32 @@ ChildItems
   </Attribute>
 </Attributes>
 ```
+
+### Условное оформление формы при чтении
+
+`Attributes/ConditionalAppearance` — сосед реквизитов `Attribute`, а не
+постоянные свойства элементов и не настройки динамического списка.
+В `unica.view` он доступен через объявленную ветвь формы `Setting`:
+`<форма>.Setting.ConditionalAppearance.Item.Rule1`. Позиции `RuleN` сохраняют
+порядок исходного XML в прочитанном снимке; коллекция поддерживает `limit` и
+`cursor`. Владелец настройки сообщает `sourcePath` и `ruleCount`.
+
+Свойства `selection`, `filter` и `appearance` правила — вложенный JSON
+типизированных фактов; явно заданный `use` — boolean, подпись правила
+`presentation` — строка или `{"kind":"localizedString","values":[...]}`.
+Читатель различает сравнения и группы условий, `Field`, `Color` (включая
+`auto`), `Font` (атрибуты `kind`, `ref`, `faceName`, `height`, `scale`
+и признаки начертания), `HorizontalAlign`, `DesignTimeValue`,
+`StandardBeginningDate`, `LocalStringType`, `xs:string`, `xs:boolean`,
+`xs:decimal`; локализация сохраняет языки и порядок, decimal — точную строку.
+Сравнение со списком повторяет `right` для каждого значения, и `right`
+становится массивом; без `right` правое значение не задано.
+XML-типы определяются по URI, независимо от префикса.
+Неподдержанная структура, повреждённое значение или превышение предела
+компактного факта (2048 байт UTF-8, 256 элементов, глубина 32) исключают только
+этот факт с пояснением в `limits`. Реквизиты формы остаются доступны.
+Отсутствие контейнера не создаёт настройки, явный пустой контейнер даёт
+`ruleCount=0`. Чтение не вычисляет оформление во время исполнения.
 
 ### 9.1. Система типов
 
@@ -1097,23 +1145,28 @@ ChildItems
   <Command name="ИмяКоманды" id="N">
     <Title>...</Title>                    <!-- multilang -->
     <ToolTip>...</ToolTip>                <!-- multilang -->
+    <Use>...</Use>                        <!-- xr:AdjustableBoolean -->
+    <Shortcut>Ctrl+S</Shortcut>           <!-- клавиатурное сочетание -->
     <Picture>
       <xr:Ref>StdPicture.Refresh</xr:Ref>
       <xr:LoadTransparent>true</xr:LoadTransparent>
     </Picture>
     <Action>ИмяОбработчика</Action>       <!-- имя процедуры обработки -->
-    <Shortcut>Ctrl+S</Shortcut>           <!-- клавиатурное сочетание -->
-    <Representation>Auto | Picture | Text | PictureAndText | TextPicture | None | Compact</Representation>
-    <CurrentRowUse>DontUse | Use | Auto</CurrentRowUse>
-    <ModifiesData>true | false</ModifiesData>
+    <FunctionalOptions>...</FunctionalOptions>
+    <Representation>Auto | Text | Picture | TextPicture</Representation>
     <ModifiesSavedData>true | false</ModifiesSavedData>
-    <ChangedStateSavedData>true | false</ChangedStateSavedData>
-    <Use>Auto</Use>
-    <Mark>true | false</Mark>
-    <ParameterUse>...</ParameterUse>
+    <CurrentRowUse>DontUse | Use | Auto</CurrentRowUse>
+    <AssociatedTableElementId xsi:type="xs:string">ИмяТаблицы</AssociatedTableElementId>
   </Command>
 </Commands>
 ```
+
+Состав и порядок свойств — тип `FormCommand` XDTO платформы 8.3.27.
+`Representation` команды имеет тип `DefaultRepresentation`: `Auto`, `Text`,
+`Picture`, `TextPicture` (по умолчанию `Auto`, в выгрузке не пишется).
+Значения кнопки (`PictureAndText`) и других элементов (`None`, `Compact`)
+команда не принимает: загрузка такой `Form.xml` прерывается исключением XDTO
+«Несоответствие свойства и элемента данных XDTO: Свойство: 'Representation'».
 
 ---
 

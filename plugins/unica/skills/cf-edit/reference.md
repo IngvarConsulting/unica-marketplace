@@ -23,7 +23,7 @@
 | `SynchronousPlatformExtensionAndAddInCallUseMode` | `DontUse`, `Use`, `UseWithWarnings` |
 | `InterfaceCompatibilityMode` | `Version8_2`, `Version8_2EnableTaxi`, `Taxi`, `TaxiEnableVersion8_2`, `TaxiEnableVersion8_5`, `Version8_5EnableTaxi`, `Version8_5` |
 | `DatabaseTablespacesUseMode` | `DontUse`, `Use` |
-| `MainClientApplicationWindowMode` | `Normal`, `Fullscreen`, `Kiosk` |
+| `MainClientApplicationWindowMode` | `Normal`, `Workplace`, `EmbeddedWorkplace`, `FullscreenWorkplace`, `Kiosk` |
 
 ### Ref
 `DefaultLanguage` — значение вида `Language.Русский`
@@ -35,7 +35,7 @@
 
 Формат: `Type.Name` — XML-тип и имя объекта через точку.
 
-**Важно про `add-childObject`**: регистрирует в `<ChildObjects>` объект, **файл которого уже существует на диске**. Если файла нет — exit 1. Для создания нового объекта используй профильный навык — `/unica:meta-add` (Catalog, Document, Enum, Report, регистры и т.д.), `/unica:role-compile` (Role), `/unica:subsystem-compile` (Subsystem). Они создают файл И регистрируют его за один вызов.
+**Важно про `add-childObject`**: регистрирует в `<ChildObjects>` объект, **файл которого уже существует на диске**. Если файла нет — exit 1. Для создания нового объекта используй профильный навык — `/unica:meta-add` (Catalog, Document, Enum, Report, регистры и т.д.), `/unica:role-edit` (Role, операция `role.create`), `/unica:subsystem-edit` (Subsystem, операция `subsystem.create`). Они создают файл И регистрируют его за один вызов.
 
 Batch: `"Catalog.Товары ;; Document.Заказ ;; Enum.ВидыОплат"`
 

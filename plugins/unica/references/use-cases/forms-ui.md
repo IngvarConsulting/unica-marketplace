@@ -17,9 +17,10 @@ with `at` and `ops` to obtain a non-writing plan. Execute it by passing only
 
 - `unica.apply` with `form.add` scaffolds forms from the owner node and `items`:
   metadata XML, `Form.xml`, `Module.bsl` and the owner's `<Form>` registration.
-- `unica.apply` with `form.create` scaffolds one form from its own form address
-  and `values`; both reach the same staging, so `Form.xml` is written either way.
-- `unica.form.edit` applies point changes to an existing form.
+  A form address does not exist before its form: there is no form-address
+  creation operation.
+- `unica.apply` with the form's item, attribute and command operations on the
+  form node applies point changes to an existing form.
 - `unica.view` on the form node gives compact structure before editing.
 - `unica.check` on the form node (validator `form`) checks XML and structural constraints.
 - `unica.apply` with `form.remove` removes form metadata and files.

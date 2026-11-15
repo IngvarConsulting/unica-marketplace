@@ -30,7 +30,7 @@ allowed-tools:
 {
   "jsonrpc": "2.0",
   "method": "tools/call",
-  "params": { "name": "unica.view", "arguments": { "cwd": "<workspace>" } }
+  "params": { "name": "unica.view", "arguments": {} }
 }
 ```
 
@@ -44,7 +44,7 @@ allowed-tools:
   "method": "tools/call",
   "params": {
     "name": "unica.view",
-    "arguments": { "cwd": "<workspace>", "at": "ext:Configuration" }
+    "arguments": { "at": "ext:Configuration" }
   }
 }
 ```
@@ -56,10 +56,11 @@ allowed-tools:
 | Префикс имён | `props.properties.namePrefix` |
 | Режим совместимости расширения | `props.properties.extensionCompatibilityMode` |
 | Сколько объектов в расширении | `props.totalObjects` |
-| Состав по видам | `branches` — по ветви на вид с числом объектов |
+| Состав по видам | `branches` — по ветви на каждый вид, в том числе пустой (`count: 0`) |
 
-`props.support.state` у расширения — `extension`: это его собственный статус
-поддержки, а не поддержка объекта конфигурации.
+`props.support.reason` у расширения и его узлов — `extension`: поддержка
+поставщика к расширению не относится, это не «объект конфигурации не на
+поддержке».
 
 Спуск по ветви даёт объекты вида, дальше — их модули и методы, как у обычного
 набора: `ext:Role` → роль, `ext:Module` → модули расширения.
@@ -75,7 +76,7 @@ allowed-tools:
   "method": "tools/call",
   "params": {
     "name": "unica.check",
-    "arguments": { "cwd": "<workspace>", "at": "ext:Configuration" }
+    "arguments": { "at": "ext:Configuration" }
   }
 }
 ```
@@ -96,7 +97,6 @@ allowed-tools:
   "params": {
     "name": "unica.diff",
     "arguments": {
-      "cwd": "<workspace>",
       "left": "main:Catalog.Валюты",
       "right": "ext:Catalog.Валюты"
     }
@@ -126,7 +126,7 @@ allowed-tools:
   "method": "tools/call",
   "params": {
     "name": "unica.search",
-    "arguments": { "cwd": "<workspace>", "query": "&ИзменениеИКонтроль", "scope": "ext:Configuration" }
+    "arguments": { "query": "&ИзменениеИКонтроль", "scope": "ext:Configuration" }
   }
 }
 ```
@@ -137,7 +137,7 @@ allowed-tools:
   "method": "tools/call",
   "params": {
     "name": "unica.search",
-    "arguments": { "cwd": "<workspace>", "query": "&Вместо", "scope": "ext:Configuration" }
+    "arguments": { "query": "&Вместо", "scope": "ext:Configuration" }
   }
 }
 ```

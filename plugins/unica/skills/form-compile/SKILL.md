@@ -13,18 +13,21 @@ allowed-tools:
 ## MCP routing
 
 - Preferred path: use MCP `unica` tool `unica.apply`: форма заводится
-  операцией `form.create`, наполняется `element.add`, `formAttribute.add`,
-  `formCommand.add`, `event.bind`.
+  операцией `form.add` на объекте-владельце, наполняется `item.add`,
+  `attribute.add`, `command.add`, `event.bind`.
 - Не зови внутренние адаптеры напрямую: они спрятаны за MCP `unica`.
 - Сначала вызови `unica.apply` с `at` и `ops`: это план без записи.
   Когда пользователь поручил внести эту правку, вызови `unica.apply` только
   с `executionToken` из `data.executionToken` успешного плана.
-- Словарь операций узла даёт `unica.view {at}` в секции `can`.
+- Словарь операций узла даёт `unica.view {at}` в словаре `can`.
 
 ## Шаг 1 — завести форму
 
-Адрес называет будущую форму: `<набор>:<Вид>.<Имя>.Form.<Форма>`; `values.type`
-задаёт назначение, `values.name` обязано совпасть с именем в адресе.
+Форму создаёт операция владельца: адрес — объект `<набор>:<Вид>.<Имя>`,
+элемент `items` называет новую форму (`name`) и её назначение (`type`).
+Адреса формы, которой ещё нет, назвать нельзя. Снятая `form.create`
+получает отказ `bad_value`, а `next` ведёт к владельцу, где исполнима
+`form.add`.
 
 ```json
 {
@@ -33,9 +36,9 @@ allowed-tools:
   "params": {
     "name": "unica.apply",
     "arguments": {
-      "at": "main:Catalog.Валюты.Form.ФормаЭлемента",
+      "at": "main:Catalog.Валюты",
       "ops": [
-        {"op": "form.create", "args": {"values": {"name": "ФормаЭлемента", "type": "ObjectForm"}}}
+        {"op": "form.add", "args": {"items": [{"name": "ФормаЭлемента", "type": "ObjectForm"}]}}
       ]
     }
   }
@@ -57,13 +60,25 @@ allowed-tools:
     "arguments": {
       "at": "main:Catalog.Валюты.Form.ФормаЭлемента",
       "ops": [
-        {"op": "formAttribute.add", "args": {"items": [{"name": "Объект", "type": "CatalogObject.Валюты", "main": true}]}},
-        {"op": "element.add", "args": {"items": [{"name": "Наименование", "type": "InputField", "path": "Объект.Наименование"}]}}
+        {"op": "props.set", "args": {"values": {"Title": "Валюта", "AutoTitle": false, "Width": 60}}},
+        {"op": "attribute.add", "args": {"items": [{"name": "Объект", "type": "CatalogObject.Валюты", "main": true}]}},
+        {"op": "item.add", "args": {"items": [{"name": "Наименование", "type": "InputField", "path": "Объект.Наименование"}]}}
       ]
     }
   }
 }
 ```
+
+Заголовок, размеры и поведение самой формы пишет `props.set` на адресе
+формы. Ключи — имена, которые `unica.view` формы показывает в
+`props.properties`: `Title`, `AutoTitle`, `Width`, `Height`, `Scale`,
+`WindowOpeningMode` и другие из `….Form.<Форма>.Can.props.set`. Заголовок
+без `AutoTitle: false` платформа показывает вместе с представлением объекта.
+
+Элементы внутрь группы добавляет `item.add` на адресе группы
+(`….Form.ФормаЭлемента.Item.<Группа>`), обработчик события — `event.bind`
+на адресе события (`….Item.<Поле>.Event.OnChange`). Группа, созданная
+в том же вызове, принимает элементы следующей операции с этим `args.at`.
 
 Точечные правки готовой формы держит `form-edit`; DSL ниже описывает, как
 выражать внутреннее описание элементов. На публичной поверхности `items[]`
@@ -94,8 +109,8 @@ allowed-tools:
 }
 ```
 
-- `title` — заголовок формы (multilingual). Можно указать и в `properties`, но лучше на верхнем уровне
-- `properties` — свойства формы: `autoTitle`, `windowOpeningMode`, `commandBarLocation`, `saveDataInSettings`, `width`, `height` и др.
+- `title` — заголовок формы (multilingual). На поверхности его пишет `props.set` формы ключом `Title`
+- `properties` — свойства формы: `autoTitle`, `windowOpeningMode`, `commandBarLocation`, `saveDataInSettings`, `width`, `height` и др. На поверхности их пишет `props.set` формы именами XML: `AutoTitle`, `WindowOpeningMode`, `Width`
 - `events` — обработчики событий формы (ключ: имя события 1С, значение: непустое строковое имя процедуры). Этот формат не поддерживает `callType`.
 - `excludedCommands` — исключённые стандартные команды
 
@@ -486,8 +501,8 @@ allowed-tools:
 
 ## Workflow
 
-1. **Сборка**: `unica.apply` (`form.create`, затем наполнение) генерирует `Form.xml` и регистрирует `<Form>` в составе объекта-владельца, названного адресом.
-2. **Метаданные формы** (`ФормаСписка.xml`) и `Module.bsl` создаёт та же `form.create`; `form.add` регистрирует форму в составе объекта, когда она заводится списком. Существующий `Form.xml` ни одна из них не перезаписывает.
+1. **Сборка**: `unica.apply` (`form.add` на владельце, затем наполнение) генерирует `Form.xml` и регистрирует `<Form>` в составе объекта-владельца, названного адресом.
+2. **Метаданные формы** (`ФормаСписка.xml`) и `Module.bsl` создаёт та же `form.add`. Существующий `Form.xml` она не перезаписывает.
 3. **Проверка**: `unica.check` на узле формы, затем `unica.view` on the form node.
 
 ## Верификация
@@ -516,7 +531,6 @@ allowed-tools:
   "params": {
     "name": "unica.view",
     "arguments": {
-      "cwd": "<workspace>",
       "at": "main:Catalog.Валюты.Form.ФормаЭлемента"
     }
   }
@@ -528,13 +542,12 @@ allowed-tools:
 - Runtime идёт через `unica.run`: вызов без `op` отдаёт словарь операций и
 контракт каждой — `argsSchema`, `execution`, `previewRequired`,
 `dryRunRequired`. Контракт вызова бери оттуда, а не из этого текста;
-при `implemented: true` используй опубликованную `argsSchema`; при
-`support.state: limited` разрешено только подмножество `support.supportedArgs`.
-При `support.state: unavailable` остановись; не выдумывай аргументов при
-`argsSchema: null`. Для плановой операции сначала проверь результат `dryRun: true`,
-затем исполняй запрос с `dryRun: false`. Preview не фиксирует входы между
-вызовами. Не обходи контракт прямым runner-ом.
+используй опубликованную `argsSchema`; при `support.state: limited`
+разрешено только подмножество `support.supportedArgs`. Недоступной операции
+в словаре нет. Для плановой операции сначала проверь результат
+`dryRun: true`, затем исполняй запрос с `dryRun: false`. Preview
+не фиксирует входы между вызовами. Не обходи контракт прямым runner-ом.
 
 - **Тип главного реквизита**: `ExternalDataProcessorObject.ИмяОбработки` (не `DataProcessorObject`)
 - **DataPath**: используйте реквизиты формы (`ИмяРеквизита`), а не `Объект.ИмяРеквизита` — у внешних обработок нет реквизитов объекта в метаданных
-- **Ссылочные типы**: `CatalogRef.XXX`, `DocumentRef.XXX` допустимы в XML, но для будущей публикации EPF потребуется база с целевой конфигурацией; runtime-публикацию сначала обнаруживать через `unica.run {}` и использовать `make` только при `implemented: true`, не угадывая аргументы при `argsSchema: null`
+- **Ссылочные типы**: `CatalogRef.XXX`, `DocumentRef.XXX` допустимы в XML, но для будущей публикации EPF потребуется база с целевой конфигурацией; runtime-публикацию сначала обнаруживать через `unica.run {}` и использовать `make` только когда он есть в словаре, с аргументами из его `argsSchema`

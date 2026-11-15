@@ -193,6 +193,7 @@ Platform-generated CDFI sidecar `ConfigDumpInfo.xml` с корнем
 | `app` | `http://v8.1c.ru/8.2/managed-application/core` | Ядро управляемого приложения (ChoiceParameters) |
 | `xen` | `http://v8.1c.ru/8.3/xcf/enums` | Перечисления формата |
 | `xpr` | `http://v8.1c.ru/8.3/xcf/predef` | Предопределённые типы |
+| `pal` | `http://v8.1c.ru/8.1/data/ui/colors/palette` | Палитра цветов; объявлено с формата 2.21 (§ 26.3) |
 
 ### 2.3. Элемент типа объекта
 
@@ -422,6 +423,13 @@ Platform-generated CDFI sidecar `ConfigDumpInfo.xml` с корнем
 элемент как `incomplete` с предупреждением и не становится разрешённым входом
 мутации.
 
+Тип объекта основной конфигурации в выгрузке расширения записан
+`<v8:TypeId>UUID</v8:TypeId>` (см. [1c-extension-spec.md](1c-extension-spec.md)).
+`unica.view` возвращает его вариантом `{"kind":"typeId","typeId":"<UUID>"}`,
+а весь тип — с `mutationCapability: readOnly`: имени у такого типа нет, во вход
+writer он не передаётся. Правка других свойств элемента его не меняет; явная
+замена `type` записывает новый тип целиком.
+
 **Составной тип (несколько типов):**
 ```xml
 <Type>
@@ -488,11 +496,11 @@ Platform-generated CDFI sidecar `ConfigDumpInfo.xml` с корнем
     <xr:Field>Catalog.Номенклатура.StandardAttribute.Description</xr:Field>
     <xr:Field>Catalog.Номенклатура.StandardAttribute.Code</xr:Field>
 </InputByString>
-<SearchStringModeOnInputByString>Begin</SearchStringModeOnInputByString>  <!-- Begin | Anywhere -->
+<SearchStringModeOnInputByString>Begin</SearchStringModeOnInputByString>  <!-- Begin | AnyPart -->
 <FullTextSearchOnInputByString>Use</FullTextSearchOnInputByString>
-<ChoiceDataGetModeOnInputByString>Directly</ChoiceDataGetModeOnInputByString> <!-- Directly | SlowlyObtainedSet -->
-<CreateOnInput>DontUse</CreateOnInput>                  <!-- Use | DontUse -->
-<ChoiceHistoryOnInput>Auto</ChoiceHistoryOnInput>        <!-- Auto | Use | DontUse -->
+<ChoiceDataGetModeOnInputByString>Directly</ChoiceDataGetModeOnInputByString> <!-- Directly | Background -->
+<CreateOnInput>DontUse</CreateOnInput>                  <!-- Auto | Use | DontUse -->
+<ChoiceHistoryOnInput>Auto</ChoiceHistoryOnInput>        <!-- Auto | DontUse -->
 ```
 
 ### 4.8. Свойства блокировки данных
@@ -892,7 +900,7 @@ XML-элемент: `<Catalog>`. Категория InternalInfo: CatalogObject,
 <CodeLength>11</CodeLength>
 <CodeType>String</CodeType>                          <!-- String | Number -->
 <CodeAllowedLength>Variable</CodeAllowedLength>      <!-- Variable | Fixed -->
-<CodeSeries>WholeCatalog</CodeSeries>                <!-- WholeCatalog | WithinOwnerSubordination | WithinParent -->
+<CodeSeries>WholeCatalog</CodeSeries>                <!-- WholeCatalog | WithinOwnerSubordination | WithinSubordination -->
 <DescriptionLength>150</DescriptionLength>
 <CheckUnique>true</CheckUnique>
 <Autonumbering>true</Autonumbering>
@@ -911,10 +919,10 @@ XML-элемент: `<Catalog>`. Категория InternalInfo: CatalogObject,
 **Прочее:**
 
 ```xml
-<EditType>InDialog</EditType>               <!-- InDialog | InList | Both -->
+<EditType>InDialog</EditType>               <!-- InDialog | InList | BothWays -->
 <QuickChoice>true</QuickChoice>
 <ChoiceMode>BothWays</ChoiceMode>            <!-- BothWays -->
-<PredefinedDataUpdate>Auto</PredefinedDataUpdate>  <!-- Auto | DontAutoUpdate -->
+<PredefinedDataUpdate>Auto</PredefinedDataUpdate>  <!-- Auto | AutoUpdate | DontAutoUpdate -->
 ```
 
 ### 7.2. Предопределённые элементы (Predefined.xml)
@@ -1097,12 +1105,13 @@ XML-элемент: `<AccumulationRegister>`.
 **Специфичные свойства:**
 
 ```xml
-<RegisterType>Balances</RegisterType>       <!-- Balances (остатки) | Turnovers (обороты) -->
+<RegisterType>Balance</RegisterType>        <!-- Balance (остатки) | Turnovers (обороты) -->
 <EnableTotalsSplitting>true</EnableTotalsSplitting>
 ```
 
-- `Balances` — хранит остатки (приход/расход → итоговое сальдо)
+- `Balance` — хранит остатки (приход/расход → итоговое сальдо)
 - `Turnovers` — хранит только обороты (без остатков)
+- Вид регистра задаёт поля движения: у `Balance` есть стандартный реквизит `ВидДвижения` (`RecordType`: `Receipt`/`Expense`, в коде `ВидДвиженияНакопления.Приход`/`Расход`), у `Turnovers` его нет — движение оборотного регистра не указывает вид, а обращение к `ВидДвижения` падает при проведении.
 
 **Дочерние объекты:** `<Dimension>`, `<Resource>`, `<Attribute>`.
 
@@ -1704,11 +1713,22 @@ XML-элемент: `<EventSubscription>`.
 и `cfg:CalculationRegisterRecordSet.Xxx`.
 
 Публичный типизированный маршрут создания и редактирования подписки проверяет
-одну итоговую связку `Source` → `Event` → `Handler`. `Source` меняется операцией
-`editRelations` с `relation: "source"`, `mode: "replace"`; `Event` и `Handler` —
-операцией `setProperties` в том же атомарном вызове. Это два из пяти существующих
-тегов `op`, а не отдельная операция подписки. Частичные режимы и пустой итоговый
-`Source` не поддерживаются. Порядок целей не участвует в семантическом сравнении.
+одну итоговую связку `Source` → `Event` → `Handler`. `Source` меняется операциями
+со связью `source`: `relation.replace` задаёт полный логический состав,
+`relation.add` добавляет перечисленные цели, а `relation.remove` удаляет их.
+`Event` и `Handler` меняются через `setProperties` в том же атомарном вызове.
+
+При `relation.add` и `relation.remove` байты и относительный порядок прежних
+узлов сохраняются, кроме удаляемых; новые цели сортируются только между собой
+и дополняют свою группу XML (`Type` перед `TypeSet`/`TypeId`). Добавление уже
+имеющейся или удаление отсутствующей цели не меняет файл. Изменяющий состав
+`relation.replace` выпускает логические цели в детерминированном порядке.
+Порядок целей не участвует в семантическом сравнении.
+
+После всех операций одного вызова в `Source` должен остаться хотя бы один
+логический источник. Поэтому промежуточный пустой состав допустим, если другая
+операция того же вызова добавляет источник; пустой итог отклоняется без записи.
+Сохранённые `v8:TypeId` не считаются логическими источниками.
 
 Каждый элемент `targets` принадлежит закрытому размеченному объединению:
 
@@ -1887,16 +1907,111 @@ XML-элемент: `<WebService>`. Трёхуровневая вложенно�
 </TabularSection>
 ```
 
-### 26.2. Стабильные элементы
+### 26.2. Стабильные элементы 8.3
 
-Между версиями 8.3.20 → 8.3.24 → 8.3.27:
+Между версиями 8.3.20 → 8.3.24 → 8.3.27 (что меняют линии 8.5 — в § 26.3):
 - Структура каталогов **без изменений**
 - Пространства имён **без изменений**
 - UUID объектов **сохраняются**
 - Именование файлов и каталогов **без изменений**
 
----
 <!-- legacy-format-reference:end -->
+
+### 26.3. Версия 2.20 → 2.21 → 2.22
+
+Платформа 8.5.1 пишет формат 2.21, платформа 8.5.4 — формат 2.22. Набор
+остаётся в своём формате: новые файлы правки получают формат набора и всё,
+что этот формат добавляет. Эталоны — выгрузки `all_kinds` в
+`tests/fixtures/formats/platform_xml/<версия>/all_kinds/src/`.
+
+**Изменения в версии 2.21 (платформа 8.5.1):**
+
+1. **Пространство имён палитры** объявлено в корне каждого `<MetaDataObject>`,
+   по алфавиту префиксов — между `lf` и `style`. Корень из эталона
+   `tests/fixtures/formats/platform_xml/2.21/all_kinds/src/Catalogs/Валюты.xml`:
+
+```xml
+<MetaDataObject xmlns="http://v8.1c.ru/8.3/MDClasses" xmlns:app="http://v8.1c.ru/8.2/managed-application/core" xmlns:cfg="http://v8.1c.ru/8.1/data/enterprise/current-config" xmlns:cmi="http://v8.1c.ru/8.2/managed-application/cmi" xmlns:ent="http://v8.1c.ru/8.1/data/enterprise" xmlns:lf="http://v8.1c.ru/8.2/managed-application/logform" xmlns:pal="http://v8.1c.ru/8.1/data/ui/colors/palette" xmlns:style="http://v8.1c.ru/8.1/data/ui/style" xmlns:sys="http://v8.1c.ru/8.1/data/ui/fonts/system" xmlns:v8="http://v8.1c.ru/8.1/data/core" xmlns:v8ui="http://v8.1c.ru/8.1/data/ui" xmlns:web="http://v8.1c.ru/8.1/data/ui/colors/web" xmlns:win="http://v8.1c.ru/8.1/data/ui/colors/windows" xmlns:xen="http://v8.1c.ru/8.3/xcf/enums" xmlns:xpr="http://v8.1c.ru/8.3/xcf/predef" xmlns:xr="http://v8.1c.ru/8.3/xcf/readable" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="2.21">
+```
+
+2. **Color** — последнее свойство значения перечисления, по умолчанию `auto`.
+   Эталон `tests/fixtures/formats/platform_xml/2.21/all_kinds/src/Enums/СпособыУстановкиКурсаВалюты.xml`:
+
+```xml
+<EnumValue uuid="fd400786-6741-5718-8b41-09e2ecc331c5">
+	<Properties>
+		<Name>ЗагрузкаИзИнтернета</Name>
+		<Synonym>
+			<v8:item>
+				<v8:lang>ru</v8:lang>
+				<v8:content>Загрузка из интернета</v8:content>
+			</v8:item>
+		</Synonym>
+		<Comment/>
+		<Color>auto</Color>
+	</Properties>
+</EnumValue>
+```
+
+3. **UseInInterfaceCompatibilityMode** — в описании формы сразу после
+   `UsePurposes`, по умолчанию `Any`. Эталон
+   `tests/fixtures/formats/platform_xml/2.21/all_kinds/src/CommonForms/MainA.xml`:
+
+```xml
+<UsePurposes>
+	<v8:Value xsi:type="app:ApplicationUsePurpose">PlatformApplication</v8:Value>
+	<v8:Value xsi:type="app:ApplicationUsePurpose">MobilePlatformApplication</v8:Value>
+</UsePurposes>
+<UseInInterfaceCompatibilityMode>Any</UseInInterfaceCompatibilityMode>
+```
+
+4. **Свойства конфигурации**, эталон `tests/fixtures/formats/platform_xml/2.21/all_kinds/src/Configuration.xml`:
+   формы `AuxiliaryReportForm`, `AuxiliaryReportVariantForm`,
+   `AuxiliaryReportSettingsForm`, `AuxiliaryDynamicListSettingsForm`,
+   `AuxiliaryDataHistoryChangeHistoryForm`, `AuxiliaryDataHistoryVersionDataForm`,
+   `AuxiliaryDataHistoryVersionDifferencesForm`,
+   `AuxiliaryCollaborationSystemUsersChoiceForm`;
+   `MainClientApplicationWindowInterfaceVariant`, `ClientApplicationTheme`,
+   `ClientApplicationWindowsOpenVariant`, `Caption`, `ShortCaption`,
+   `Version85InterfaceMigrationMode`. Режим совместимости расширений —
+   `Version8_5_1`.
+
+**Изменения в версии 2.22 (платформа 8.5.4):**
+
+1. **MainAnalyticsSystemSchema** — свойство отчёта сразу после
+   `MainDataCompositionSchema`, по умолчанию пустое. Эталон
+   `tests/fixtures/formats/platform_xml/2.22/all_kinds/src/Reports/АнализВерсийОбъектов.xml`:
+
+```xml
+<MainDataCompositionSchema>Report.АнализВерсийОбъектов.Template.ОсновнаяСхемаКомпоновкиДанных</MainDataCompositionSchema>
+<MainAnalyticsSystemSchema/>
+```
+
+2. Режим совместимости расширений `Version8_5_4`, эталон
+   `tests/fixtures/formats/platform_xml/2.22/all_kinds/src/Configuration.xml`.
+
+3. **Свойства корня расширения**, эталон
+   `tests/fixtures/formats/platform_xml/2.22/empty_extension/ext/Configuration.xml`:
+   `ActionOnConfigurationObjectMissing` и `DefaultExtensionPropertyCheckAction`
+   (`Error`, `Warning`, `Ignore`, `Auto`),
+   `TypeReductionByConfigurationExtensionMode` (`TransformValues`, `DeleteData`,
+   `Deny`) и составное `ActionOnExtendedConfigurationObjectsMissing` из частей
+   `xr:AdoptedObject`, `xr:NotifiedObject`, `xr:CheckedObject`,
+   `xr:ExtendedObject` с теми же значениями, что у первого:
+
+```xml
+<ActionOnConfigurationObjectMissing>Auto</ActionOnConfigurationObjectMissing>
+<DefaultExtensionPropertyCheckAction>Error</DefaultExtensionPropertyCheckAction>
+<TypeReductionByConfigurationExtensionMode>TransformValues</TypeReductionByConfigurationExtensionMode>
+<ActionOnExtendedConfigurationObjectsMissing>
+	<xr:AdoptedObject>Error</xr:AdoptedObject>
+	<xr:NotifiedObject>Error</xr:NotifiedObject>
+	<xr:CheckedObject>Error</xr:CheckedObject>
+	<xr:ExtendedObject>Error</xr:ExtendedObject>
+</ActionOnExtendedConfigurationObjectsMissing>
+```
+
+---
 
 ## 27. Сводная таблица: свойства по типам объектов
 
@@ -1910,6 +2025,7 @@ XML-элемент: `<WebService>`. Трёхуровневая вложенно�
 | Posting | - | + | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | RegisterRecords | - | + | - | - | - | - | - | - | - | - | - | - | - | - | - | - | - |
 | RegisterType | - | - | - | - | - | + | - | - | - | - | - | - | - | - | - | - | - |
+| IncludeHelpInContents | + | + | - | - | + | + | + | + | + | + | + | + | + | + | + | + | + |
 | Periodicity | - | - | - | - | + | - | - | + | - | - | - | - | - | - | - | - | - |
 | WriteMode | - | - | - | - | + | - | - | - | - | - | - | - | - | - | - | - | - |
 | ChartOfAccounts | - | - | - | - | - | - | + | - | - | - | - | - | - | - | - | - | - |
