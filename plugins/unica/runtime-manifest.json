@@ -1,14 +1,14 @@
 {
   "schemaVersion": 2,
-  "pluginVersion": "0.15.0",
+  "pluginVersion": "0.16.0-rc.1",
   "development": false,
   "source": {
     "repository": "https://github.com/IngvarConsulting/unica",
-    "commit": "e0324e80a2961156b21742e2091a9210813e6e2d"
+    "commit": "15cf4d08d72466cdb1392a3e8896d561a228a296"
   },
   "release": {
     "repository": "https://github.com/IngvarConsulting/unica",
-    "tag": "v0.15.0"
+    "tag": "v0.16.0-rc.1"
   },
   "artifacts": {
     "bsl-analyzer": {
@@ -63,26 +63,26 @@
       }
     },
     "unica": {
-      "version": "0.15.0",
+      "version": "0.16.0-rc.1",
       "role": "core",
       "targets": {
         "darwin-arm64": {
           "asset": {
             "mediaType": "application/gzip",
             "name": "unica-runtime-darwin-arm64.tar.gz",
-            "sha256": "6b734d89b0ee1fa4a9021b33c68061403fa562ea613e5ce8eeb696cd69f3672c",
-            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.15.0/unica-runtime-darwin-arm64.tar.gz"
+            "sha256": "393852a7adb7d14fb9d4814d36e295826ffd052e4f15c8f09f50dea733dc68d8",
+            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.16.0-rc.1/unica-runtime-darwin-arm64.tar.gz"
           },
           "files": [
             {
               "executable": true,
               "path": "bin/darwin-arm64/unica",
-              "sha256": "93cc39af17f115273807daf4f643f58f4079a5bfb9eae125df453085ddba86aa"
+              "sha256": "4e583b04e928127d8db1f12844c0d5b5fee0fb1a9f18fb1acb883318c51e8a3d"
             },
             {
               "executable": false,
               "path": "third-party/manifest.json",
-              "sha256": "94ee63854231946f093c5cbd8736feb50114f4a77c52564fe0e5281cc1aa30fa"
+              "sha256": "0869ae1deecd168807e3c345b807a099a18940fc01959960a52b8aea8e52f31e"
             }
           ],
           "entrypoint": "bin/darwin-arm64/unica"
@@ -91,19 +91,19 @@
           "asset": {
             "mediaType": "application/gzip",
             "name": "unica-runtime-linux-x64.tar.gz",
-            "sha256": "a3e88d7688bceef5eed08add742fadd71b04aa00f5d869ec08c9b6b5c0cdbe44",
-            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.15.0/unica-runtime-linux-x64.tar.gz"
+            "sha256": "da7447debf57840b57ec18c98600f2018e7d79cba7f9739f1e6ee8a5e3ac406e",
+            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.16.0-rc.1/unica-runtime-linux-x64.tar.gz"
           },
           "files": [
             {
               "executable": true,
               "path": "bin/linux-x64/unica",
-              "sha256": "36d2fefad5204b44355290b047a8949ac4024da59ab81db57b6c906aaf81b297"
+              "sha256": "e276e81122a557f97f871279faa19c680fa88ba9e0771e5a173907472ab1a167"
             },
             {
               "executable": false,
               "path": "third-party/manifest.json",
-              "sha256": "e5e265a5e320fe9486f745810170f105a9733b7185f36de47ba5a5f3c92bb9a0"
+              "sha256": "93709435b35ee4fabd5b1c357982aaf536e68b569de748a17eca362a24039908"
             }
           ],
           "entrypoint": "bin/linux-x64/unica"
@@ -112,19 +112,19 @@
           "asset": {
             "mediaType": "application/gzip",
             "name": "unica-runtime-win-x64.tar.gz",
-            "sha256": "20508cc25cfe5629b9fd3998d86eee1c85330bb45d5e1305b8500b894737d80e",
-            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.15.0/unica-runtime-win-x64.tar.gz"
+            "sha256": "553c36a8b8fb987ed45c03e9b5e7c43bd1cfd6a854335d97b056e2a9bf935555",
+            "url": "https://github.com/IngvarConsulting/unica/releases/download/v0.16.0-rc.1/unica-runtime-win-x64.tar.gz"
           },
           "files": [
             {
               "executable": true,
               "path": "bin/win-x64/unica.exe",
-              "sha256": "e467b48bd3117bff0666d420f2d009e0717c416b164ce2c9d6327f864b94f01a"
+              "sha256": "8d592297794eced4a221e4f459d598866ee6da264c654e11349666aaa1862974"
             },
             {
               "executable": false,
               "path": "third-party/manifest.json",
-              "sha256": "649f195b9da16cbf6d0c9aaa1d72452f73a76c764036b76011229b457f7b6db3"
+              "sha256": "dbb66b182a6bdb08b3e45d1188b8ee24424b66a2800178d983a5e58f623c022a"
             }
           ],
           "entrypoint": "bin/win-x64/unica.exe"
@@ -132,15 +132,15 @@
       }
     },
     "v8-runner": {
-      "version": "0.17.4",
+      "version": "0.18.0",
       "role": "engine",
       "targets": {
         "darwin-arm64": {
           "asset": {
             "mediaType": "application/gzip",
             "name": "v8-runner-macos-aarch64.tar.gz",
-            "sha256": "65bc7ad874f55b3cff8e04b94795a9ba8d037b15d1ca8ecc461b26aa6bb3c2ba",
-            "url": "https://github.com/IngvarConsulting/v8-runner-rust/releases/download/v0.17.4/v8-runner-macos-aarch64.tar.gz"
+            "sha256": "b92f4ce343a6e581cd2d4edc7b9c3edacc4174136d583f1fc7acc75221a69a8a",
+            "url": "https://github.com/IngvarConsulting/v8-runner-rust/releases/download/v0.18.0/v8-runner-macos-aarch64.tar.gz"
           },
           "files": [
             {
@@ -156,7 +156,7 @@
             {
               "executable": false,
               "path": "v8-runner-macos-aarch64/README.md",
-              "sha256": "5af8159276e2b735383bbbb97d6d0afe9df91008bf023468fb5e817fa88e89ef"
+              "sha256": "24ff10ff3b00261eac27e1ba4329a7a839d3d2b116fd9e4e60c6ed8b3428547a"
             },
             {
               "executable": false,
@@ -176,7 +176,7 @@
             {
               "executable": true,
               "path": "v8-runner-macos-aarch64/v8-runner",
-              "sha256": "ade8a4857626b60398bf56295c730937b846298cc136f876646681b7c2866715"
+              "sha256": "5c37db171cef4c44e427aa0dc2caebe8d6fb1e92bb347a70ddb835619a85675d"
             }
           ]
         },
@@ -184,8 +184,8 @@
           "asset": {
             "mediaType": "application/gzip",
             "name": "v8-runner-linux-x86_64-musl.tar.gz",
-            "sha256": "6c740b005947998e2034dae2497c7cafefc2d9b746777f5f580f90815d2fa459",
-            "url": "https://github.com/IngvarConsulting/v8-runner-rust/releases/download/v0.17.4/v8-runner-linux-x86_64-musl.tar.gz"
+            "sha256": "1166bdc031ded8d33b2c3e3a87b54b1fd3e7d76a7f0b738b1136d1920705a36d",
+            "url": "https://github.com/IngvarConsulting/v8-runner-rust/releases/download/v0.18.0/v8-runner-linux-x86_64-musl.tar.gz"
           },
           "files": [
             {
@@ -201,7 +201,7 @@
             {
               "executable": false,
               "path": "v8-runner-linux-x86_64-musl/README.md",
-              "sha256": "5af8159276e2b735383bbbb97d6d0afe9df91008bf023468fb5e817fa88e89ef"
+              "sha256": "24ff10ff3b00261eac27e1ba4329a7a839d3d2b116fd9e4e60c6ed8b3428547a"
             },
             {
               "executable": false,
@@ -221,7 +221,7 @@
             {
               "executable": true,
               "path": "v8-runner-linux-x86_64-musl/v8-runner",
-              "sha256": "5075fc2c0ea5e1f0261f57d99a545afcd6589c13da726f25f61d40a626d57753"
+              "sha256": "25a12fde7b99150e3d1ab321f739b933e8727251edac7462d7b562413846b7e0"
             }
           ]
         },
@@ -229,8 +229,8 @@
           "asset": {
             "mediaType": "application/zip",
             "name": "v8-runner-windows-x86_64.zip",
-            "sha256": "b0fa55084664b86c96589f85e1aa9a57396c12b207d36c796ee4afd277ade38f",
-            "url": "https://github.com/IngvarConsulting/v8-runner-rust/releases/download/v0.17.4/v8-runner-windows-x86_64.zip"
+            "sha256": "33ad05c9028ae37b57a8dbe3c88fd5a77d03d1a03d3ac73021cd8649f42b82a0",
+            "url": "https://github.com/IngvarConsulting/v8-runner-rust/releases/download/v0.18.0/v8-runner-windows-x86_64.zip"
           },
           "files": [
             {
@@ -246,7 +246,7 @@
             {
               "executable": false,
               "path": "v8-runner-windows-x86_64/README.md",
-              "sha256": "5af8159276e2b735383bbbb97d6d0afe9df91008bf023468fb5e817fa88e89ef"
+              "sha256": "24ff10ff3b00261eac27e1ba4329a7a839d3d2b116fd9e4e60c6ed8b3428547a"
             },
             {
               "executable": false,
@@ -266,7 +266,7 @@
             {
               "executable": true,
               "path": "v8-runner-windows-x86_64/v8-runner.exe",
-              "sha256": "f263f665349dc4ff50be9b840a147a78cb5221786ae48871fddc9a01dc71da90"
+              "sha256": "9c9cfa20b26332ffca5ce751f2dce6485095598c75ab863c007d7be91822facc"
             }
           ]
         }
